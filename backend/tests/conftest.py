@@ -13,9 +13,14 @@ from typing import Any
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 from plt.app import create_app
 from plt.config import AppEnv, Settings
+from plt.db.base import Base
+from plt.db.models import Jurisdiction, JurisdictionType
+from plt.db.session import create_session_factory, make_engine
 
 #: Repository root, resolved from ``<repo>/backend/tests/conftest.py``.
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -59,3 +64,57 @@ def client(app: Flask) -> Iterator[FlaskClient]:
     """Return a test client, closed after the test."""
     with app.test_client() as test_client:
         yield test_client
+
+
+@pytest.fixture
+def db_engine(settings: Settings) -> Iterator[Engine]:
+    """Return an engine on a temporary SQLite file with the schema created.
+
+    The schema is built from ``Base.metadata`` rather than by running the migrations, which
+    keeps the fixture fast; ``tests/unit/test_migrations.py`` covers the migrations
+    themselves and asserts that the two agree.
+    """
+    engine = make_engine(settings)
+    Base.metadata.create_all(engine)
+    try:
+        yield engine
+    finally:
+        engine.dispose()
+
+
+@pytest.fixture
+def db_session(db_engine: Engine) -> Iterator[Session]:
+    """Return an open session on the temporary database, rolled back and closed after."""
+    factory = create_session_factory(db_engine)
+    session = factory()
+    try:
+        yield session
+    finally:
+        session.rollback()
+        session.close()
+
+
+@pytest.fixture
+def seeded_session(db_session: Session) -> Session:
+    """Return a session with the two launch jurisdictions inserted, as migration 0002 does."""
+    db_session.add_all(
+        [
+            Jurisdiction(
+                code="EU",
+                name="European Union",
+                type=JurisdictionType.SUPRANATIONAL,
+                map_feature_id="EU",
+                default_language="en",
+            ),
+            Jurisdiction(
+                code="NL",
+                name="Netherlands",
+                type=JurisdictionType.STATE,
+                iso_alpha2="NL",
+                map_feature_id="NL",
+                default_language="nl",
+            ),
+        ]
+    )
+    db_session.flush()
+    return db_session

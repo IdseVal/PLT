@@ -1,9 +1,13 @@
 /**
  * Methodology: how cases are selected, filtered and classified.
  *
- * Scaffold placeholder; the copy is written by the content issue.
+ * The copy lives in `src/content/methodology.ts` and must stay true to what the pipeline
+ * actually does; `StaticPage` renders it.
  */
 
+import StaticPage from '@/components/StaticPage'
+import { methodologyPage } from '@/content/methodology'
+
 export default function Methodology(): JSX.Element {
-  return <h1 className="text-2xl font-bold">Methodology</h1>
+  return <StaticPage content={methodologyPage} />
 }
