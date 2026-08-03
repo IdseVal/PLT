@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-wur-surface text-wur-ink font-sans antialiased;
+  }
+
+  /* Accessibility: a visible focus ring on every interactive element (architecture §6). */
+  :focus-visible {
+    @apply outline-wur-green outline outline-2 outline-offset-2;
+  }
+}
+
+@layer components {
+  /* Skip link, revealed on keyboard focus. */
+  .skip-link {
+    @apply bg-wur-green sr-only rounded px-4 py-2 text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50;
+  }
+}
