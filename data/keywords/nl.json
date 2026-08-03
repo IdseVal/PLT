@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0.0",
+  "jurisdiction": "NL",
+  "jurisdiction_name": "Netherlands",
+  "list_version": "1.0.0",
+  "updated": "2026-08-03",
+  "maintainer": "PLT content manager (Law group, WUR)",
+  "languages": ["nl"],
+  "notes": "Seed list for the Rechtspraak.nl connector. Dutch is a compounding language: many terms occur inside compounds (gewasbeschermingsmiddelenrichtlijn, bestrijdingsmiddelengebruik), so several stems use match=substring deliberately. Weight 3 = qualifies alone; weight 2 = strong; weight 1 = contextual only. Precision and recall to be reviewed against the first full ingestion run before this list is frozen.",
+  "scoring": {
+    "min_score": 3,
+    "count_term_once": true,
+    "fields": {
+      "title": 1.5,
+      "abstract": 1.5,
+      "subject": 1.0,
+      "full_text": 1.0
+    }
+  },
+  "terms": [
+    { "id": "nl-pesticide", "term": "pesticide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["pesticiden"], "note": "substring also catches 'pesticidengebruik', 'pesticidenrichtlijn'" },
+    { "id": "nl-gewasbeschermingsmiddel", "term": "gewasbeschermingsmiddel", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["gewasbeschermingsmiddelen", "gewasbescherming"] },
+    { "id": "nl-bestrijdingsmiddel", "term": "bestrijdingsmiddel", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["bestrijdingsmiddelen"] },
+    { "id": "nl-biocide", "term": "biocide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["biociden", "biocidenproduct"] },
+    { "id": "nl-landbouwgif", "term": "landbouwgif", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["landbouwgift"] },
+    { "id": "nl-herbicide", "term": "herbicide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["herbiciden", "onkruidbestrijdingsmiddel", "onkruidbestrijdingsmiddelen"] },
+    { "id": "nl-insecticide", "term": "insecticide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["insecticiden"] },
+    { "id": "nl-fungicide", "term": "fungicide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["fungiciden", "schimmelbestrijdingsmiddel"] },
+    { "id": "nl-acaricide", "term": "acaricide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["acariciden", "nematicide", "nematiciden", "rodenticide", "rodenticiden", "molluscicide"] },
+    { "id": "nl-werkzame-stof", "term": "werkzame stof", "lang": "nl", "category": "product_class", "weight": 2, "match": "phrase", "aliases": ["werkzame stoffen", "actieve stof", "actieve stoffen"] },
+    { "id": "nl-spuitmiddel", "term": "spuitmiddel", "lang": "nl", "category": "product_class", "weight": 2, "match": "substring", "aliases": ["spuitmiddelen", "chemische onkruidbestrijding"] },
+
+    { "id": "nl-glyfosaat", "term": "glyfosaat", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["glyphosaat", "glyfosaathoudend"] },
+    { "id": "nl-roundup", "term": "Roundup", "lang": "nl", "category": "brand", "weight": 3, "match": "word", "aliases": ["Round-up"] },
+    { "id": "nl-neonicotinoide", "term": "neonicotinoide", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["neonicotinoïde", "neonicotinoïden", "neonicotinoiden", "neonics"] },
+    { "id": "nl-imidacloprid", "term": "imidacloprid", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring" },
+    { "id": "nl-thiacloprid", "term": "thiacloprid", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["thiamethoxam", "clothianidine", "clothianidin"] },
+    { "id": "nl-chloorpyrifos", "term": "chloorpyrifos", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["chlorpyrifos", "chloorpyrifos-methyl"] },
+    { "id": "nl-fipronil", "term": "fipronil", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring" },
+    { "id": "nl-metam-natrium", "term": "metam-natrium", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["metam natrium", "metam-sodium"] },
+    { "id": "nl-chloorprofam", "term": "chloorprofam", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["chlorprofam", "CIPC"] },
+    { "id": "nl-mancozeb", "term": "mancozeb", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["maneb", "captan", "folpet"] },
+    { "id": "nl-prosulfocarb", "term": "prosulfocarb", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["asulam", "asulox", "metolachloor", "s-metolachloor"] },
+    { "id": "nl-bromadiolon", "term": "bromadiolon", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["difenacoum", "brodifacoum"] },
+    { "id": "nl-ddt", "term": "DDT", "lang": "nl", "category": "active_substance", "weight": 3, "match": "word", "case_sensitive": true, "aliases": ["lindaan", "dieldrin", "paraquat", "atrazine", "atrazin"] },
+
+    { "id": "nl-wgb", "term": "Wet gewasbeschermingsmiddelen en biociden", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["Wgb", "Bestrijdingsmiddelenwet", "Besluit gewasbeschermingsmiddelen en biociden", "Regeling gewasbeschermingsmiddelen en biociden"] },
+    { "id": "nl-vo-1107-2009", "term": "Verordening (EG) nr. 1107/2009", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["1107/2009", "Gewasbeschermingsverordening"] },
+    { "id": "nl-vo-528-2012", "term": "Verordening (EU) nr. 528/2012", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["528/2012", "Biocidenverordening"] },
+    { "id": "nl-rl-2009-128", "term": "Richtlijn 2009/128/EG", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["2009/128/EG", "duurzaam gebruik van pesticiden", "richtlijn duurzaam gebruik"] },
+    { "id": "nl-vo-396-2005", "term": "Verordening (EG) nr. 396/2005", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["396/2005", "residuverordening"] },
+    { "id": "nl-activiteitenbesluit-gewas", "term": "teeltvrije zone", "lang": "nl", "category": "statute", "weight": 2, "match": "phrase", "aliases": ["teeltvrije zones", "driftreducerende techniek", "driftreductie", "driftreducerend"] },
+
+    { "id": "nl-ctgb", "term": "Ctgb", "lang": "nl", "category": "authority", "weight": 3, "match": "word", "case_sensitive": true, "aliases": ["College voor de toelating van gewasbeschermingsmiddelen en biociden", "College voor de toelating van bestrijdingsmiddelen", "CTB"] },
+    { "id": "nl-nvwa-gewas", "term": "NVWA", "lang": "nl", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["Nederlandse Voedsel- en Warenautoriteit"], "note": "Contextual: the NVWA appears across food and animal law. Only meaningful alongside a pesticide term." },
+    { "id": "nl-efsa", "term": "EFSA", "lang": "nl", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["Europese Autoriteit voor voedselveiligheid", "ECHA", "RIVM"] },
+
+    { "id": "nl-toelating", "term": "toelating van gewasbeschermingsmiddelen", "lang": "nl", "category": "procedure", "weight": 3, "match": "phrase", "aliases": ["toelatingsbesluit", "toelatingshouder", "toelatingsaanvraag", "herbeoordeling werkzame stof"] },
+    { "id": "nl-vrijstelling-art38", "term": "vrijstelling gewasbescherming", "lang": "nl", "category": "procedure", "weight": 2, "match": "phrase", "aliases": ["noodtoelating", "vrijstellingsbesluit", "artikel 53 verordening"] },
+    { "id": "nl-wederzijdse-erkenning", "term": "wederzijdse erkenning", "lang": "nl", "category": "procedure", "weight": 1, "match": "phrase", "note": "Contextual: also used in unrelated internal-market cases." },
+    { "id": "nl-etikettering-middel", "term": "wettelijk gebruiksvoorschrift", "lang": "nl", "category": "procedure", "weight": 3, "match": "phrase", "aliases": ["gebruiksvoorschrift en gebruiksaanwijzing", "WG/GA"] },
+
+    { "id": "nl-lelieteelt", "term": "lelieteelt", "lang": "nl", "category": "crop_or_practice", "weight": 1, "match": "substring", "aliases": ["lelievelden", "lelieveld", "lelieperceel"], "note": "Contextual: the Drenthe/Gelderland lily cases are a core NL line of pesticide litigation, but the word alone also appears in tenancy and zoning disputes." },
+    { "id": "nl-bollenteelt", "term": "bollenteelt", "lang": "nl", "category": "crop_or_practice", "weight": 1, "match": "substring", "aliases": ["bloembollenteelt", "bloembollen", "bollenveld", "bollenperceel"] },
+    { "id": "nl-boomkwekerij", "term": "boomkwekerij", "lang": "nl", "category": "crop_or_practice", "weight": 1, "match": "substring", "aliases": ["fruitteelt", "boomgaard", "akkerbouw", "glastuinbouw", "kwekerij"] },
+    { "id": "nl-bespuiting", "term": "bespuiting", "lang": "nl", "category": "crop_or_practice", "weight": 2, "match": "substring", "aliases": ["bespuitingen", "gewasbespuiting", "veldspuit", "spuitapparatuur", "spuiten van gewassen"] },
+    { "id": "nl-spuitzone", "term": "spuitzone", "lang": "nl", "category": "crop_or_practice", "weight": 3, "match": "substring", "aliases": ["spuitzones", "spuitvrije zone", "spuitcirkel"] },
+    { "id": "nl-spuitdrift", "term": "spuitdrift", "lang": "nl", "category": "environment", "weight": 3, "match": "substring", "aliases": ["drift van gewasbeschermingsmiddelen", "afdrift"] },
+    { "id": "nl-drift", "term": "drift", "lang": "nl", "category": "environment", "weight": 1, "match": "word", "requires": ["nl-bespuiting"], "note": "Homonym trap: 'drift' also means anger/impulse in criminal judgments. Only counts alongside a spraying term." },
+    { "id": "nl-bufferzone", "term": "bufferzone", "lang": "nl", "category": "environment", "weight": 1, "match": "substring", "aliases": ["afstandsnorm", "minimale afstand tot", "50 meter zone"] },
+
+    { "id": "nl-omwonenden", "term": "omwonenden", "lang": "nl", "category": "exposure_or_harm", "weight": 1, "match": "substring", "aliases": ["omwonende"], "note": "Contextual: central to the Dutch residents-exposure line of cases, but generic in planning law." },
+    { "id": "nl-blootstelling", "term": "blootstelling", "lang": "nl", "category": "exposure_or_harm", "weight": 1, "match": "substring", "aliases": ["blootgesteld", "blootstellingsrisico"] },
+    { "id": "nl-gezondheidsschade-middel", "term": "gezondheidsschade door bestrijdingsmiddelen", "lang": "nl", "category": "exposure_or_harm", "weight": 3, "match": "phrase", "aliases": ["ziekte van Parkinson bestrijdingsmiddelen", "beroepsziekte gewasbescherming"] },
+    { "id": "nl-bijensterfte", "term": "bijensterfte", "lang": "nl", "category": "exposure_or_harm", "weight": 2, "match": "substring", "aliases": ["bijenvolken", "insectensterfte"] },
+    { "id": "nl-residu", "term": "residu", "lang": "nl", "category": "exposure_or_harm", "weight": 1, "match": "substring", "aliases": ["residuen", "residugehalte"] },
+    { "id": "nl-mrl", "term": "maximale residulimiet", "lang": "nl", "category": "exposure_or_harm", "weight": 3, "match": "phrase", "aliases": ["maximumresidugehalte", "residulimiet", "MRL"] },
+
+    { "id": "nl-normoverschrijding-water", "term": "normoverschrijding oppervlaktewater", "lang": "nl", "category": "environment", "weight": 2, "match": "phrase", "aliases": ["waterkwaliteitsnorm", "emissie naar oppervlaktewater"] },
+    { "id": "nl-krw", "term": "Kaderrichtlijn Water", "lang": "nl", "category": "environment", "weight": 1, "match": "phrase", "aliases": ["KRW", "grondwaterrichtlijn", "drinkwaterwinning"] },
+    { "id": "nl-natura2000-gewas", "term": "stikstof- en gewasbeschermingsdepositie", "lang": "nl", "category": "environment", "weight": 1, "match": "phrase", "aliases": ["depositie van gewasbeschermingsmiddelen"] },
+    { "id": "nl-bodemverontreiniging-middel", "term": "bodemverontreiniging bestrijdingsmiddelen", "lang": "nl", "category": "environment", "weight": 3, "match": "phrase" },
+
+    { "id": "nl-illegaal-middel", "term": "illegale gewasbeschermingsmiddelen", "lang": "nl", "category": "general", "weight": 3, "match": "phrase", "aliases": ["niet-toegelaten middel", "niet toegelaten gewasbeschermingsmiddel", "verboden bestrijdingsmiddel"] },
+    { "id": "nl-wed", "term": "Wet op de economische delicten", "lang": "nl", "category": "statute", "weight": 1, "match": "phrase", "aliases": ["WED"], "note": "Contextual: the route by which pesticide offences are prosecuted, but covers all economic offences." }
+  ],
+  "exclusions": [
+    { "pattern": "in een opwelling van drift", "match": "phrase", "reason": "Criminal-law idiom; 'drift' as emotion, not spray drift." }
+  ]
+}
