@@ -1,0 +1,14 @@
+# Normalise line endings: LF in the repository, on every platform.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+
+# Generated; keep it out of diffs and language statistics.
+frontend/package-lock.json linguist-generated=true -diff
