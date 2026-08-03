@@ -38,6 +38,8 @@ dev = [
     "mypy>=1.10,<2.0",
     "types-flask-cors>=4.0",
     "lxml-stubs>=0.5",
+    # Windows ships no timezone database; alembic needs one to stamp a new revision.
+    "tzdata>=2024.1; sys_platform == 'win32'",
 ]
 
 [project.urls]
