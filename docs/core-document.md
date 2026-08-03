@@ -172,8 +172,15 @@ user flow — to be discussed. The layout agreed for the first iteration is reco
 
 ### 3.2 Design brief
 
-- LAW group styling (Wageningen University & Research).
+- LAW group styling.
 - Sabin Center for Climate Change Litigation as the reference implementation.
+
+**Styling package (added 3 August 2026).** The PLT is a **Wageningen Law** endeavour, not a
+WUR-wide one, and does not run on WUR corporate branding. Styling documentation, asset files
+and fonts will be supplied by the Law group later in the project. Until they arrive the
+front-end uses a neutral academic placeholder palette and a system font stack, defined once
+as theme tokens so the styling package can be dropped in as a single change. Developers
+should not derive or approximate corporate branding in the meantime.
 
 ### 3.3 First-iteration layout
 

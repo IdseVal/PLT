@@ -35,7 +35,7 @@ academic research and civil-society use.
 
 | Area | Behaviour |
 | --- | --- |
-| **Header** | WUR Law group branding, plus a menu: *About Wageningen Law*, *Methodology*, *FAQ*, *Contact* |
+| **Header** | Wageningen Law branding, plus a menu: *About Wageningen Law*, *Methodology*, *FAQ*, *Contact* |
 | **Home** | Title "Pesticide Litigation Tracker (PLT)" with a prominent search bar directly below |
 | **Map** | Below the search bar. Hovering a country shows how many cases the database holds for that jurisdiction. An EU logo sits in the North Sea and is hoverable in the same way — the **EU is treated as its own jurisdiction**, not as an aggregate of its member states |
 | **Sidebar** | The 20 most recent cases, with a button through to a dedicated **All cases** page |
@@ -102,13 +102,21 @@ data/        Keyword filter lists and other curated reference data
 docs/        Core document and supporting documentation
 ```
 
-## 7. Project status
+## 7. Styling
+
+The PLT is a **Wageningen Law** project. Styling documentation, asset files and fonts will
+be supplied by the Law group; until they arrive the front-end runs on a neutral academic
+placeholder palette and a system font stack, defined once as Tailwind theme tokens so the
+styling package drops in as a single change. Do not derive or approximate WUR corporate
+branding in the meantime — see [core document §3.2](docs/core-document.md#32-design-brief).
+
+## 8. Project status
 
 Startup phase (June–September 2026): first iteration of the database and data pipeline,
 first visual impression of the website. See the
 [project timeline](docs/core-document.md#annex-1-project-timeline) for the full schedule
 through launch in September 2027.
 
-## 8. Credits
+## 9. Credits
 
-Wageningen University & Research, Law group — Edwin Alblas, Idse Val & Vincent Latjes.
+Law group, Wageningen University & Research — Edwin Alblas, Idse Val & Vincent Latjes.
