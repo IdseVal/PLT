@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plt.wur.nl/schemas/keywords-1.0.0.json",
+  "title": "PLT jurisdiction keyword filter list",
+  "description": "Curated linguistic filter used as stage 1 of the PLT ingestion filter chain. One file per jurisdiction. See docs/core-document.md section 2.5.",
+  "type": "object",
+  "required": ["schema_version", "jurisdiction", "jurisdiction_name", "list_version", "updated", "languages", "scoring", "terms"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0",
+      "description": "Version of this schema the file conforms to."
+    },
+    "jurisdiction": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "description": "Jurisdiction code. ISO 3166-1 alpha-2 for states; 'EU' for the European Union, which is treated as its own jurisdiction."
+    },
+    "jurisdiction_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "list_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this list. Bump the minor version when terms are added, the major version when scoring semantics change."
+    },
+    "updated": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date the list was last curated."
+    },
+    "maintainer": {
+      "type": "string",
+      "description": "Role or person responsible for curating this list. Curation is a content-manager responsibility."
+    },
+    "languages": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-z]{2}$" },
+      "description": "ISO 639-1 codes of the languages covered. Must cover every working language of the jurisdiction's courts."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-text curation notes: known gaps, precision/recall observations, decisions taken."
+    },
+    "scoring": {
+      "type": "object",
+      "required": ["min_score", "fields"],
+      "additionalProperties": false,
+      "properties": {
+        "min_score": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Total weight a document must reach to pass the filter. A single weight-3 term is intended to be sufficient on its own."
+        },
+        "count_term_once": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, repeated occurrences of the same term contribute their weight only once."
+        },
+        "fields": {
+          "type": "object",
+          "description": "Per-field multipliers applied to a term's weight depending on where it matched.",
+          "required": ["title", "abstract", "full_text"],
+          "additionalProperties": { "type": "number", "minimum": 0 },
+          "properties": {
+            "title": { "type": "number", "minimum": 0 },
+            "abstract": { "type": "number", "minimum": 0 },
+            "full_text": { "type": "number", "minimum": 0 },
+            "subject": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "terms": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/term" }
+    },
+    "exclusions": {
+      "type": "array",
+      "description": "Patterns that veto a document outright regardless of score. Use sparingly, for known homonym traps.",
+      "items": {
+        "type": "object",
+        "required": ["pattern", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "pattern": { "type": "string", "minLength": 1 },
+          "match": { "enum": ["word", "phrase", "substring", "regex"], "default": "phrase" },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "term": {
+      "type": "object",
+      "required": ["id", "term", "lang", "category", "weight"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2}-[a-z0-9-]+$",
+          "description": "Stable identifier, prefixed with the language code. Never reuse an id for a different term; match provenance is stored against it."
+        },
+        "term": {
+          "type": "string",
+          "minLength": 2,
+          "description": "The term as it appears in court documents, in the source language."
+        },
+        "lang": {
+          "type": "string",
+          "pattern": "^[a-z]{2}$",
+          "description": "ISO 639-1 code of the language this term is written in."
+        },
+        "category": {
+          "enum": [
+            "active_substance",
+            "product_class",
+            "brand",
+            "statute",
+            "authority",
+            "procedure",
+            "crop_or_practice",
+            "exposure_or_harm",
+            "environment",
+            "general"
+          ],
+          "description": "Used for reporting on which kinds of terms drive recall, and for tuning."
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "description": "3 = unambiguous, qualifies a document alone. 2 = strong but needs light corroboration. 1 = contextual, only meaningful in combination."
+        },
+        "match": {
+          "enum": ["word", "phrase", "substring", "regex"],
+          "default": "word",
+          "description": "'word' matches on word boundaries; 'phrase' matches a whitespace-normalised multi-word sequence; 'substring' matches anywhere (use for compounding languages); 'regex' for the rare case the others cannot express."
+        },
+        "case_sensitive": {
+          "type": "boolean",
+          "default": false,
+          "description": "Set true only for short acronyms whose lowercase form is a common word."
+        },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 2 },
+          "description": "Spelling variants, inflections and abbreviations that score identically to the term."
+        },
+        "requires": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Term ids that must also match before this term contributes any weight. Use to disarm homonyms."
+        },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}
