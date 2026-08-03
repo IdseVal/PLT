@@ -1,0 +1,4 @@
+worktree:
+  sharedDirectories:
+    - node_modules
+    - .cache
