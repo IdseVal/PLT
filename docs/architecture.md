@@ -111,10 +111,34 @@ add source-specific fields to `source_metadata`.
 
 **Deduplication key:** `UNIQUE (jurisdiction_code, source_id)`. On conflict, compare
 `content_hash`; identical → touch `last_seen_at` only; different → update in place and
-record the revision. Never insert a second row for the same source identifier.
+record the revision (`case.revision` is incremented). Never insert a second row for the same
+source identifier.
 
 **`keyword_match` matters:** it is how the content manager evaluates and tunes the keyword
 lists. Do not treat it as optional.
+
+**Portability rules, fixed by the implementation of the schema:**
+
+- Timestamps use `plt.db.base.UtcDateTime`, which is `TIMESTAMP WITH TIME ZONE` on
+  PostgreSQL and a converting decorator on SQLite. A naive `datetime` is rejected on write.
+- Enumerated columns are `VARCHAR` plus a named `CHECK` constraint, never a native
+  PostgreSQL `ENUM`, so a new member is an ordinary migration on both back ends. Values are
+  persisted as the lower-case enum *value* (`state`, `judgment`, `applicant`, …), which is
+  also what the API exposes.
+- JSON columns use the portable `JSON` type, not `JSONB`.
+- `case_document.doc_type` takes `judgment | opinion | summary | attachment | other`; the
+  last two exist so a connector meeting an unexpected document kind stores it rather than
+  discarding it.
+- `jurisdiction.map_feature_id` is the identifier the frontend map resolves a jurisdiction
+  against: the ISO 3166-1 alpha-2 code for a state (`NL`), and the sentinel `EU` for the
+  Union, which the map renders as the hoverable North Sea logo instead of a shape.
+
+**Repository helpers** (`plt/db/repositories.py`) are the only SQL the API layer calls:
+`search_cases` / `count_cases` / `stream_cases` (all taking a `CaseSearchCriteria`),
+`latest_cases`, `get_case_by_source_id`, `get_case_by_id`, `get_case_fingerprint` (the
+pipeline's dedup pre-check), `jurisdiction_stats` (the one-query map payload, EU included and
+zero-case jurisdictions retained), `list_facets` and `latest_successful_runs`. Clamping
+`page`, `page_size` and `limit` against `Settings` stays the caller's job.
 
 ---
 
