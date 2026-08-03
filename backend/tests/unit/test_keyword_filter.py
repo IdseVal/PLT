@@ -118,9 +118,13 @@ def matched(result: FilterResult) -> set[str]:
 # ----------------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(("code", "term_count"), [("nl", 57), ("eu", 64)])
-def test_shipped_lists_load_and_validate(code: str, term_count: int) -> None:
-    keyword_list = load_keyword_list(KEYWORDS_DIR / f"{code}.json")
+@pytest.mark.parametrize("code", ["nl", "eu"])
+def test_shipped_lists_load_and_validate(code: str) -> None:
+    path = KEYWORDS_DIR / f"{code}.json"
+    keyword_list = load_keyword_list(path)
+    # Derived from the file rather than hard-coded: these lists are curated by the content
+    # manager, and a term added or split must not break the matcher's tests.
+    term_count = len(json.loads(path.read_text(encoding="utf-8"))["terms"])
 
     assert keyword_list.jurisdiction == code.upper()
     assert keyword_list.term_count == term_count
@@ -640,7 +644,7 @@ def test_the_snippet_shows_the_term_in_context(nl_filter: KeywordFilter) -> None
     assert len(snippet) < 250, "a snippet is context, not the document"
 
 
-def test_the_reason_explains_the_verdict(nl_filter: KeywordFilter) -> None:
+def test_the_reason_explains_the_verdict(nl_list: KeywordList, nl_filter: KeywordFilter) -> None:
     passed = nl_filter.evaluate(Doc(full_text="glyfosaat"))
     failed = nl_filter.evaluate(Doc(full_text="lelieteelt"))
     nothing = nl_filter.evaluate(Doc(full_text="een gewoon huurgeschil"))
@@ -648,7 +652,9 @@ def test_the_reason_explains_the_verdict(nl_filter: KeywordFilter) -> None:
     assert "reaches" in passed.reason
     assert "nl-glyfosaat" in passed.reason
     assert "below" in failed.reason
-    assert "NL list v1.0.0" in failed.reason
+    # Taken from the loaded list: curation bumps list_version, and that must not break a
+    # test of the matcher's reporting.
+    assert f"NL list v{nl_list.list_version}" in failed.reason
     assert "no curated term" in nothing.reason
     assert nothing.matches == ()
 

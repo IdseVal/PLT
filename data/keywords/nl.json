@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "jurisdiction": "NL",
   "jurisdiction_name": "Netherlands",
-  "list_version": "1.0.0",
+  "list_version": "1.0.1",
   "updated": "2026-08-03",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": ["nl"],
-  "notes": "Seed list for the Rechtspraak.nl connector. Dutch is a compounding language: many terms occur inside compounds (gewasbeschermingsmiddelenrichtlijn, bestrijdingsmiddelengebruik), so several stems use match=substring deliberately. Weight 3 = qualifies alone; weight 2 = strong; weight 1 = contextual only. Precision and recall to be reviewed against the first full ingestion run before this list is frozen.",
+  "notes": "Seed list for the Rechtspraak.nl connector. Dutch is a compounding language: many terms occur inside compounds (gewasbeschermingsmiddelenrichtlijn, bestrijdingsmiddelengebruik), so several stems use match=substring deliberately. Weight 3 = qualifies alone; weight 2 = strong; weight 1 = contextual only. Precision and recall to be reviewed against the first full ingestion run before this list is frozen. Revision 1.0.1 (issue #20): case_sensitive applies to a term and all of its aliases, so acronyms and prose words can never share a term. nl-ddt and nl-ctgb were splitting that rule and would have missed a sentence-initial 'Lindaan' or a lower-cased 'college voor de toelating'.",
   "scoring": {
     "min_score": 3,
     "count_term_once": true,
@@ -42,7 +42,8 @@
     { "id": "nl-mancozeb", "term": "mancozeb", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["maneb", "captan", "folpet"] },
     { "id": "nl-prosulfocarb", "term": "prosulfocarb", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["asulam", "asulox", "metolachloor", "s-metolachloor"] },
     { "id": "nl-bromadiolon", "term": "bromadiolon", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["difenacoum", "brodifacoum"] },
-    { "id": "nl-ddt", "term": "DDT", "lang": "nl", "category": "active_substance", "weight": 3, "match": "word", "case_sensitive": true, "aliases": ["lindaan", "dieldrin", "paraquat", "atrazine", "atrazin"] },
+    { "id": "nl-ddt", "term": "DDT", "lang": "nl", "category": "active_substance", "weight": 3, "match": "word", "case_sensitive": true, "note": "Acronym only. case_sensitive applies to a term AND all its aliases, so prose-word substances live in nl-organochloor instead." },
+    { "id": "nl-organochloor", "term": "lindaan", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["dieldrin", "aldrin", "paraquat", "atrazine", "atrazin", "endosulfan"], "note": "Withdrawn organochlorine and bipyridyl substances that still surface in soil-contamination and legacy-liability cases. Case-insensitive: these appear capitalised at the start of a sentence." },
 
     { "id": "nl-wgb", "term": "Wet gewasbeschermingsmiddelen en biociden", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["Wgb", "Bestrijdingsmiddelenwet", "Besluit gewasbeschermingsmiddelen en biociden", "Regeling gewasbeschermingsmiddelen en biociden"] },
     { "id": "nl-vo-1107-2009", "term": "Verordening (EG) nr. 1107/2009", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["1107/2009", "Gewasbeschermingsverordening"] },
@@ -51,9 +52,10 @@
     { "id": "nl-vo-396-2005", "term": "Verordening (EG) nr. 396/2005", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["396/2005", "residuverordening"] },
     { "id": "nl-activiteitenbesluit-gewas", "term": "teeltvrije zone", "lang": "nl", "category": "statute", "weight": 2, "match": "phrase", "aliases": ["teeltvrije zones", "driftreducerende techniek", "driftreductie", "driftreducerend"] },
 
-    { "id": "nl-ctgb", "term": "Ctgb", "lang": "nl", "category": "authority", "weight": 3, "match": "word", "case_sensitive": true, "aliases": ["College voor de toelating van gewasbeschermingsmiddelen en biociden", "College voor de toelating van bestrijdingsmiddelen", "CTB"] },
-    { "id": "nl-nvwa-gewas", "term": "NVWA", "lang": "nl", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["Nederlandse Voedsel- en Warenautoriteit"], "note": "Contextual: the NVWA appears across food and animal law. Only meaningful alongside a pesticide term." },
-    { "id": "nl-efsa", "term": "EFSA", "lang": "nl", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["Europese Autoriteit voor voedselveiligheid", "ECHA", "RIVM"] },
+    { "id": "nl-ctgb", "term": "Ctgb", "lang": "nl", "category": "authority", "weight": 3, "match": "word", "case_sensitive": true, "aliases": ["CTB"], "note": "Acronyms only; the spelled-out name is nl-college-toelating, which must stay case-insensitive." },
+    { "id": "nl-college-toelating", "term": "College voor de toelating van gewasbeschermingsmiddelen en biociden", "lang": "nl", "category": "authority", "weight": 3, "match": "phrase", "aliases": ["College voor de toelating van bestrijdingsmiddelen"], "note": "Case-insensitive: Dutch judgments routinely write 'het college voor de toelating van gewasbeschermingsmiddelen en biociden' in lower case mid-sentence." },
+    { "id": "nl-nvwa-gewas", "term": "NVWA", "lang": "nl", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["Nederlandse Voedsel- en Warenautoriteit"], "note": "Contextual: the NVWA appears across food and animal law. Only meaningful alongside a pesticide term. DOCUMENTED EXCEPTION to the acronyms-only rule in README: the alias is a proper noun that is always capitalised, so its case-sensitivity exposure is theoretical, and splitting it would change contextual scoring. Revisit under issue #24." },
+    { "id": "nl-efsa", "term": "EFSA", "lang": "nl", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["Europese Autoriteit voor voedselveiligheid", "ECHA", "RIVM"], "note": "DOCUMENTED EXCEPTION to the acronyms-only rule in README, on the same grounds as nl-nvwa-gewas. Revisit under issue #24." },
 
     { "id": "nl-toelating", "term": "toelating van gewasbeschermingsmiddelen", "lang": "nl", "category": "procedure", "weight": 3, "match": "phrase", "aliases": ["toelatingsbesluit", "toelatingshouder", "toelatingsaanvraag", "herbeoordeling werkzame stof"] },
     { "id": "nl-vrijstelling-art38", "term": "vrijstelling gewasbescherming", "lang": "nl", "category": "procedure", "weight": 2, "match": "phrase", "aliases": ["noodtoelating", "vrijstellingsbesluit", "artikel 53 verordening"] },

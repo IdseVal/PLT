@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "jurisdiction": "EU",
   "jurisdiction_name": "European Union",
-  "list_version": "1.0.0",
+  "list_version": "1.0.1",
   "updated": "2026-08-03",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": ["en", "fr", "de", "nl"],
-  "notes": "Seed list for the EUR-Lex/CELLAR connector. The EU is treated as a jurisdiction in its own right. CJEU judgments exist in all official languages; the connector fetches English where available and the procedural language otherwise, so this list carries EN plus the three most common procedural languages for pesticide cases. Add further language sections as the corpus demands. Instrument numbers (1107/2009, 528/2012) are the highest-precision signals in this jurisdiction and are language-independent.",
+  "notes": "Seed list for the EUR-Lex/CELLAR connector. The EU is treated as a jurisdiction in its own right. CJEU judgments exist in all official languages; the connector fetches English where available and the procedural language otherwise, so this list carries EN plus the three most common procedural languages for pesticide cases. Add further language sections as the corpus demands. Instrument numbers (1107/2009, 528/2012) are the highest-precision signals in this jurisdiction and are language-independent. Revision 1.0.1 (issue #20): DDT split out of en-paraquat into its own case-sensitive word term, mirroring nl-ddt, so acronyms and prose words never share a term.",
   "scoring": {
     "min_score": 3,
     "count_term_once": true,
@@ -32,7 +32,8 @@
     { "id": "en-imidacloprid", "term": "imidacloprid", "lang": "en", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["clothianidin", "thiamethoxam", "thiacloprid"] },
     { "id": "en-chlorpyrifos", "term": "chlorpyrifos", "lang": "en", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["chlorpyrifos-methyl"] },
     { "id": "en-fipronil", "term": "fipronil", "lang": "en", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["dimethoate", "chlorothalonil", "mancozeb", "captan", "metam", "prosulfocarb", "flupyradifurone"] },
-    { "id": "en-paraquat", "term": "paraquat", "lang": "en", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["atrazine", "lindane", "DDT", "endosulfan", "diquat"] },
+    { "id": "en-paraquat", "term": "paraquat", "lang": "en", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["atrazine", "lindane", "endosulfan", "diquat", "aldrin", "dieldrin"] },
+    { "id": "en-ddt", "term": "DDT", "lang": "en", "category": "active_substance", "weight": 3, "match": "word", "case_sensitive": true, "note": "Acronym, kept as its own case-sensitive term so it is not matched as a substring inside unrelated tokens. Mirrors nl-ddt." },
     { "id": "en-copper-compounds", "term": "copper compounds", "lang": "en", "category": "active_substance", "weight": 2, "match": "phrase", "aliases": ["copper sulphate", "sulfoxaflor", "cypermethrin", "deltamethrin"] },
 
     { "id": "en-reg-1107-2009", "term": "1107/2009", "lang": "en", "category": "statute", "weight": 3, "match": "substring", "aliases": ["Regulation (EC) No 1107/2009", "placing of plant protection products on the market"], "note": "Language-independent: the instrument number appears verbatim in every language version." },
@@ -45,8 +46,8 @@
     { "id": "en-reach", "term": "REACH", "lang": "en", "category": "statute", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["1907/2006"], "note": "Contextual: chemicals law generally." },
     { "id": "en-aarhus-ppp", "term": "Aarhus", "lang": "en", "category": "statute", "weight": 1, "match": "word", "aliases": ["access to environmental information", "1367/2006"], "note": "Contextual: many pesticide-transparency cases run on Aarhus grounds (e.g. disclosure of studies), but Aarhus alone is not enough." },
 
-    { "id": "en-efsa", "term": "EFSA", "lang": "en", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["European Food Safety Authority"] },
-    { "id": "en-echa", "term": "ECHA", "lang": "en", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["European Chemicals Agency"] },
+    { "id": "en-efsa", "term": "EFSA", "lang": "en", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["European Food Safety Authority"], "note": "DOCUMENTED EXCEPTION to the acronyms-only rule in README: the alias is a proper noun that is always capitalised, so its case-sensitivity exposure is theoretical, and splitting it would change contextual scoring. Revisit under issue #24." },
+    { "id": "en-echa", "term": "ECHA", "lang": "en", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["European Chemicals Agency"], "note": "DOCUMENTED EXCEPTION to the acronyms-only rule in README, on the same grounds as en-efsa. Revisit under issue #24." },
     { "id": "en-scopaff", "term": "Standing Committee on Plants, Animals, Food and Feed", "lang": "en", "category": "authority", "weight": 3, "match": "phrase", "aliases": ["SCoPAFF", "rapporteur Member State"] },
 
     { "id": "en-authorisation-ppp", "term": "authorisation of plant protection products", "lang": "en", "category": "procedure", "weight": 3, "match": "phrase", "aliases": ["marketing authorisation for a plant protection product", "renewal of approval", "non-renewal of approval", "withdrawal of approval"] },

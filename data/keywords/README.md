@@ -43,6 +43,41 @@ A document passes when its total weight (after per-field multipliers) reaches
 another term also matched — `nl-drift` is the worked example, since *drift* also means
 *fit of anger* in Dutch criminal judgments.
 
+## Case sensitivity
+
+**`case_sensitive` applies to a term *and every one of its aliases*.** The schema cannot
+express it per alias, so the rule for every list is:
+
+> A `case_sensitive: true` term carries **acronyms only**. Never mix an acronym and an
+> ordinary word in the same term.
+
+An ordinary word inheriting the flag silently loses every sentence-initial occurrence — a
+judgment opening "Lindaan is in de bodem aangetroffen" would not have matched, while the
+same word mid-sentence would. The split terms `nl-ddt` / `nl-organochloor` and
+`nl-ctgb` / `nl-college-toelating` exist for exactly this reason; follow that pattern.
+
+Only set `case_sensitive` where the lowercase form is a common word or would over-match
+(`Ctgb`, `DDT`, `REACH`, `NVWA`). Everything else stays case-insensitive.
+
+### Known exceptions
+
+Four authority terms keep a spelled-out name as an alias and are therefore **not** compliant
+with the rule above: `nl-nvwa-gewas`, `nl-efsa`, `en-efsa`, `en-echa`.
+
+They are exceptions on purpose. Their aliases are institution names that are always
+capitalised in practice, so the exposure is theoretical — and splitting them would change
+scoring rather than just structure. Because `count_term_once` counts per **term**, splitting
+a weight-1 term in two either doubles the score of a document that names the authority both
+ways, or halves the score of one that names it once, depending on how the halves are
+weighted. Neither is acceptable for a contextual term sitting one point below the threshold.
+
+Resolving this properly needs a curation decision (issue #24) about whether contextual
+authority terms should be *gated* on a pesticide term rather than merely weighted. Note that
+`requires` cannot currently express that: it is an **AND** over term ids, so there is no way
+to say "requires any pesticide term".
+
+Do not split these four without reading #24 first.
+
 ## Curation
 
 These lists are **data curated by the content manager**, not code. Every ingestion run
