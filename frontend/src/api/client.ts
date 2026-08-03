@@ -6,7 +6,15 @@
  * that timeouts, cancellation and the uniform error envelope are handled in one place.
  */
 
-import type { ApiErrorEnvelope, HealthResponse } from '@/types/api'
+import type {
+  ApiErrorEnvelope,
+  CaseRecord,
+  CaseSummary,
+  ExportFormat,
+  FilterFacets,
+  HealthResponse,
+  Paginated,
+} from '@/types/api'
 
 /** Base URL every request is resolved against. Empty means "the site's own origin". */
 const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
@@ -165,6 +173,84 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
  */
 export function getHealth(signal?: AbortSignal): Promise<HealthResponse> {
   return request<HealthResponse>('/health', signal === undefined ? {} : { signal })
+}
+
+/**
+ * Build an absolute-or-rooted URL for an API endpoint without requesting it.
+ *
+ * Needed for downloads: an export has to be an ordinary link so the browser handles the
+ * `Content-Disposition` and writes the file itself, which `fetch` cannot do. Keeping the URL
+ * construction here means the base URL is still read in exactly one module
+ * (`docs/architecture.md` section 6).
+ *
+ * @param path - Path relative to the API base URL.
+ * @param query - Query parameters, serialised as they are for {@link request}.
+ * @returns The URL to put in an `href`.
+ */
+export function buildApiUrl(path: string, query?: Record<string, QueryValue>): string {
+  return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}${buildQueryString(query)}`
+}
+
+/**
+ * Search, filter and paginate the collection (`GET /api/cases`).
+ *
+ * @param query - Query parameters from `docs/architecture.md` section 5. `jurisdiction`
+ *   repeats for multiple values; empty and `undefined` values are dropped.
+ * @param signal - Optional abort signal, so a superseded search is cancelled.
+ * @returns One page of results with the totals a paginator needs.
+ * @throws {ApiError} If the request fails or the API rejects a parameter.
+ */
+export function searchCases(
+  query: Record<string, QueryValue>,
+  signal?: AbortSignal,
+): Promise<Paginated<CaseSummary>> {
+  return request<Paginated<CaseSummary>>('/cases', signal === undefined ? { query } : { query, signal })
+}
+
+/**
+ * Fetch one case with its documents, parties and topics
+ * (`GET /api/cases/<jurisdiction>/<source_id>`).
+ *
+ * Both path segments are percent-encoded: a source identifier is an ECLI or CELEX number
+ * supplied through the URL bar, so it is untrusted and must not be able to reach outside the
+ * path it is meant to address.
+ *
+ * @param jurisdiction - Jurisdiction code, e.g. `NL`.
+ * @param sourceId - ECLI or CELEX identifier.
+ * @param signal - Optional abort signal.
+ * @returns The case record.
+ * @throws {ApiError} With `status` 404 when no such case exists.
+ */
+export function getCase(
+  jurisdiction: string,
+  sourceId: string,
+  signal?: AbortSignal,
+): Promise<CaseRecord> {
+  const path = `/cases/${encodeURIComponent(jurisdiction)}/${encodeURIComponent(sourceId)}`
+  return request<CaseRecord>(path, signal === undefined ? {} : { signal })
+}
+
+/**
+ * Fetch the facet values behind the All-cases filters (`GET /api/filters`).
+ *
+ * @param signal - Optional abort signal.
+ * @returns The facet payload.
+ * @throws {ApiError} If the request fails.
+ */
+export function getFilters(signal?: AbortSignal): Promise<FilterFacets> {
+  return request<FilterFacets>('/filters', signal === undefined ? {} : { signal })
+}
+
+/**
+ * Build the download URL for the current result set (`GET /api/cases/export`).
+ *
+ * @param query - The active filters, in the same spelling `GET /api/cases` takes. Paging
+ *   parameters are the caller's to leave out: an export covers the whole selection.
+ * @param format - `csv` or `json`.
+ * @returns The URL to put in the download link's `href`.
+ */
+export function caseExportUrl(query: Record<string, QueryValue>, format: ExportFormat): string {
+  return buildApiUrl('/cases/export', { ...query, format })
 }
 
 /** The configured API base URL, exported for diagnostics and tests. */
