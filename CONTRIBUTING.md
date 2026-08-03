@@ -119,8 +119,19 @@ checkpoint and exits), stream rather than accumulate, and release every resource
 `finally`.
 
 **TypeScript.** No `any`. All server data flows through `src/api/client.ts`; no component
-calls `fetch`. Tailwind theme tokens (`bg-wur-green`, `text-wur-ink`) rather than hex values
-in components. Every control labelled, focus visible, contrast checked.
+calls `fetch`. Tailwind theme tokens (`bg-plt-surface`, `text-plt-ink`, `text-plt-muted`,
+`border-plt-border`, `text-plt-accent-strong`, `bg-plt-accent-deep`, `text-plt-inverse`)
+rather than hex values in components. Every control labelled, focus visible, contrast
+checked.
+
+> Tailwind emits **no CSS and no error** for a class that does not exist, so a token name
+> that has drifted produces silently unstyled markup. `frontend/tailwind.config.js` is the
+> only list that counts — read it rather than copying class names from another component.
+> `frontend/tests/theme.test.ts` catches hex values, not stale token names.
+
+The palette and font stack are **placeholders** awaiting the Wageningen Law styling package
+(README §7). Keep every visual decision expressible through the tokens so the swap stays a
+one-file change, and do not derive or approximate WUR corporate branding in the meantime.
 
 **Logging.** Structured and levelled through `plt.utils.logging`. Identifiers such as an
 ECLI or CELEX number are fine; case text, personal data, tokens and credentials are not.
