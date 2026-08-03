@@ -9,13 +9,15 @@ autogenerate runs.
 from __future__ import annotations
 
 from logging.config import fileConfig
+from typing import Any, Literal
 
 from alembic import context
+from alembic.autogenerate.api import AutogenContext
 from sqlalchemy import engine_from_config, pool
 
 import plt.db.models  # noqa: F401 - imported for its side effect of registering models
 from plt.config import get_settings
-from plt.db.base import metadata
+from plt.db.base import UtcDateTime, metadata
 
 config = context.config
 
@@ -27,6 +29,28 @@ config.set_main_option("sqlalchemy.url", get_settings().database_url)
 target_metadata = metadata
 
 
+def render_item(type_: str, obj: Any, autogen_context: AutogenContext) -> str | Literal[False]:  # noqa: ANN401 - alembic hands over arbitrary schema objects
+    """Render PLT-specific column types as plain SQLAlchemy constructs.
+
+    Without this hook, autogenerate emits ``plt.db.base.UtcDateTime()`` into every revision,
+    which would make an already-applied migration depend on application code that is free to
+    change. :class:`~plt.db.base.UtcDateTime` only adds Python-side conversion on top of
+    ``DateTime(timezone=True)``, so the DDL is identical either way.
+
+    Args:
+        type_: The kind of object alembic is rendering, e.g. ``"type"``.
+        obj: The object itself.
+        autogen_context: The autogenerate context. Unused.
+
+    Returns:
+        The replacement source, or ``False`` to fall back to alembic's own rendering.
+    """
+    del autogen_context
+    if type_ == "type" and isinstance(obj, UtcDateTime):
+        return "sa.DateTime(timezone=True)"
+    return False
+
+
 def run_migrations_offline() -> None:
     """Emit SQL to stdout without connecting to a database."""
     context.configure(
@@ -36,6 +60,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         render_as_batch=True,
+        render_item=render_item,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -57,6 +82,7 @@ def run_migrations_online() -> None:
                 # Batch mode lets SQLite alter tables, keeping development and
                 # PostgreSQL deployments on the same revisions.
                 render_as_batch=True,
+                render_item=render_item,
             )
             with context.begin_transaction():
                 context.run_migrations()
