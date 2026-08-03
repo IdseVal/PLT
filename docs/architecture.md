@@ -199,8 +199,14 @@ responses.
   hover affordance must have a focus equivalent.
 - **Search submits to `/cases?q=…`** — the home search bar does not render results in place.
 - All server data flows through `src/api/client.ts`. No component calls `fetch` directly.
-- Tailwind, with WUR Law group colours defined once as theme tokens, never as ad-hoc hex
+- Tailwind, with all colours and type defined once as theme tokens, never as ad-hoc hex
   values in components. Responsive; accessible (labelled controls, visible focus, contrast).
+- **Styling is placeholder until the Wageningen Law styling package arrives** — the project
+  owner will supply styling documentation, asset files and fonts. Until then: a neutral,
+  restrained academic palette and a system font stack, defined in `tailwind.config.js` and
+  marked as placeholders. Do not derive, approximate or reverse-engineer WUR corporate
+  branding; the PLT is a Wageningen Law project, not a WUR-wide one. Every visual decision
+  must be expressible through the theme tokens so the eventual swap is a one-file change.
 
 ---
 
