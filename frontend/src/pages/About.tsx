@@ -1,9 +1,13 @@
 /**
  * About Wageningen Law.
  *
- * Scaffold placeholder; the copy is written by the content issue.
+ * The copy lives in `src/content/about.ts` so that it can be edited without touching a
+ * component; `StaticPage` renders it.
  */
 
+import StaticPage from '@/components/StaticPage'
+import { aboutPage } from '@/content/about'
+
 export default function About(): JSX.Element {
-  return <h1 className="text-2xl font-bold">About Wageningen Law</h1>
+  return <StaticPage content={aboutPage} />
 }
