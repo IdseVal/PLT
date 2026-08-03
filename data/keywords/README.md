@@ -43,6 +43,22 @@ A document passes when its total weight (after per-field multipliers) reaches
 another term also matched — `nl-drift` is the worked example, since *drift* also means
 *fit of anger* in Dutch criminal judgments.
 
+## Case sensitivity
+
+**`case_sensitive` applies to a term *and every one of its aliases*.** The schema cannot
+express it per alias, so the rule for every list is:
+
+> A `case_sensitive: true` term carries **acronyms only**. Never mix an acronym and an
+> ordinary word in the same term.
+
+An ordinary word inheriting the flag silently loses every sentence-initial occurrence — a
+judgment opening "Lindaan is in de bodem aangetroffen" would not have matched, while the
+same word mid-sentence would. The split terms `nl-ddt` / `nl-organochloor` and
+`nl-ctgb` / `nl-college-toelating` exist for exactly this reason; follow that pattern.
+
+Only set `case_sensitive` where the lowercase form is a common word or would over-match
+(`Ctgb`, `DDT`, `REACH`, `NVWA`). Everything else stays case-insensitive.
+
 ## Curation
 
 These lists are **data curated by the content manager**, not code. Every ingestion run
