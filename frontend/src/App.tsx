@@ -1,12 +1,15 @@
 /**
  * Root component and route table.
  *
- * The routes are fixed by `docs/architecture.md` section 6. The pages behind them are
- * scaffold placeholders; each is filled in by the issue that owns it.
+ * The routes are fixed by `docs/architecture.md` section 6. The shell around them - skip
+ * link, header, main landmark, footer - is the same on every route; `/`, `/cases` and
+ * `/cases/:jurisdiction/:sourceId` render placeholders that the issues owning those pages
+ * replace.
  */
 
 import { Route, Routes } from 'react-router-dom'
 
+import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 import About from '@/pages/About'
 import AllCases from '@/pages/AllCases'
@@ -24,7 +27,7 @@ export default function App(): JSX.Element {
         Skip to content
       </a>
       <Header />
-      <main id="main" className="mx-auto w-full max-w-content flex-1 px-4 py-8">
+      <main id="main" className="mx-auto w-full max-w-content flex-1 px-4 py-8 sm:py-10">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/cases" element={<AllCases />} />
@@ -36,6 +39,7 @@ export default function App(): JSX.Element {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   )
 }

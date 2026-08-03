@@ -8,18 +8,31 @@
   }
 
   body {
-    @apply bg-wur-surface text-wur-ink font-sans antialiased;
+    @apply bg-plt-surface text-plt-ink font-sans antialiased;
   }
 
-  /* Accessibility: a visible focus ring on every interactive element (architecture §6). */
+  /*
+   * Accessibility: a visible focus ring on every interactive element (architecture §6).
+   * `accent-strong` reaches 8.4:1 against the page background, well past the 3:1 that
+   * WCAG 2.1 SC 1.4.11 asks of a focus indicator. See the contrast budget in
+   * `tailwind.config.js`.
+   */
   :focus-visible {
-    @apply outline-wur-green outline outline-2 outline-offset-2;
+    @apply outline-plt-accent-strong outline outline-2 outline-offset-2;
   }
 }
 
 @layer components {
   /* Skip link, revealed on keyboard focus. */
   .skip-link {
-    @apply bg-wur-green sr-only rounded px-4 py-2 text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50;
+    @apply bg-plt-accent-deep text-plt-inverse sr-only rounded px-4 py-2 focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50;
+  }
+
+  /*
+   * Focus ring for controls sitting on the dark footer band, where the default ring is too
+   * close in tone to the background. `inverse-muted` is 10.2:1 against it.
+   */
+  .focus-on-dark:focus-visible {
+    @apply outline-plt-inverse-muted;
   }
 }

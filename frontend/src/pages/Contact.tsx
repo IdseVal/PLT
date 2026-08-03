@@ -1,9 +1,13 @@
 /**
  * Contact page.
  *
- * Scaffold placeholder; the copy is written by the content issue.
+ * The copy lives in `src/content/contact.ts`, including the placeholder contact details that
+ * have to be replaced before launch; `StaticPage` renders it.
  */
 
+import StaticPage from '@/components/StaticPage'
+import { contactPage } from '@/content/contact'
+
 export default function Contact(): JSX.Element {
-  return <h1 className="text-2xl font-bold">Contact</h1>
+  return <StaticPage content={contactPage} />
 }

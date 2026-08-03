@@ -1,9 +1,12 @@
 /**
  * Frequently asked questions.
  *
- * Scaffold placeholder; the copy is written by the content issue.
+ * The copy lives in `src/content/faq.ts`; `StaticPage` renders it, one section per question.
  */
 
+import StaticPage from '@/components/StaticPage'
+import { faqPage } from '@/content/faq'
+
 export default function Faq(): JSX.Element {
-  return <h1 className="text-2xl font-bold">Frequently asked questions</h1>
+  return <StaticPage content={faqPage} />
 }
