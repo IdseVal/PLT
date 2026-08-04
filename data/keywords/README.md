@@ -88,17 +88,26 @@ The same holds for all four terms: `Nederlandse voedsel- en Warenautoriteit`,
 `European food safety authority` and `European chemicals agency` all score 0.00 today.
 
 What limits the damage is **not** that these names are always capitalised — they are not.
-It is that in each pair the **acronym is the primary term** and is case-robust, and
-`count_term_once` counts per term. So the alias only decides anything in a document that
-spells the name out and **never** abbreviates it. That is uncommon in judgments, which
-typically introduce the authority once and use the acronym thereafter, but it is not rare
-enough to call the exposure nil.
+Nor is it that the acronym is case-robust, which is what an earlier version of this section
+claimed. **The acronym is case-sensitive too**, so `efsa`, `Efsa`, `nvwa` and `echa` also
+score 0.00, and nothing else in either list catches them. Under `case_sensitive`, *every*
+form of these terms matches only the exact curated casing.
 
-| Term | Exposure |
-| --- | --- |
-| `en-efsa`, `en-echa` | Low — but because `EFSA`/`ECHA` almost always appear too, not because the spelled-out names are reliably capitalised. |
-| `nl-nvwa-gewas` | Low, on the same reasoning. |
-| `nl-efsa` | Highest of the four: its alias already mixes cases (`voor`, `voedselveiligheid`), so it is the most brittle string of the set. |
+What actually bounds the cost is the **weight**. All four are weight-1 contextual terms
+against a `min_score` of 3, so a miss costs at most one point and can never by itself be the
+reason a document is rejected. It changes a verdict only for a document already sitting at
+2.x from other terms:
+
+| Document | Score | Verdict |
+| --- | ---: | --- |
+| Two contextual terms alone | 2.00 | rejected |
+| …plus `EFSA` (matches) | 3.00 | **accepted** |
+| …plus `efsa` (misses) | 2.00 | rejected |
+
+So the exposure is bounded but not nil, and the band where it bites — a document two
+contextual points short — is exactly the band these terms exist to tip. **Treat all four as
+equally brittle**; there is no safe one among them, and no casing of any of them is safe
+except the one curated string.
 
 **Gating on a pesticide term — the proposal in #24 — does not fix any of this.** The two
 problems are independent. If these terms are restructured anyway, dropping `case_sensitive`
