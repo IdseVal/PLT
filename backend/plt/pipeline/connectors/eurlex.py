@@ -63,6 +63,7 @@ from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
+from urllib.parse import quote
 
 from lxml import etree
 
@@ -788,13 +789,20 @@ class EurLexConnector(SourceConnector):
     def _celex_url(self, celex: str) -> str:
         """Return the CELLAR REST URL of a CELEX number.
 
+        The number is percent-encoded into the path. That is not decoration: a corrigendum
+        or a second order in the same case carries a parenthesised suffix
+        (``62021TO0601(01)``), and CELLAR answers the unencoded form with a 404 while
+        serving ``62021TO0601%2801%29`` (verified 4 August 2026). Those documents would
+        otherwise fail every week and hold the checkpoint back for the whole window.
+
         Args:
             celex: The CELEX number, already validated.
 
         Returns:
             The URL the notice and the manifestations are content-negotiated at.
         """
-        return f"{self.settings.eurlex_cellar_base_url.rstrip('/')}/{celex}"
+        base = self.settings.eurlex_cellar_base_url.rstrip("/")
+        return f"{base}/{quote(celex, safe='')}"
 
     def fetch(self, candidate: Candidate) -> RawDocument:
         """Retrieve one case: its metadata notice and the chosen language manifestations.

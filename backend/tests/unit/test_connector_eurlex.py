@@ -23,7 +23,7 @@ from collections.abc import Iterator
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, unquote
 
 import httpx
 import pytest
@@ -240,16 +240,18 @@ class FakeCellar:
         page = inside[offset : offset + limit]
         return _json(*(row.binding() for row in page))
 
-    def _celex_in(self, url: str) -> str:
+    def _celex_in(self, raw_url: str) -> str:
         """Return the CELEX number a REST URL refers to.
 
         Args:
-            url: The requested URL, which may be the redirect target rather than the
-                original ``/celex/<CELEX>`` route.
+            raw_url: The requested URL, percent-encoded as the connector built it, and
+                possibly the redirect target rather than the original ``/celex/<CELEX>``
+                route.
 
         Returns:
             The CELEX number, or the last path segment when none is recognised.
         """
+        url = unquote(raw_url)
         for celex in (*self.notices, *(celex for celex, _ in self.texts)):
             if celex in url:
                 return celex
@@ -713,6 +715,18 @@ def test_a_missing_manifestation_does_not_lose_the_case() -> None:
     assert len(case.documents) == 1
     assert case.documents[0].raw_payload == fixture(f"notice-{BLAISE}.xml")
     assert case.full_text is None
+
+
+def test_a_parenthesised_celex_number_is_percent_encoded_into_the_path() -> None:
+    """A corrigendum's suffix is a 404 unencoded, and would fail every week if left so."""
+    corrigendum = "62021TO0601(01)"
+    source = FakeCellar(notices={corrigendum: fixture("notice-minimal.xml")})
+
+    with source.connector() as connector:
+        connector.fetch(Candidate(source_id=corrigendum, jurisdiction_code="EU"))
+
+    [(url, _, _)] = source.requests
+    assert url.endswith("62021TO0601%2801%29")
 
 
 def test_a_redirect_to_the_cellar_uri_is_followed() -> None:
