@@ -124,6 +124,12 @@ const EU_JURISDICTION = 'EU'
  * A member state added to the annex and not to this table stops the generator with a message
  * naming it. That is the point: the map was a member state short of the annex for a while, and
  * every check passed, because the coverage was written down in three places and read from none.
+ *
+ * The codes below are **not** the last word on themselves. Annex 2 carries no ISO codes, so it
+ * cannot catch a code exchanged between two countries here — that would draw one member state's
+ * case count and `/cases` link on another's outline, with nothing malformed to notice.
+ * `tests/mapGeometry.test.ts` states the name-to-code pairing independently and fails on it, so
+ * a code changed here has to be changed there too, deliberately.
  */
 const GEOMETRY_BY_JURISDICTION = {
   Austria: { code: 'AT', source: '040' },
