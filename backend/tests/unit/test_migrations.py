@@ -7,6 +7,7 @@ do — which is the check that the revisions and ``plt.db.models`` have not drif
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -15,10 +16,10 @@ from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import Enum, create_engine, inspect, text
 
 from plt.config import get_settings
-from plt.db.base import Base
+from plt.db.base import NAMING_CONVENTION, Base, include_object
 from tests.conftest import REPO_ROOT
 
 BACKEND = REPO_ROOT / "backend"
@@ -121,18 +122,61 @@ def test_the_seed_migration_inserts_the_launch_jurisdictions(alembic_config: Con
 
 
 def test_migrations_and_models_do_not_drift(alembic_config: Config) -> None:
-    """Autogenerate against the migrated database must find nothing to change."""
+    """Autogenerate against the migrated database must find nothing to change.
+
+    ``include_object`` is the same filter ``migrations/env.py`` installs, so this asserts
+    against exactly what ``alembic revision --autogenerate`` would produce. It excludes the
+    CHECK constraints ``portable_enum`` generates, which alembic cannot compare; their values
+    are asserted directly by the test below instead.
+    """
     command.upgrade(alembic_config, "head")
 
     engine = create_engine(database_url(alembic_config))
     try:
         with engine.connect() as connection:
-            context = MigrationContext.configure(connection, opts={"compare_type": True})
+            context = MigrationContext.configure(
+                connection, opts={"compare_type": True, "include_object": include_object}
+            )
             diff = compare_metadata(context, Base.metadata)
     finally:
         engine.dispose()
 
     assert diff == []
+
+
+def test_the_migrated_check_constraints_match_the_model_enums(alembic_config: Config) -> None:
+    """The enum CHECK constraints in the database must permit exactly the model's values.
+
+    Autogenerate cannot compare these (see :func:`plt.db.base.include_object`), so excluding
+    them there would leave an enum member added to a model but not to a migration undetected.
+    This closes that gap by reading the constraints out of the migrated database and comparing
+    the permitted values against the enums themselves.
+    """
+    command.upgrade(alembic_config, "head")
+
+    expected = {
+        NAMING_CONVENTION["ck"] % {"table_name": table.name, "constraint_name": column.type.name}: (
+            set(column.type.enums)
+        )
+        for table in Base.metadata.tables.values()
+        for column in table.columns
+        if isinstance(column.type, Enum) and not column.type.native_enum
+    }
+    assert expected, "no portable_enum columns found; the models did not import"
+
+    engine = create_engine(database_url(alembic_config))
+    try:
+        inspector = inspect(engine)
+        actual = {
+            constraint["name"]: set(re.findall(r"'([^']*)'", str(constraint["sqltext"])))
+            for table_name in inspector.get_table_names()
+            for constraint in inspector.get_check_constraints(table_name)
+            if constraint["name"] in expected
+        }
+    finally:
+        engine.dispose()
+
+    assert actual == expected
 
 
 def test_downgrade_removes_everything_it_created(alembic_config: Config) -> None:

@@ -13,7 +13,8 @@ than properties of a single table:
   PostgreSQL stores the same column as ``TIMESTAMP WITH TIME ZONE``.
 * :func:`portable_enum` — enumerated columns are ``VARCHAR`` plus a ``CHECK`` constraint
   rather than a native PostgreSQL ``ENUM`` type, which keeps the value set alterable in a
-  plain migration on both back ends.
+  plain migration on both back ends. :func:`include_object` is the Alembic autogenerate
+  filter that goes with it, and says why.
 """
 
 from __future__ import annotations
@@ -27,13 +28,16 @@ from sqlalchemy.orm import DeclarativeBase
 
 if TYPE_CHECKING:
     from sqlalchemy.engine.interfaces import Dialect
+    from sqlalchemy.sql.schema import SchemaItem
 
 __all__ = [
     "NAMING_CONVENTION",
     "Base",
     "UtcDateTime",
+    "include_object",
     "metadata",
     "portable_enum",
+    "portable_enum_constraint_names",
     "utcnow",
 ]
 
@@ -142,6 +146,74 @@ def portable_enum(enum_type: type[_EnumT], name: str) -> Enum:
         validate_strings=True,
         values_callable=lambda members: [str(member.value) for member in members],
     )
+
+
+def portable_enum_constraint_names() -> frozenset[str]:
+    """Return the name of every CHECK constraint :func:`portable_enum` generates.
+
+    The names are derived from the metadata rather than listed literally, so a column added
+    with :func:`portable_enum` is covered without anyone remembering to update this module.
+    Requires :mod:`plt.db.models` to have been imported, which is what populates the tables.
+
+    Returns:
+        The constraint names, rendered through :data:`NAMING_CONVENTION`.
+    """
+    names: set[str] = set()
+    for table in metadata.tables.values():
+        for column in table.columns:
+            column_type = column.type
+            if (
+                isinstance(column_type, Enum)
+                and not column_type.native_enum
+                and column_type.create_constraint
+                and column_type.name is not None
+            ):
+                names.add(
+                    NAMING_CONVENTION["ck"]
+                    % {"table_name": table.name, "constraint_name": column_type.name}
+                )
+    return frozenset(names)
+
+
+def include_object(
+    object_: SchemaItem,
+    name: str | None,
+    type_: str,
+    reflected: bool,
+    compare_to: SchemaItem | None,
+) -> bool:
+    """Filter the schema objects Alembic autogenerate is allowed to compare.
+
+    Alembic 1.19 began comparing CHECK constraints, and it cannot compare the ones
+    :func:`portable_enum` produces. SQLAlchemy marks a constraint generated from a column
+    *type* as type-bound, and alembic deliberately leaves those out of the model side of the
+    comparison (``autogenerate/compare/check_constraints.py``) while reflecting them from the
+    database like any other named constraint. The constraint is therefore present on one side
+    only, and every ``portable_enum`` column is reported as a removal on every run — against a
+    database created by ``metadata.create_all()`` from that very metadata just the same, which
+    is what proves the report is an artefact rather than drift.
+
+    Acting on those reports would drop the constraints that section 3 of
+    ``docs/architecture.md`` requires, so they are excluded here instead: from the drift test,
+    and from ``alembic revision --autogenerate``, which would otherwise write six spurious
+    ``drop_constraint`` calls into the next revision anyone generates. Hand-written CHECK
+    constraints are *not* type-bound, compare correctly, and stay in the comparison. That the
+    values still agree is covered directly by
+    ``tests/unit/test_migrations.py::test_the_migrated_check_constraints_match_the_model_enums``.
+
+    Args:
+        object_: The schema object alembic is considering. Unused; the name identifies it.
+        name: The object's name, or ``None`` for an unnamed object.
+        type_: The kind of object, e.g. ``"table"`` or ``"check_constraint"``.
+        reflected: Whether the object came from the database rather than the models. Unused;
+            the constraint is excluded on both sides.
+        compare_to: The object on the other side of the comparison, or ``None``. Unused.
+
+    Returns:
+        ``False`` for a ``portable_enum`` CHECK constraint, ``True`` for everything else.
+    """
+    del object_, reflected, compare_to
+    return not (type_ == "check_constraint" and name in portable_enum_constraint_names())
 
 
 class Base(DeclarativeBase):
