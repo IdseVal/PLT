@@ -304,6 +304,25 @@ forward into the startup phase.
 | Slovakia | Unified | Supreme Court / Supreme Administrative Court | https://www.nsud.sk |
 | Slovenia | Unified | Judicial Portal of Slovenia | https://www.sodisce.si |
 | Spain | Unified | General Council of the Judiciary (Poder Judicial) | https://www.poderjudicial.es |
+| Sweden | Administrative | Supreme Administrative Court (Högsta förvaltningsdomstolen) | https://www.domstol.se/hogsta-forvaltningsdomstolen/ |
+| Sweden | Civil/Criminal | Supreme Court (Högsta domstolen) | https://www.domstol.se/hogsta-domstolen/ |
+| Sweden | Environmental | Land and Environment Courts / Court of Appeal (Mark- och miljödomstolarna, Mark- och miljööverdomstolen) | https://www.domstol.se/hitta-domstol/mark--och-miljodomstolar/ |
+| Sweden | Unified | Swedish Courts (Sveriges Domstolar) | https://www.domstol.se |
+
+> **Sweden added 4 August 2026.** Sweden was absent from the original Annex 2 while every
+> other EU member state was listed. The omission surfaced when the map (issue #13) drew
+> exactly the coverage this annex states and came out one member state short. Since §1.1
+> scopes the PLT to "the EU and its member states", this was a gap rather than a scope
+> decision.
+>
+> Sweden also introduces a **court type no other row in this annex uses**: the Land and
+> Environment Courts (*mark- och miljödomstolarna*), five specialised divisions of district
+> courts with the Land and Environment Court of Appeal above them, which hear environmental
+> permitting and environmental damage cases. That is where Swedish pesticide litigation is
+> most likely to sit — not in the supreme courts. Other member states have comparable
+> specialised environmental or agricultural jurisdictions that this annex does not yet
+> capture, so this annex should be treated as a starting point per member state rather than
+> a complete map of where pesticide cases are heard.
 
 ### Annex 2a: machine-readable access routes (verified 3 August 2026)
 
