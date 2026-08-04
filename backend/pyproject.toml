@@ -91,9 +91,11 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# assert is the point of a test; per-test docstrings stay optional; S105/S106 fire on
-# throwaway literals that exist precisely to prove production rejects real ones.
-"tests/**" = ["S101", "S105", "S106", "D103"]
+# assert is the point of a test; per-test docstrings stay optional whether the test is a
+# function (D103) or a method of a grouping class (D102) - the class itself is still
+# documented; S105/S106 fire on throwaway literals that exist precisely to prove production
+# rejects real ones.
+"tests/**" = ["S101", "S105", "S106", "D102", "D103"]
 "migrations/env.py" = ["D103"]
 
 [tool.ruff.lint.pydocstyle]

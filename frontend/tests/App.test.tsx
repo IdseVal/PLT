@@ -1,9 +1,10 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from '@/App'
 import { SITE_MENU } from '@/content/navigation'
+import { mockApi } from './helpers/api'
 
 function renderAt(path: string): void {
   render(
@@ -12,6 +13,18 @@ function renderAt(path: string): void {
     </MemoryRouter>,
   )
 }
+
+// `/cases` and the case route read from the API. The shell is what is under test here, so
+// every endpoint answers 404 and the pages render their loading or not-found state; no test
+// in this file touches the network.
+beforeEach(() => {
+  mockApi({})
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 
 describe('App', () => {
   it('renders the PLT title on the home page', () => {
@@ -33,7 +46,9 @@ describe('App', () => {
 
   it.each([
     ['/cases', /All cases/i],
-    ['/cases/NL/ECLI:NL:HR:2024:1', /^Case$/i],
+    // The detail page names itself after the identifier in the address bar until the case
+    // itself arrives, so a reader always knows which case is loading.
+    ['/cases/NL/ECLI:NL:HR:2024:1', /^ECLI:NL:HR:2024:1$/],
     ['/about', /About Wageningen Law/i],
     ['/methodology', /Methodology/i],
     ['/faq', /Frequently asked questions/i],
