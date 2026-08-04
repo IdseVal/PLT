@@ -185,6 +185,10 @@ class Settings(BaseSettings):
         default=100,
         description="Result-page size requested from source endpoints during discovery.",
     )
+    pipeline_report_dir: Path = Field(
+        default=_REPO_ROOT / "reports",
+        description="Directory a --dry-run match report is written to. Git-ignored.",
+    )
 
     # -- Source endpoints -----------------------------------------------------------
     rechtspraak_search_url: str = Field(
