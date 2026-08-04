@@ -620,6 +620,7 @@ class EurLexConnector(SourceConnector):
             return None
         by_document_date = self.settings.eurlex_discovery_date is EurLexDiscoveryDate.DOCUMENT
         modified = value("modified_at")
+        expression_title = value("title") or value("fallback_title")
         return Candidate(
             source_id=raw_celex,
             jurisdiction_code=self.jurisdiction_code,
@@ -630,12 +631,16 @@ class EurLexConnector(SourceConnector):
             # fetched at all (``docs/architecture.md`` section 4.2).
             content_hash=modified,
             cursor=window.cursor(offset),
-            title=_clean_title(value("title") or value("fallback_title")),
+            title=_clean_title(expression_title),
             decision_date=_parse_date(value("document_date")),
             source_url=self._celex_url(raw_celex),
             source_metadata={
                 "cellar_last_modification_date": modified,
                 "discovery_window": window.cursor(offset),
+                # The title with CELLAR's segment separators still in it. Normalisation
+                # reads the parties out of those segments, and the cleaned title above has
+                # lost them.
+                "expression_title": expression_title,
             },
         )
 
@@ -947,7 +952,12 @@ class EurLexConnector(SourceConnector):
         resource_type = _find_text(work, "WORK_HAS_RESOURCE-TYPE/URI/IDENTIFIER")
         documents = self._documents(raw, resource_type)
         procedural = _procedure_language(root)
-        title = _clean_title(_find_text(root, ".//EXPRESSION_TITLE/VALUE")) or raw.candidate.title
+        # Discovery's title is bound to this work's own expression. The notice's is not: an
+        # object notice embeds the Official Journal container's expression, and for an
+        # Advocate General's opinion that is the *judgment's* title, which would file one
+        # document's name against another's. The notice's title is therefore only the
+        # fallback, for a case fetched outside a discovery run.
+        title = raw.candidate.title or _clean_title(_find_text(root, ".//EXPRESSION_TITLE/VALUE"))
         primary = next(
             (document.language for document in documents if document.has_text),
             _iso_639_1(procedural),
@@ -976,7 +986,12 @@ class EurLexConnector(SourceConnector):
             source_url=self._celex_url(celex),
             court=_court(work),
             documents=documents,
-            parties=_parties(_find_text(root, ".//EXPRESSION_TITLE/VALUE")),
+            # Parties are read from the segmented title, so it has to be the unsplit one:
+            # discovery's where there is one, the notice's otherwise.
+            parties=_parties(
+                raw.candidate.source_metadata.get("expression_title")
+                or _find_text(root, ".//EXPRESSION_TITLE/VALUE")
+            ),
             citations=_citations(work),
             source_metadata=_metadata(root, work, raw, procedural, resource_type),
         )

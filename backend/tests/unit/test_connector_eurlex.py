@@ -928,6 +928,39 @@ def test_a_direct_action_names_its_parties() -> None:
     assert case.case_numbers == ("T-429/13", "T-451/13")
 
 
+def test_the_title_comes_from_the_work_itself_not_from_a_neighbouring_one() -> None:
+    """An object notice embeds the Official Journal container's expression.
+
+    For an Advocate General's opinion that container is the *judgment*, so reading the title
+    out of the notice would file the judgment's name against the opinion. Discovery's title
+    is bound to the work's own expression and wins.
+    """
+    opinion = "62017CC0616"
+    own_title = (
+        "Opinion of Advocate General Sharpston delivered on 12 March 2019."
+        "#Criminal proceedings against Mathieu Blaise and Others.#Case C-616/17."
+    )
+    source = FakeCellar(
+        rows=[Row(opinion, "2025-08-24T11:49:54+00:00", "2019-03-12", title=own_title)],
+        # The notice of the judgment, standing in for the opinion's: what matters is that it
+        # embeds a different work's title.
+        notices={opinion: fixture(f"notice-{BLAISE}.xml")},
+    )
+
+    with source.connector() as connector:
+        [candidate] = list(
+            connector.discover(datetime(2025, 8, 1, tzinfo=UTC), datetime(2025, 9, 1, tzinfo=UTC))
+        )
+        case = connector.normalise(connector.fetch(candidate))
+
+    assert case.title is not None
+    assert case.title.startswith("Opinion of Advocate General")
+    # The parties are still read from the segmented title, so they survive the switch.
+    assert [party.name for party in case.parties] == [
+        "Criminal proceedings against Mathieu Blaise and Others"
+    ]
+
+
 def test_a_title_that_names_no_two_sides_keeps_one_party_with_no_invented_role(
     blaise_case: NormalisedCase,
 ) -> None:
