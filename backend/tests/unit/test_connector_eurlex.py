@@ -27,9 +27,11 @@ from urllib.parse import parse_qs
 
 import httpx
 import pytest
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from plt.config import EurLexDiscoveryDate, Settings
-from plt.db.models import DocumentType, LawDomain, PartyRole
+from plt.db.models import Case, CaseDocument, DocumentType, LawDomain, PartyRole
 from plt.pipeline.base import (
     Candidate,
     DocumentUnavailableError,
@@ -38,8 +40,10 @@ from plt.pipeline.base import (
     SourceUnavailableError,
 )
 from plt.pipeline.connectors.eurlex import EurLexConnector
+from plt.pipeline.dedup import decide_before_fetch, resolve_content_hash
 from plt.pipeline.filters.keywords import KeywordFilter
 from plt.pipeline.http import PoliteClient
+from plt.pipeline.persistence import persist_case
 from plt.pipeline.registry import connector_for
 from tests.conftest import build_settings
 
@@ -1097,6 +1101,58 @@ def test_a_recorded_pesticide_judgment_passes_the_curated_eu_list(
     matched = {match.term_id for match in result.matches}
     assert "en-reg-1107-2009" in matched
     assert "en-glyphosate" in matched
+
+
+def test_a_second_run_in_another_language_adds_documents_and_no_second_case(
+    seeded_session: Session,
+) -> None:
+    """The acceptance criterion, asserted where it finally matters: in the database.
+
+    The same CELEX is ingested twice, the second time with a second language configured.
+    What has to come out is one ``case`` row carrying more ``case_document`` rows — never a
+    second case for the same decision.
+    """
+    stage = KeywordFilter.for_jurisdiction("EU", settings=build_settings())
+    english = FakeCellar(
+        notices={BLAISE: fixture(f"notice-{BLAISE}.xml")},
+        texts={(BLAISE, "ENG"): fixture(f"text-{BLAISE}-eng.xhtml")},
+    )
+    both = FakeCellar(
+        notices={BLAISE: fixture(f"notice-{BLAISE}.xml")},
+        texts={
+            (BLAISE, "ENG"): fixture(f"text-{BLAISE}-eng.xhtml"),
+            (BLAISE, "FRA"): "<html><body><p>produits phytopharmaceutiques</p></body></html>",
+        },
+    )
+
+    for source, languages in ((english, ["eng"]), (both, ["eng", "fra"])):
+        with source.connector(settings(eurlex_languages=languages)) as connector:
+            candidate = Candidate(
+                source_id=BLAISE,
+                jurisdiction_code="EU",
+                content_hash=f"revision-{len(languages)}",
+            )
+            case = connector.normalise(connector.fetch(candidate))
+            decision = decide_before_fetch(seeded_session, candidate)
+            persist_case(
+                seeded_session,
+                case,
+                stage.evaluate(case),
+                content_hash=resolve_content_hash(candidate, case),
+                case_id=decision.case_id,
+            )
+            seeded_session.flush()
+
+    stored = seeded_session.scalars(select(Case).where(Case.jurisdiction_code == "EU")).all()
+    assert len(stored) == 1
+    documents = seeded_session.scalars(
+        select(CaseDocument).where(CaseDocument.case_id == stored[0].id)
+    ).all()
+    # Two language versions plus the notice, all on the one case.
+    assert sorted(document.language or "" for document in documents) == ["", "en", "fr"]
+    assert stored[0].revision == 2
+    assert stored[0].citations
+    assert any(citation.target_identifier == "32009R1107" for citation in stored[0].citations)
 
 
 def test_the_connector_closes_the_client_it_built() -> None:
