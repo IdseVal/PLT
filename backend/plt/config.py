@@ -11,6 +11,7 @@ process, rather than by instantiating :class:`Settings` directly.
 
 from __future__ import annotations
 
+import re
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
@@ -21,6 +22,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 __all__ = [
     "AppEnv",
+    "EurLexDiscoveryDate",
     "LogFormat",
     "Settings",
     "get_settings",
@@ -31,6 +33,9 @@ _REPO_ROOT: Final[Path] = Path(__file__).resolve().parents[2]
 
 #: Placeholder secret shipped in ``.env.example``; refused outside development.
 _PLACEHOLDER_SECRET_KEY: Final[str] = "change-me-in-production"  # noqa: S105
+
+#: Shape of a controlled-vocabulary code that may be interpolated into a SPARQL URI.
+_VOCABULARY_CODE: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9_]{1,32}")
 
 
 class AppEnv(StrEnum):
@@ -46,6 +51,23 @@ class LogFormat(StrEnum):
 
     JSON = "json"
     TEXT = "text"
+
+
+class EurLexDiscoveryDate(StrEnum):
+    """Which CELLAR date the EU connector's discovery window bounds.
+
+    ``modification`` is the incremental route: the window bounds the repository's own last
+    modification timestamp, which is what makes a weekly run pick up newly published *and*
+    newly corrected decisions, and what the ``ingest_checkpoint`` timestamp means.
+
+    ``document`` bounds the date of the decision itself. It exists for backfilling a
+    historical period — "every judgment delivered in 2024" — and deliberately leaves the
+    incremental checkpoint alone, because a backfill says nothing about what has changed
+    since.
+    """
+
+    MODIFICATION = "modification"
+    DOCUMENT = "document"
 
 
 class Settings(BaseSettings):
@@ -219,6 +241,49 @@ class Settings(BaseSettings):
         default="http://publications.europa.eu/resource/celex",
         description="CELLAR REST base; a CELEX number is appended to fetch a notice.",
     )
+    eurlex_max_results: Annotated[int, Field(ge=1, le=1_000_000)] = Field(
+        default=10_000,
+        description=(
+            "Results a single CELLAR search returns at most, capped by the Publications "
+            "Office since 1 January 2026. Discovery keeps every date window under this."
+        ),
+    )
+    eurlex_window_days: Annotated[int, Field(ge=1, le=3650)] = Field(
+        default=30,
+        description="Initial width of a CELLAR discovery date window, halved when it hits the cap.",
+    )
+    eurlex_min_window_seconds: Annotated[int, Field(ge=1, le=86_400 * 366)] = Field(
+        default=3600,
+        description=(
+            "Narrowest a discovery window is split to. A window this small that still hits "
+            "the cap is processed anyway and logged, rather than splitting forever."
+        ),
+    )
+    eurlex_languages: list[str] = Field(
+        default_factory=lambda: ["eng"],
+        description=(
+            "Manifestation languages to retrieve per case, in order of preference, as "
+            "ISO 639-3 codes. A case with none of them falls back to its procedural "
+            "language. Each retrieved language becomes its own case_document row."
+        ),
+    )
+    eurlex_resource_types: list[str] = Field(
+        default_factory=lambda: ["JUDG", "ORDER", "OPIN_AG", "JUDG_EXTRACT"],
+        description=(
+            "CDM resource-type codes discovery enumerates: the decisions themselves. "
+            "Leave the Official Journal notices (INFO_JUDICIAL) and editorial summaries "
+            "(SUM_JUR, ABSTRACT_JUR) out, or every case is discovered several times over."
+        ),
+    )
+    eurlex_discovery_date: EurLexDiscoveryDate = Field(
+        default=EurLexDiscoveryDate.MODIFICATION,
+        description=(
+            "Which CELLAR date the discovery window bounds. 'modification' is the "
+            "incremental route the weekly job needs; 'document' walks the date of the "
+            "decision itself, for backfilling a historical period, and never advances the "
+            "incremental checkpoint."
+        ),
+    )
 
     # -- Data files -----------------------------------------------------------------
     data_dir: Path = Field(
@@ -247,6 +312,46 @@ class Settings(BaseSettings):
         if isinstance(value, str) and not value.strip().startswith("["):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
+
+    @field_validator("eurlex_languages", "eurlex_resource_types", mode="before")
+    @classmethod
+    def _split_codes(cls, value: object) -> object:
+        """Accept a comma-separated string as well as a JSON list for the CELLAR code lists."""
+        if isinstance(value, str) and not value.strip().startswith("["):
+            return [code.strip() for code in value.split(",") if code.strip()]
+        return value
+
+    @field_validator("eurlex_languages", "eurlex_resource_types")
+    @classmethod
+    def _validate_codes(cls, value: list[str]) -> list[str]:
+        """Reject a controlled-vocabulary code that is not one.
+
+        These codes are interpolated into SPARQL vocabulary URIs, so the character set is
+        checked here, at the configuration boundary, rather than trusted downstream. Nothing
+        outside ``A-Z``, ``a-z``, ``0-9`` and ``_`` can reach a query.
+
+        Args:
+            value: The codes as configured.
+
+        Returns:
+            The codes, upper-cased and de-duplicated, order preserved.
+
+        Raises:
+            ValueError: If the list is empty or a code carries anything else.
+        """
+        if not value:
+            message = "at least one code is required"
+            raise ValueError(message)
+        seen: dict[str, None] = {}
+        for code in value:
+            if not _VOCABULARY_CODE.fullmatch(code):
+                message = (
+                    f"{code!r} is not a CELLAR vocabulary code; expected letters, digits and "
+                    "underscores only"
+                )
+                raise ValueError(message)
+            seen.setdefault(code.upper(), None)
+        return list(seen)
 
     @field_validator("log_level", mode="before")
     @classmethod

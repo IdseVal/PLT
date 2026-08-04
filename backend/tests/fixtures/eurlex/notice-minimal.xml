@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand-written, unlike the recorded notices beside it: a work with nothing optional on it.
+  CELLAR does serve notices this bare for older orders, and every reader in the connector
+  has to come back empty rather than raise on one.
+-->
+<NOTICE decoding="eng" type="object">
+   <WORK>
+      <URI>
+         <VALUE>http://publications.europa.eu/resource/cellar/00000000-0000-0000-0000-000000000001</VALUE>
+         <IDENTIFIER>00000000-0000-0000-0000-000000000001</IDENTIFIER>
+         <TYPE>cellar</TYPE>
+      </URI>
+      <RESOURCE_LEGAL_ID_CELEX type="data">
+         <VALUE>61962CO0026</VALUE>
+      </RESOURCE_LEGAL_ID_CELEX>
+      <ID_SECTOR type="data">
+         <VALUE>6</VALUE>
+      </ID_SECTOR>
+      <WORK_DATE_DOCUMENT type="data">
+         <VALUE>1962-11-07</VALUE>
+      </WORK_DATE_DOCUMENT>
+   </WORK>
+</NOTICE>
