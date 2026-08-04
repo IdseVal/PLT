@@ -29,7 +29,10 @@
  * ## What comes out
  *
  * - one path per jurisdiction in `docs/core-document.md` Annex 2, keyed by its
- *   `map_feature_id` (`docs/architecture.md` section 3: the ISO 3166-1 alpha-2 code);
+ *   `map_feature_id` (`docs/architecture.md` section 3: the ISO 3166-1 alpha-2 code). **The
+ *   annex is read, not restated**: the table in that document decides the coverage, and a
+ *   member state added to it that this script cannot place stops the run by name rather than
+ *   going quietly missing from the map;
  * - one merged path for the surrounding countries, which are context, not jurisdictions;
  * - a label point per jurisdiction, used to anchor the tooltip on keyboard focus;
  * - a marker flag for jurisdictions too small to hit with a pointer (Luxembourg, Malta);
@@ -100,42 +103,121 @@ const EU_MARKER = { longitude: 2.6, latitude: 56.4, radius: 26 }
 /** Smallest acceptable gap between the EU marker and any rendered coastline, in user units. */
 const MIN_EU_CLEARANCE = 3
 
+/** The document that decides which jurisdictions the map covers. */
+const ANNEX_PATH = resolve(FRONTEND_ROOT, '..', 'docs', 'core-document.md')
+
+/** Heading the jurisdiction table sits under. */
+const ANNEX_HEADING = '## Annex 2: project data sources'
+
+/** The Union's row in that table. It is a jurisdiction, but a marker rather than a shape. */
+const EU_JURISDICTION = 'EU'
+
 /**
- * The jurisdictions of `docs/core-document.md` Annex 2, keyed by `map_feature_id`.
+ * How to draw a jurisdiction Annex 2 names.
  *
- * The name is the source of truth for the tooltip and the accessible name, so it is the
- * jurisdiction's English name rather than whatever Natural Earth calls the country. `source`
- * is the Natural Earth ISO 3166-1 numeric id, which is stable across releases; matching on it
- * rather than on a display name means an upstream rename cannot silently drop a jurisdiction.
+ * **This table does not decide the coverage** — Annex 2 does, and {@link readAnnexJurisdictions}
+ * reads it. This says only how to render a jurisdiction the annex already lists: its ISO
+ * 3166-1 alpha-2 code, which is the `map_feature_id` the API resolves against
+ * (`docs/architecture.md` section 3), and its ISO 3166-1 numeric id in Natural Earth, which is
+ * stable across releases so an upstream rename cannot silently drop a country.
+ *
+ * A member state added to the annex and not to this table stops the generator with a message
+ * naming it. That is the point: the map was a member state short of the annex for a while, and
+ * every check passed, because the coverage was written down in three places and read from none.
  */
-const JURISDICTIONS = [
-  { code: 'AT', name: 'Austria', source: '040' },
-  { code: 'BE', name: 'Belgium', source: '056' },
-  { code: 'BG', name: 'Bulgaria', source: '100' },
-  { code: 'HR', name: 'Croatia', source: '191' },
-  { code: 'CY', name: 'Cyprus', source: '196' },
-  { code: 'CZ', name: 'Czechia', source: '203' },
-  { code: 'DK', name: 'Denmark', source: '208' },
-  { code: 'EE', name: 'Estonia', source: '233' },
-  { code: 'FI', name: 'Finland', source: '246' },
-  { code: 'FR', name: 'France', source: '250' },
-  { code: 'DE', name: 'Germany', source: '276' },
-  { code: 'GR', name: 'Greece', source: '300' },
-  { code: 'HU', name: 'Hungary', source: '348' },
-  { code: 'IE', name: 'Ireland', source: '372' },
-  { code: 'IT', name: 'Italy', source: '380' },
-  { code: 'LV', name: 'Latvia', source: '428' },
-  { code: 'LT', name: 'Lithuania', source: '440' },
-  { code: 'LU', name: 'Luxembourg', source: '442' },
-  { code: 'MT', name: 'Malta', source: '470' },
-  { code: 'NL', name: 'Netherlands', source: '528' },
-  { code: 'PL', name: 'Poland', source: '616' },
-  { code: 'PT', name: 'Portugal', source: '620' },
-  { code: 'RO', name: 'Romania', source: '642' },
-  { code: 'SK', name: 'Slovakia', source: '703' },
-  { code: 'SI', name: 'Slovenia', source: '705' },
-  { code: 'ES', name: 'Spain', source: '724' },
-]
+const GEOMETRY_BY_JURISDICTION = {
+  Austria: { code: 'AT', source: '040' },
+  Belgium: { code: 'BE', source: '056' },
+  Bulgaria: { code: 'BG', source: '100' },
+  Croatia: { code: 'HR', source: '191' },
+  Cyprus: { code: 'CY', source: '196' },
+  Czechia: { code: 'CZ', source: '203' },
+  Denmark: { code: 'DK', source: '208' },
+  Estonia: { code: 'EE', source: '233' },
+  Finland: { code: 'FI', source: '246' },
+  France: { code: 'FR', source: '250' },
+  Germany: { code: 'DE', source: '276' },
+  Greece: { code: 'GR', source: '300' },
+  Hungary: { code: 'HU', source: '348' },
+  Ireland: { code: 'IE', source: '372' },
+  Italy: { code: 'IT', source: '380' },
+  Latvia: { code: 'LV', source: '428' },
+  Lithuania: { code: 'LT', source: '440' },
+  Luxembourg: { code: 'LU', source: '442' },
+  Malta: { code: 'MT', source: '470' },
+  Netherlands: { code: 'NL', source: '528' },
+  Poland: { code: 'PL', source: '616' },
+  Portugal: { code: 'PT', source: '620' },
+  Romania: { code: 'RO', source: '642' },
+  Slovakia: { code: 'SK', source: '703' },
+  Slovenia: { code: 'SI', source: '705' },
+  Spain: { code: 'ES', source: '724' },
+  Sweden: { code: 'SE', source: '752' },
+}
+
+/**
+ * The jurisdictions Annex 2 lists, in the order it lists them.
+ *
+ * Annex 2 is a Markdown table whose first column is the jurisdiction and whose rows repeat it
+ * once per source, so the reading is: take the rows between the heading and the next one, keep
+ * the first cell, and drop repeats. Nothing subtler is needed, and nothing subtler should be:
+ * if the table's shape changes, this must fail loudly rather than guess.
+ *
+ * @returns {string[]} Jurisdiction names, `EU` among them.
+ * @throws {Error} If the annex is missing, or its table cannot be read.
+ */
+function readAnnexJurisdictions() {
+  const document = readFileSync(ANNEX_PATH, 'utf8')
+  const start = document.indexOf(ANNEX_HEADING)
+  if (start === -1) throw new Error(`${ANNEX_PATH} has no "${ANNEX_HEADING}" heading.`)
+
+  const names = []
+  for (const line of document.slice(start + ANNEX_HEADING.length).split('\n')) {
+    // The annex is followed by Annex 2a, which is a table of endpoints, not of jurisdictions.
+    if (line.startsWith('#')) break
+    if (!line.startsWith('|')) continue
+
+    const first = line.split('|')[1]?.trim() ?? ''
+    // The header row and the alignment row are the only two that are not jurisdictions.
+    if (first === '' || first === 'Jurisdiction' || /^-+$/.test(first)) continue
+    if (!names.includes(first)) names.push(first)
+  }
+
+  if (names.length < 2) throw new Error(`No jurisdiction rows found under "${ANNEX_HEADING}".`)
+  if (!names.includes(EU_JURISDICTION)) {
+    throw new Error(`Annex 2 no longer lists ${EU_JURISDICTION}, which the map draws as its own mark.`)
+  }
+  return names
+}
+
+/**
+ * The jurisdictions to draw as shapes, resolved against Annex 2.
+ *
+ * @returns {{code: string, name: string, source: string}[]} One entry per member state.
+ * @throws {Error} If the annex names a jurisdiction this script cannot place on the map, or if
+ *   it has stopped naming one the script still knows how to draw.
+ */
+function jurisdictionsToDraw() {
+  const annex = readAnnexJurisdictions().filter((name) => name !== EU_JURISDICTION)
+
+  const unplaceable = annex.filter((name) => GEOMETRY_BY_JURISDICTION[name] === undefined)
+  if (unplaceable.length > 0) {
+    throw new Error(
+      `Annex 2 lists ${unplaceable.join(', ')}, which the map has no geometry for. ` +
+        'Add an ISO alpha-2 code and a Natural Earth numeric id to GEOMETRY_BY_JURISDICTION.',
+    )
+  }
+
+  const dropped = Object.keys(GEOMETRY_BY_JURISDICTION).filter((name) => !annex.includes(name))
+  if (dropped.length > 0) {
+    throw new Error(
+      `GEOMETRY_BY_JURISDICTION still knows ${dropped.join(', ')}, which Annex 2 no longer lists. ` +
+        'Remove them, or restore the annex rows.',
+    )
+  }
+
+  return annex.map((name) => ({ name, ...GEOMETRY_BY_JURISDICTION[name] }))
+}
 
 // ---------------------------------------------------------------------------------------
 // TopoJSON
@@ -509,7 +591,7 @@ function buildGeometry(topology) {
   const project = buildProjection()
   const canvas = fitToCanvas(project)
 
-  const wanted = new Map(JURISDICTIONS.map((entry) => [entry.source, entry]))
+  const wanted = new Map(jurisdictionsToDraw().map((entry) => [entry.source, entry]))
   const shapes = []
   const contextRings = []
   const coastline = []
@@ -539,7 +621,7 @@ function buildGeometry(topology) {
   }
 
   if (wanted.size > 0) {
-    const missing = [...wanted.values()].map((entry) => entry.code).join(', ')
+    const missing = [...wanted.values()].map((entry) => entry.name).join(', ')
     throw new Error(`Annex 2 jurisdictions missing from the source data: ${missing}`)
   }
 
@@ -598,6 +680,9 @@ function renderModule(geometry) {
  * documents the source data, the projection and why the map ships as plain path strings
  * rather than as a mapping library. \`--check\` fails when this file is out of date.
  *
+ * Coverage: the ${geometry.shapes.length} member states of \`docs/core-document.md\` Annex 2,
+ * read from that table rather than restated here, plus the European Union, which the map draws
+ * as a mark in the North Sea instead of a shape.
  * Source: Natural Earth 1:50m admin-0 countries (public domain) via world-atlas@2.0.2.
  * Projection: Lambert conformal conic, standard parallels ${PROJECTION.parallel1}°N and
  * ${PROJECTION.parallel2}°N, framing ${Math.abs(VIEW.west)}°W–${VIEW.east}°E,

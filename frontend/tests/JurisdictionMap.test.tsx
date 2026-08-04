@@ -367,7 +367,9 @@ describe('reaching the map without a pointer', () => {
     expect(status).toHaveTextContent(/loading the case count/i)
 
     await waitFor(() => {
-      expect(status).toHaveTextContent(/2 of 27 jurisdictions hold cases/i)
+      expect(status).toHaveTextContent(
+        new RegExp(`2 of ${String(JURISDICTION_SHAPES.length + 1)} jurisdictions hold cases`, 'i'),
+      )
     })
   })
 })

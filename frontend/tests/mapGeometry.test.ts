@@ -13,6 +13,9 @@
  * silently redefining what the tracker claims to cover.
  */
 
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -22,41 +25,44 @@ import {
   MAP_VIEW_BOX,
 } from '@/components/map/geometry.generated'
 
+/** The document that decides the coverage. Vitest runs with `frontend/` as its directory. */
+const ANNEX_PATH = resolve(process.cwd(), '..', 'docs', 'core-document.md')
+
+/** Heading the jurisdiction table sits under. */
+const ANNEX_HEADING = '## Annex 2: project data sources'
+
+/** The Union's row: a jurisdiction, but drawn as a mark rather than as a shape. */
+const EU_JURISDICTION = 'EU'
+
 /**
- * The jurisdictions of `docs/core-document.md` Annex 2, by `map_feature_id` and name.
+ * The jurisdictions Annex 2 lists, read from the document itself.
  *
- * Annex 2 lists a source for twenty-six member states. Sweden has no row in it, so it is
- * absent here too: the map draws the coverage the project documents, and closing that gap is
- * a change to the core document rather than to this file.
+ * Read rather than restated, and the reason is the whole point of this file. The coverage used
+ * to be written down in three places and read from none, so when Annex 2 gained Sweden the map
+ * stayed a member state short of the document while every check passed. The committed geometry
+ * is now compared against the annex on every test run, which needs no network and so runs in
+ * CI, where the generator's own `--check` does not.
+ *
+ * @returns Jurisdiction names in the order the annex lists them, the Union excluded.
  */
-const ANNEX_2: readonly (readonly [string, string])[] = [
-  ['AT', 'Austria'],
-  ['BE', 'Belgium'],
-  ['BG', 'Bulgaria'],
-  ['CY', 'Cyprus'],
-  ['CZ', 'Czechia'],
-  ['DE', 'Germany'],
-  ['DK', 'Denmark'],
-  ['EE', 'Estonia'],
-  ['ES', 'Spain'],
-  ['FI', 'Finland'],
-  ['FR', 'France'],
-  ['GR', 'Greece'],
-  ['HR', 'Croatia'],
-  ['HU', 'Hungary'],
-  ['IE', 'Ireland'],
-  ['IT', 'Italy'],
-  ['LT', 'Lithuania'],
-  ['LU', 'Luxembourg'],
-  ['LV', 'Latvia'],
-  ['MT', 'Malta'],
-  ['NL', 'Netherlands'],
-  ['PL', 'Poland'],
-  ['PT', 'Portugal'],
-  ['RO', 'Romania'],
-  ['SI', 'Slovenia'],
-  ['SK', 'Slovakia'],
-]
+function annexMemberStates(): readonly string[] {
+  const document = readFileSync(ANNEX_PATH, 'utf8')
+  const start = document.indexOf(ANNEX_HEADING)
+  expect(start, `${ANNEX_PATH} has no "${ANNEX_HEADING}" heading`).toBeGreaterThan(-1)
+
+  const names: string[] = []
+  for (const line of document.slice(start + ANNEX_HEADING.length).split('\n')) {
+    if (line.startsWith('#')) break
+    if (!line.startsWith('|')) continue
+
+    const first = line.split('|')[1]?.trim() ?? ''
+    if (first === '' || first === 'Jurisdiction' || /^-+$/.test(first)) continue
+    if (!names.includes(first)) names.push(first)
+  }
+
+  expect(names, 'Annex 2 must list the Union').toContain(EU_JURISDICTION)
+  return names.filter((name) => name !== EU_JURISDICTION)
+}
 
 /**
  * Every coordinate pair in an SVG path built by the generator.
@@ -74,10 +80,21 @@ function pointsOf(path: string): readonly (readonly [number, number])[] {
 }
 
 describe('map geometry', () => {
-  it('covers exactly the jurisdictions of Annex 2', () => {
-    expect(JURISDICTION_SHAPES.map((shape) => [shape.code, shape.name])).toEqual(
-      ANNEX_2.map(([code, name]) => [code, name]),
+  it('covers exactly the member states Annex 2 lists', () => {
+    expect([...JURISDICTION_SHAPES.map((shape) => shape.name)].sort()).toEqual(
+      [...annexMemberStates()].sort(),
     )
+  })
+
+  it('identifies every jurisdiction by a distinct ISO 3166-1 alpha-2 code', () => {
+    const codes = JURISDICTION_SHAPES.map((shape) => shape.code)
+
+    for (const code of codes) expect(code).toMatch(/^[A-Z]{2}$/)
+    expect(new Set(codes).size).toBe(codes.length)
+    // The map resolves a jurisdiction against `map_feature_id`, so a code that drifted from the
+    // country it draws would put a count on the wrong shape. Two spot checks, written out.
+    expect(JURISDICTION_SHAPES.find((shape) => shape.name === 'Netherlands')?.code).toBe('NL')
+    expect(JURISDICTION_SHAPES.find((shape) => shape.name === 'Sweden')?.code).toBe('SE')
   })
 
   it('gives every jurisdiction a drawable shape', () => {
