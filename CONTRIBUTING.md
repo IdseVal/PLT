@@ -84,6 +84,21 @@ reach the browser bundle — never put a secret in one.
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | ESLint, type-aware |
 | `npm run test` | Vitest once (`npm run test:watch` to iterate) |
+| `node scripts/generate-map-geometry.mjs` | Regenerate the map's geometry asset (see below) |
+
+The jurisdiction map ships **pre-projected**: `scripts/generate-map-geometry.mjs` turns Natural
+Earth data into plain SVG path strings once, and
+`src/components/map/geometry.generated.ts` is committed. Nothing in the browser projects
+geometry or contacts a tile server, so the map works offline. Do not edit the generated file;
+change the script and re-run it. `--check` fails when the committed file is out of date, and
+the script needs the network only on a first run, after which the source data is cached.
+
+Which jurisdictions the map draws is decided by `docs/core-document.md` Annex 2, which both the
+script and `tests/mapGeometry.test.ts` read. The annex carries no ISO codes, so a member state
+added to it needs its alpha-2 code written in **two** places on purpose: `GEOMETRY_BY_JURISDICTION`
+in the script, and `JURISDICTION_CODES` in that test. The second is what makes a code paired with
+the wrong country fail a test instead of quietly putting one member state's case count on
+another's shape.
 
 ## 4. Tests and checks
 

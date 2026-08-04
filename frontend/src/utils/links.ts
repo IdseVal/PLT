@@ -38,3 +38,18 @@ export function isSafeHref(href: string): boolean {
 export function caseDetailPath(jurisdictionCode: string, sourceId: string): string {
   return `/cases/${encodeURIComponent(jurisdictionCode)}/${encodeURIComponent(sourceId)}`
 }
+
+/**
+ * Route of the all-cases page filtered to one jurisdiction.
+ *
+ * `jurisdiction` is the repeatable filter of `GET /api/cases` (`docs/architecture.md`
+ * section 5), which the all-cases page reads from the query string. The code is
+ * percent-encoded for the same reason as above: it comes from the API, and "it is always two
+ * letters" is an assumption, not a guarantee.
+ *
+ * @param jurisdictionCode - Jurisdiction code, e.g. `NL` or `EU`.
+ * @returns An application-relative path for react-router's `to`.
+ */
+export function jurisdictionCasesPath(jurisdictionCode: string): string {
+  return `/cases?jurisdiction=${encodeURIComponent(jurisdictionCode)}`
+}
