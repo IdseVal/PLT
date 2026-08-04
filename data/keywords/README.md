@@ -99,8 +99,16 @@ suggests, because `scoring.fields` multiplies it. A weight-1 term contributes:
 | Field it matched in | Contribution |
 | --- | ---: |
 | `full_text` (×1.0) | 1.00 |
+| `subject` (×1.0 in `nl.json`, ×1.2 in `eu.json`) | 1.00 / 1.20 |
 | `abstract` (×1.5) | **1.50** |
 | `title` (×1.5) | **1.50** |
+
+A term matching in several fields does **not** accumulate multipliers. Under
+`count_term_once` the matcher credits the term to its single highest-multiplier field and
+zeroes the rest, so one term contributes `weight × max(multiplier)` however many fields it
+hits. That is what makes 1.50 a true ceiling rather than the largest case anyone happened to
+try: across all four terms and every combination of fields, only three contributions are
+reachable — 1.00, 1.20 and 1.50.
 
 So a miss costs up to **1.50** against a `min_score` of 3, and the vulnerable band is any
 document already scoring in **`[1.50, 3.00)`** from other terms — not, as this section
