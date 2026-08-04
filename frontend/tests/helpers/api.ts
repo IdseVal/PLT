@@ -103,7 +103,7 @@ export function caseSummary(overrides: Partial<CaseSummary> = {}): CaseSummary {
     language: 'nl',
     law_domain: 'public',
     law_subfield: 'administrative',
-    court: { id: 7, name: 'Hoge Raad' },
+    court_name: 'Hoge Raad',
     topics: [{ slug: 'spray-zones', label: 'Spray zones' }],
     source_url: 'https://uitspraken.rechtspraak.nl/details?id=ECLI:NL:HR:2024:1',
     ...overrides,

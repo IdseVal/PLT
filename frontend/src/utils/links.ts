@@ -1,5 +1,5 @@
 /**
- * Link helpers shared by the content renderers.
+ * Link helpers shared by the content renderers and the case listings.
  */
 
 /** Link protocols the application will emit in an `href`. Anything else is dropped. */
@@ -22,4 +22,19 @@ export function isSafeHref(href: string): boolean {
   } catch {
     return false
   }
+}
+
+/**
+ * Route of a case detail page.
+ *
+ * Both segments come from the API and are percent-encoded before going into the path: an
+ * ECLI is full of colons, and neither identifier may be trusted to be URL-safe just because
+ * it usually is. The shape of the route is fixed by `docs/architecture.md` section 6.
+ *
+ * @param jurisdictionCode - Jurisdiction code, e.g. `NL` or `EU`.
+ * @param sourceId - Source identifier: an ECLI or a CELEX number.
+ * @returns An application-relative path for react-router's `to`.
+ */
+export function caseDetailPath(jurisdictionCode: string, sourceId: string): string {
+  return `/cases/${encodeURIComponent(jurisdictionCode)}/${encodeURIComponent(sourceId)}`
 }

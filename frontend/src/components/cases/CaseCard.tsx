@@ -15,10 +15,9 @@
 import { Link } from 'react-router-dom'
 
 import { CHIP } from '@/components/cases/controls'
-import { caseHref, caseLabel } from '@/utils/caseLinks'
-import { cleanInlineText } from '@/utils/caseText'
-import { formatIsoDate } from '@/utils/dates'
-import { isSafeHref } from '@/utils/links'
+import { caseLabel, cleanInlineText } from '@/utils/caseText'
+import { formatDecisionDate } from '@/utils/dates'
+import { caseDetailPath, isSafeHref } from '@/utils/links'
 import type { CaseSummary } from '@/types/api'
 
 /** Properties of {@link CaseCard}. */
@@ -34,10 +33,10 @@ export interface CaseCardProps {
  * @returns The card.
  */
 export default function CaseCard({ item }: CaseCardProps): JSX.Element {
-  const title = caseLabel(item)
+  const title = caseLabel(item.title, item.source_id)
   const abstract = cleanInlineText(item.abstract)
-  const decisionDate = formatIsoDate(item.decision_date)
-  const court = cleanInlineText(item.court?.name)
+  const decisionDate = formatDecisionDate(item.decision_date) ?? ''
+  const court = cleanInlineText(item.court_name)
   const jurisdiction = cleanInlineText(item.jurisdiction_name) || item.jurisdiction_code
   const sourceUrl = item.source_url ?? ''
   const language = cleanInlineText(item.language).toUpperCase()
@@ -46,7 +45,7 @@ export default function CaseCard({ item }: CaseCardProps): JSX.Element {
   return (
     <article className="border-plt-border bg-plt-panel rounded-sm border p-4 sm:p-5">
       <h3 className="font-display text-lg font-bold leading-snug">
-        <Link className="text-plt-accent-deep underline underline-offset-4" to={caseHref(item)}>
+        <Link className="text-plt-accent-deep underline underline-offset-4" to={caseDetailPath(item.jurisdiction_code, item.source_id)}>
           {title}
         </Link>
       </h3>

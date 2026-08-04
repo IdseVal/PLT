@@ -53,16 +53,12 @@ export type CaseSort = 'date_desc' | 'date_asc' | 'relevance'
  * string in it is untrusted input. It is rendered as text, never as markup — see
  * `src/utils/caseText.ts` — and any URL is checked against `isSafeHref` before it reaches an
  * `href`.
+ *
+ * The six fields of {@link CaseSummary} that the home-page sidebar also reads are spelled
+ * exactly as issue #12 spells them, deliberately: one shape for a case, whichever list it
+ * appears in. Everything the listing needs on top of that is optional, so the narrower
+ * sidebar payload still satisfies the type.
  */
-
-/** The court that issued a decision (`court` table, section 3). */
-export interface CourtRef {
-  id: number
-  name: string
-  /** Instance or level, e.g. `supreme`. Free text from the source vocabulary. */
-  level?: string | null
-  abbreviation?: string | null
-}
 
 /** One topic assigned to a case (`topic` table, section 3, classification label 6). */
 export interface TopicRef {
@@ -99,23 +95,38 @@ export interface CaseDocumentRef {
   source_url?: string | null
 }
 
-/** A case as it appears in a list: enough to judge relevance, not the full text. */
+/**
+ * One case as a list endpoint returns it.
+ *
+ * The first six fields are the ones every listing needs — they are also what the home-page
+ * sidebar (#12) reads, in the same spelling and with the same nullability, so both listings
+ * describe a case the same way. The rest is what the All-cases listing shows on top of that
+ * and is optional, so a narrower payload still satisfies the type.
+ */
 export interface CaseSummary {
-  id: number
+  /** Jurisdiction code, `NL` or `EU` (`jurisdiction.code`). */
   jurisdiction_code: string
-  jurisdiction_name?: string | null
-  /** ECLI or CELEX identifier; unique within the jurisdiction. */
+  /** Human-readable jurisdiction name, when the API joins it in. */
+  jurisdiction_name: string | null
+  /** Source identifier: an ECLI or a CELEX number, unique within the jurisdiction. */
   source_id: string
+  /** Case title, as published by the court. */
+  title: string
+  /** Name of the deciding court or instance. */
+  court_name: string | null
+  /** Decision date as an ISO-8601 string (`YYYY-MM-DD` or a full timestamp). */
+  decision_date: string | null
+
+  /** Database identifier, when the API exposes one. */
+  id?: number
+  /** Connector the case came from, e.g. `rechtspraak`. */
   source_system?: string | null
-  title?: string | null
   abstract?: string | null
-  /** ISO 8601 calendar date, e.g. `2024-03-05`. */
-  decision_date?: string | null
+  /** ISO 639-1 code of the language the case was issued in. */
   language?: string | null
   /** `public` | `private` | `criminal` (section 2.2 label 2). */
   law_domain?: string | null
   law_subfield?: string | null
-  court?: CourtRef | null
   topics?: TopicRef[]
   /** The case's page in the court's own publication system. */
   source_url?: string | null

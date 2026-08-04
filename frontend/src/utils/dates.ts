@@ -1,50 +1,50 @@
 /**
- * Dates as a reader wants to see them.
+ * Date presentation helpers.
  *
- * The API sends ISO calendar dates (`2024-03-05`). A citation reads better as
- * "5 March 2024", so dates are formatted for display and kept in the machine-readable form
- * in the `datetime` attribute of a `<time>` element, where a citation manager can find it.
- *
- * Formatting is pinned to `en-GB` and to UTC rather than to the reader's locale and time
- * zone. A decision date is a calendar fact, not a moment: rendering it in a zone behind UTC
- * would show the day before, and letting the locale vary would make two readers cite the
- * same judgment differently.
+ * Dates arrive from the API as ISO-8601 strings and are rendered for a reader, so the two
+ * forms are kept apart: the ISO string goes in `<time datetime>` for machines, the formatted
+ * string in the element's text for people.
  */
 
-/** Locale every date on the site is formatted in. */
-const DISPLAY_LOCALE = 'en-GB'
-
-/** Long form, for the classification block and case headers. */
-const LONG_DATE = new Intl.DateTimeFormat(DISPLAY_LOCALE, {
+/**
+ * Fixed locale and time zone.
+ *
+ * The site is English, and a decision date is a calendar date in the court's own record
+ * rather than an instant: formatting it in the reader's local zone would move it a day for
+ * anyone west of UTC. Both are therefore pinned, which also keeps tests deterministic.
+ */
+const DECISION_DATE_FORMAT = new Intl.DateTimeFormat('en-GB', {
   day: 'numeric',
   month: 'long',
   year: 'numeric',
   timeZone: 'UTC',
 })
 
+/** Counts are formatted in the same fixed locale, so a result total reads alike for everyone. */
+const COUNT_FORMAT = new Intl.NumberFormat('en-GB')
+
 /**
- * Format an ISO calendar date for reading.
+ * Format a decision date for display.
  *
- * @param value - ISO `YYYY-MM-DD` date, or `null`/`undefined` when the source had none.
- * @returns The formatted date, or an empty string when there is no usable date. An
- *   unparseable value is returned unchanged rather than dropped, so a malformed date from a
- *   source is visible instead of silently disappearing.
+ * @param value - ISO-8601 date or timestamp, or `null` when the source gave none.
+ * @returns The formatted date, or `null` when there is nothing valid to show. Callers render
+ *   their own fallback rather than a misleading placeholder date.
  */
-export function formatIsoDate(value: string | null | undefined): string {
-  if (value === null || value === undefined || value.trim() === '') return ''
+export function formatDecisionDate(value: string | null): string | null {
+  if (value === null || value.trim() === '') return null
 
-  const parsed = new Date(`${value}T00:00:00Z`)
-  if (Number.isNaN(parsed.getTime())) return value
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
 
-  return LONG_DATE.format(parsed)
+  return DECISION_DATE_FORMAT.format(parsed)
 }
 
 /**
- * Format a whole number with thousands separators, for result counts.
+ * Format a whole number with thousands separators, for result counts and page numbers.
  *
  * @param value - The number to format.
  * @returns The formatted number, e.g. `1,284`.
  */
 export function formatCount(value: number): string {
-  return new Intl.NumberFormat(DISPLAY_LOCALE).format(value)
+  return COUNT_FORMAT.format(value)
 }

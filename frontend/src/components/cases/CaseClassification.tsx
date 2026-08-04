@@ -16,7 +16,7 @@
 
 import { CHIP } from '@/components/cases/controls'
 import { cleanInlineText } from '@/utils/caseText'
-import { formatIsoDate } from '@/utils/dates'
+import { formatDecisionDate } from '@/utils/dates'
 import type { CaseRecord, PartyRef } from '@/types/api'
 
 /** Properties of {@link CaseClassification}. */
@@ -91,7 +91,7 @@ function groupParties(parties: readonly PartyRef[]): { label: string; names: str
  * @returns The row, or `null` when the source published no such date.
  */
 function DateRow({ label, value }: { readonly label: string; readonly value: string | null | undefined }): JSX.Element | null {
-  const formatted = formatIsoDate(value)
+  const formatted = formatDecisionDate(value ?? null) ?? ''
   if (formatted === '') return null
 
   return (
@@ -136,7 +136,7 @@ export default function CaseClassification({ item }: CaseClassificationProps): J
         label="Jurisdiction"
         value={cleanInlineText(item.jurisdiction_name) || item.jurisdiction_code}
       />
-      <TextRow label="Court" value={item.court?.name} />
+      <TextRow label="Court" value={item.court_name} />
       <TextRow label="Procedure" value={item.procedure_type} />
       <DateRow label="Date of filing" value={item.filing_date} />
       <DateRow label="Date of decision" value={item.decision_date} />

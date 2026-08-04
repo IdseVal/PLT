@@ -23,9 +23,9 @@ import CaseFullText from '@/components/cases/CaseFullText'
 import { LINK, PANEL } from '@/components/cases/controls'
 import { useApiResource } from '@/hooks/useApiResource'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { caseLabel } from '@/utils/caseLinks'
-import { cleanInlineText, toParagraphs } from '@/utils/caseText'
-import { formatIsoDate } from '@/utils/dates'
+
+import { caseLabel, cleanInlineText, toParagraphs } from '@/utils/caseText'
+import { formatDecisionDate } from '@/utils/dates'
 import { isSafeHref } from '@/utils/links'
 
 /** Properties of {@link CaseNotFound}. */
@@ -83,7 +83,7 @@ export default function CaseDetail(): JSX.Element {
   )
   const { data, error, isLoading } = useApiResource(loadCase)
 
-  const heading = data === null ? cleanInlineText(sourceId) : caseLabel(data)
+  const heading = data === null ? cleanInlineText(sourceId) : caseLabel(data.title, data.source_id)
   useDocumentTitle(error?.status === 404 ? 'Case not found' : heading)
 
   if (error !== null && error.status === 404) {
@@ -122,8 +122,8 @@ export default function CaseDetail(): JSX.Element {
   }
 
   const abstract = toParagraphs(data.abstract)
-  const decisionDate = formatIsoDate(data.decision_date)
-  const court = cleanInlineText(data.court?.name)
+  const decisionDate = formatDecisionDate(data.decision_date) ?? ''
+  const court = cleanInlineText(data.court_name)
   const jurisdictionName = cleanInlineText(data.jurisdiction_name) || data.jurisdiction_code
   const sourceUrl = data.source_url ?? ''
 

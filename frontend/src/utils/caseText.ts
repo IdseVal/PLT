@@ -99,6 +99,20 @@ export function toParagraphs(text: string | null | undefined): string[] {
 }
 
 /**
+ * The name a case is listed and linked under.
+ *
+ * Not every source publishes a title — Rechtspraak often does not — so the identifier is the
+ * fallback and a link is never left without an accessible name.
+ *
+ * @param title - Title as published by the court, possibly empty or absent.
+ * @param sourceId - The case's ECLI or CELEX identifier.
+ * @returns A cleaned, non-empty label.
+ */
+export function caseLabel(title: string | null | undefined, sourceId: string): string {
+  return cleanInlineText(title) || cleanInlineText(sourceId) || 'Untitled case'
+}
+
+/**
  * Count the words in a block of text, for the "about n words" reading estimate.
  *
  * @param text - Cleaned text.
