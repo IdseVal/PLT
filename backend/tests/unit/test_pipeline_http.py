@@ -199,6 +199,58 @@ def test_a_retry_after_header_wins_over_the_computed_delay() -> None:
     assert gaps(sent)[0] == pytest.approx(17.0, abs=0.02)
 
 
+def test_a_retry_after_is_never_shortened_to_the_jitter_ceiling() -> None:
+    """A court asking for five minutes gets five minutes, not the 60-second ceiling.
+
+    Waiting less than a source explicitly asked, five times over, is the behaviour most
+    likely to get a research project blocked from an endpoint.
+    """
+    clock = Clock()
+    sent: list[float] = []
+
+    with client(
+        responder(429, headers={"Retry-After": "300"}, at=sent, clock=clock),
+        clock,
+        http_requests_per_second=100.0,
+        http_backoff_max_seconds=60.0,
+        http_retry_after_max_seconds=900.0,
+    ) as polite:
+        polite.get(URL)
+
+    assert gaps(sent)[0] == pytest.approx(300.0, abs=0.02)
+
+
+def test_a_retry_after_beyond_the_limit_ends_the_run_rather_than_knocking_sooner() -> None:
+    clock = Clock()
+
+    with (
+        client(
+            responder(503, headers={"Retry-After": "3600"}),
+            clock,
+            http_retry_after_max_seconds=900.0,
+        ) as polite,
+        pytest.raises(SourceUnavailableError, match="asked for 3600s"),
+    ):
+        polite.get(URL)
+
+    # Nothing was waited out and nothing was retried: the run ends, the checkpoint stays
+    # where it was, and the next scheduled run picks the window up.
+    assert sum(clock.slept) == 0
+
+
+def test_a_retry_after_date_in_the_past_does_not_produce_a_negative_delay() -> None:
+    clock = Clock()
+
+    with client(
+        responder(503, headers={"Retry-After": "Wed, 21 Oct 2015 07:28:00 GMT"}),
+        clock,
+        http_requests_per_second=100.0,
+    ) as polite:
+        polite.get(URL)
+
+    assert min(clock.slept, default=0.0) >= 0.0
+
+
 def test_the_retry_budget_is_finite() -> None:
     clock = Clock()
 

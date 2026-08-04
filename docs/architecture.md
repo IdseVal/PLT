@@ -184,9 +184,11 @@ the two class attributes and builds it with `cls(settings)`. Two connectors clai
 jurisdiction is an error, not last-one-wins.
 
 **Fetch through `plt.pipeline.http.PoliteClient`.** It applies the configured request rate,
-exponential backoff with jitter on 429/5xx (honouring `Retry-After`), the descriptive
-`User-Agent`, and abandons a backoff as soon as the run is asked to stop. A connector
-composing `httpx` calls itself silently loses all four.
+exponential backoff with jitter on 429/5xx, the descriptive `User-Agent`, and abandons a
+backoff as soon as the run is asked to stop. A connector composing `httpx` calls itself
+silently loses all four. An explicit `Retry-After` is obeyed **as the source sent it** and is
+never shortened to the jitter ceiling; a pause longer than `http_retry_after_max_seconds`
+ends the run instead, leaving the checkpoint for the next scheduled one.
 
 **Errors.** `DocumentUnavailableError` scopes a failure to one document: the runner logs it,
 counts it, holds the checkpoint back and carries on. `SourceUnavailableError` ends the run

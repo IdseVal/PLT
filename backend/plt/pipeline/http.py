@@ -11,8 +11,12 @@ What it guarantees, all of it from :class:`plt.config.Settings` and none of it h
   client, spaced evenly rather than burst-then-idle.
 * **Backoff.** ``429`` and ``5xx`` are retried up to ``http_max_retries`` times with an
   exponential delay, capped at ``http_backoff_max_seconds`` and jittered so that two
-  jurisdictions running in parallel do not resynchronise onto the same retry schedule. A
-  ``Retry-After`` header wins over the computed delay, because the server knows better.
+  jurisdictions running in parallel do not resynchronise onto the same retry schedule.
+* **An explicit ``Retry-After`` is obeyed as sent**, never shortened to the jitter ceiling.
+  A court endpoint answering ``Retry-After: 300`` gets 300 seconds. If it asks for longer
+  than ``http_retry_after_max_seconds`` the run ends rather than waiting: the checkpoint
+  stays where it was and the next scheduled run resumes the window, which leaves the source
+  alone for as long as it asked without the process idling on an open connection.
 * **Identification.** Every request carries the descriptive ``User-Agent`` from
   :meth:`plt.config.Settings.user_agent`, naming the project, its repository and a contact
   address, so an operator whose endpoint we are inconveniencing can reach a human.
@@ -258,7 +262,8 @@ class PoliteClient:
             DocumentUnavailableError: On a ``4xx`` that is not worth retrying — a missing
                 document must not abort a run over thousands of others.
             SourceUnavailableError: When the retry budget is exhausted, the transport keeps
-                failing, or the run was asked to stop mid-retry.
+                failing, the run was asked to stop mid-retry, or the source asked for a
+                pause longer than ``http_retry_after_max_seconds``.
         """
         attempts = self._settings.http_max_retries + 1
         last_reason = "no attempt was made"
@@ -281,6 +286,9 @@ class PoliteClient:
                 if response.status_code not in _RETRYABLE_STATUS:
                     raise self._client_error(method, url, response)
                 retry_after = _retry_after_seconds(response)
+            longest_pause = self._settings.http_retry_after_max_seconds
+            if retry_after is not None and retry_after > longest_pause:
+                raise self._long_pause(method, url, retry_after)
             if attempt + 1 >= attempts:
                 break
             delay = self._backoff_delay(attempt, retry_after)
@@ -319,25 +327,60 @@ class PoliteClient:
         message = f"{method} {url}: HTTP {response.status_code}, {detail}"
         return DocumentUnavailableError(message)
 
+    def _long_pause(self, method: str, url: str, retry_after: float) -> ConnectorError:
+        """Turn a very long ``Retry-After`` into the end of the run.
+
+        A source asking for longer than ``http_retry_after_max_seconds`` is telling us to
+        come back later, not to sit in a retry loop holding a connection open. Ending the
+        run is the polite reading and costs nothing: the checkpoint is not advanced, so the
+        next scheduled run picks the window up where this one left it. What must never
+        happen is the third option — waiting less than the server asked and knocking again.
+
+        Args:
+            method: HTTP method of the request.
+            url: URL requested.
+            retry_after: Seconds the server asked for.
+
+        Returns:
+            A :class:`~plt.pipeline.base.SourceUnavailableError` naming the delay.
+        """
+        message = (
+            f"{method} {url}: the source asked for {retry_after:.0f}s before the next request, "
+            f"beyond the {self._settings.http_retry_after_max_seconds:.0f}s this run will wait; "
+            "abandoning the run so the source is left alone until it is next scheduled"
+        )
+        log.warning(
+            "source asked for a long pause; ending the run",
+            extra={"context": {"method": method, "url": url, "retry_after": retry_after}},
+        )
+        return SourceUnavailableError(message)
+
     def _backoff_delay(self, attempt: int, retry_after: float | None) -> float:
         """Compute the delay before the next attempt.
 
-        Equal jitter: half the exponential delay, plus a random share of the other half. It
-        keeps the retries spread out without ever collapsing to zero, which full jitter can.
+        An explicit ``Retry-After`` is honoured **exactly as the server sent it**: the source
+        knows what it is protecting, and waiting less than it asked - which capping the value
+        at the jitter ceiling would do - is the behaviour most likely to get a research
+        project blocked from a court's endpoint. Values beyond
+        ``http_retry_after_max_seconds`` never reach this method; :meth:`_long_pause` ends the
+        run instead, so no wait is ever shortened.
+
+        Without a header, equal jitter: half the exponential delay, plus a random share of the
+        other half. That keeps retries spread out without ever collapsing to zero, which full
+        jitter can, and is capped at ``http_backoff_max_seconds``.
 
         Args:
             attempt: Zero-based number of the attempt that just failed.
             retry_after: Seconds the server asked for, if it said.
 
         Returns:
-            The delay in seconds, never above ``http_backoff_max_seconds``.
+            The delay in seconds.
         """
+        if retry_after is not None:
+            return retry_after
         ceiling: float = self._settings.http_backoff_max_seconds
         exponential: float = min(self._settings.http_backoff_initial_seconds * 2**attempt, ceiling)
-        jittered: float = exponential / 2 + self._rng.uniform(0.0, exponential / 2)
-        if retry_after is not None:
-            return min(max(retry_after, jittered), ceiling)
-        return jittered
+        return exponential / 2 + self._rng.uniform(0.0, exponential / 2)
 
     def _interruptible_sleep(self, seconds: float) -> None:
         """Sleep, but notice a stop request while doing so.
