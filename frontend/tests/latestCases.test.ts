@@ -9,7 +9,12 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, LATEST_CASES_MAX_LIMIT, getLatestCases } from '@/api/client'
+import {
+  ApiError,
+  LATEST_CASES_DEFAULT_LIMIT,
+  LATEST_CASES_MAX_LIMIT,
+  getLatestCases,
+} from '@/api/client'
 import { formatDecisionDate } from '@/utils/dates'
 
 /**
@@ -82,8 +87,47 @@ describe('getLatestCases', () => {
     })
   })
 
+  it('keeps a case the source published no title for', async () => {
+    // Section 5.1: a field with no value is present and `null`. A metadata-only ECLI is a
+    // record a lawyer can still cite, so it is normalised rather than discarded.
+    stubJson({ items: [{ ...VALID, title: null }] })
+
+    const cases = await getLatestCases()
+
+    expect(cases).toHaveLength(1)
+    expect(cases[0]?.title).toBeNull()
+    expect(cases[0]?.source_id).toBe(VALID.source_id)
+  })
+
+  it('returns as many cases as the API sent when some have no title', async () => {
+    const items = Array.from({ length: LATEST_CASES_DEFAULT_LIMIT }, (_unused, index) => ({
+      ...VALID,
+      source_id: `ECLI:NL:HR:2024:${index + 1}`,
+      // Every third case is untitled, which is what a run of metadata-only ECLIs looks like.
+      title: index % 3 === 0 ? null : `Case ${index + 1}`,
+    }))
+    stubJson({ items, limit: LATEST_CASES_DEFAULT_LIMIT })
+
+    const cases = await getLatestCases(LATEST_CASES_DEFAULT_LIMIT)
+
+    expect(cases).toHaveLength(LATEST_CASES_DEFAULT_LIMIT)
+    expect(cases.map((entry) => entry.source_id)).toEqual(items.map((item) => item.source_id))
+  })
+
   it('drops an element that cannot identify a case, keeping the rest', async () => {
-    stubJson({ items: [VALID, { title: 'no identifiers' }, null] })
+    // The two path parameters of the detail route stay mandatory: without them the row has
+    // nowhere to link to. Everything else section 5.1 allows to be null.
+    stubJson({
+      items: [
+        VALID,
+        { title: 'no identifiers' },
+        { jurisdiction_code: 'NL', title: 'no source id' },
+        { source_id: 'ECLI:NL:HR:2024:9', title: 'no jurisdiction' },
+        { ...VALID, source_id: '' },
+        'not an object',
+        null,
+      ],
+    })
 
     const cases = await getLatestCases()
 

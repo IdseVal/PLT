@@ -155,8 +155,15 @@ export interface CaseSummary {
   jurisdiction_name: string | null
   /** Source identifier: an ECLI or a CELEX number, unique within the jurisdiction. */
   source_id: string
-  /** Case title, as published by the court. */
-  title: string
+  /**
+   * Case title, as published by the court, or `null` when the source published none.
+   *
+   * Nullable because `case.title` is (section 3) and section 5.1 puts an absent value on the
+   * wire as `null`: a metadata-only ECLI or a CELLAR notice with no title in the retrieved
+   * language manifestation is a real record, not a malformed one. Render it through
+   * `caseLabel`, which falls back to `source_id` — the identifier a lawyer would cite anyway.
+   */
+  title: string | null
   /** Name of the deciding court or instance. */
   court_name: string | null
   /** Decision date as an ISO-8601 string (`YYYY-MM-DD` or a full timestamp). */
