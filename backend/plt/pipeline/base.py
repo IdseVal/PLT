@@ -535,6 +535,23 @@ class SourceConnector(ABC):
             DocumentUnavailableError: If the payload cannot be parsed. The run continues.
         """
 
+    def iter_courts(self) -> Iterator[NormalisedCourt]:
+        """Yield the courts of this source's controlled vocabulary, for reference seeding.
+
+        ``plt seed-vocabularies`` calls this and upserts what it gets on
+        ``(jurisdiction_code, source_identifier)``, so seeding is idempotent and no court name
+        is written into the code. A source that publishes no such vocabulary inherits this
+        empty implementation and is simply reported as having nothing to seed, which is why
+        the method is concrete rather than abstract.
+
+        Yields:
+            One :class:`NormalisedCourt` per court the source's vocabulary lists.
+
+        Raises:
+            SourceUnavailableError: If the vocabulary exists but cannot be read.
+        """
+        return iter(())
+
     def close(self) -> None:
         """Release whatever the connector holds open.
 

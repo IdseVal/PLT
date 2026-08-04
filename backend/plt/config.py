@@ -233,6 +233,14 @@ class Settings(BaseSettings):
         default="https://data.rechtspraak.nl/Waardelijst",
         description="Rechtspraak.nl controlled vocabularies used to seed reference tables.",
     )
+    rechtspraak_documents_only: bool = Field(
+        default=True,
+        description=(
+            "Restrict Rechtspraak discovery to ECLIs that carry text (return=DOC). The "
+            "excluded registrations have no summary and no body, so they cost roughly three "
+            "requests for every one that can match; disable only to mirror the bare register."
+        ),
+    )
     eurlex_sparql_url: str = Field(
         default="https://publications.europa.eu/webapi/rdf/sparql",
         description="CELLAR SPARQL endpoint used to enumerate EU case law.",

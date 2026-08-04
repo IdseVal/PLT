@@ -20,10 +20,14 @@ from pathlib import Path
 from typing import Any
 
 import click
+from sqlalchemy.orm import Session, sessionmaker
 
-from plt.config import get_settings
+from plt.config import Settings, get_settings
 from plt.db.models import IngestStatus
-from plt.pipeline.registry import available_jurisdictions
+from plt.db.session import get_session_factory, session_scope
+from plt.pipeline.base import PipelineError
+from plt.pipeline.persistence import resolve_court
+from plt.pipeline.registry import available_jurisdictions, connector_for
 from plt.pipeline.runner import IngestReport, run_jurisdiction
 from plt.utils.logging import configure_logging, get_logger
 
@@ -169,6 +173,80 @@ def ingest(
             break
 
     _exit_for(reports)
+
+
+@plt_cli.command(name="seed-vocabularies")
+@click.option(
+    "--jurisdiction",
+    "-j",
+    "jurisdictions",
+    multiple=True,
+    metavar="CODE",
+    help="Jurisdiction whose reference tables to seed, e.g. NL. Repeat for several.",
+)
+@click.option(
+    "--all",
+    "every_jurisdiction",
+    is_flag=True,
+    help="Seed every jurisdiction a connector exists for.",
+)
+def seed_vocabularies(jurisdictions: tuple[str, ...], every_jurisdiction: bool) -> None:
+    """Seed the court table from each source's controlled vocabulary.
+
+    Courts are matched on ``(jurisdiction_code, source_identifier)`` — the source's own
+    vocabulary URI — so running this again updates the rows it created rather than adding a
+    second set. It is therefore safe to re-run after the vocabulary changes, and safe to run
+    before every ingestion.
+
+    Raises:
+        click.UsageError: If no jurisdiction was named.
+        click.ClickException: If a source's vocabulary could not be read.
+    """
+    settings = get_settings()
+    codes = _selected_jurisdictions(jurisdictions, every_jurisdiction=every_jurisdiction)
+    factory = get_session_factory()
+    failures: list[str] = []
+    for code in codes:
+        try:
+            seeded = _seed_courts(code, settings, factory)
+        except PipelineError as error:
+            failures.append(f"{code}: {type(error).__name__}: {error}")
+            click.echo(f"{code}: failed; {error}")
+            continue
+        click.echo(f"{code}: {seeded} court(s) seeded from the source vocabulary")
+    if failures:
+        raise click.ClickException("; ".join(failures))
+
+
+def _seed_courts(
+    code: str,
+    settings: Settings,
+    factory: sessionmaker[Session],
+) -> int:
+    """Upsert one jurisdiction's courts from its connector's vocabulary.
+
+    Args:
+        code: Jurisdiction code.
+        settings: Validated settings.
+        factory: Session factory the upserts run in.
+
+    Returns:
+        The number of courts the vocabulary listed.
+
+    Raises:
+        PipelineError: If no connector serves the jurisdiction, or its vocabulary is
+            unreadable.
+    """
+    connector = connector_for(code, settings)
+    try:
+        with session_scope(factory) as session:
+            return sum(
+                1
+                for court in connector.iter_courts()
+                if resolve_court(session, connector.jurisdiction_code, court) is not None
+            )
+    finally:
+        connector.close()
 
 
 def _selected_jurisdictions(
