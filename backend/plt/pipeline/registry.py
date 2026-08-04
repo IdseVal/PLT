@@ -140,13 +140,25 @@ def _ensure_registry() -> dict[str, type[SourceConnector]]:
     return _registry
 
 
-def reset_registry() -> None:
+def reset_registry(*connector_classes: type[SourceConnector]) -> None:
     """Forget every registration, so the next lookup rediscovers.
 
     Used by tests, which must not leak a fake connector into another test's run.
+
+    Args:
+        *connector_classes: Classes to seed the registry with instead of rediscovering.
+            Passing any of them makes this the *whole* registry, which is what a test driving
+            the pipeline through a fake needs: once a jurisdiction ships a real connector,
+            discovery would otherwise claim that jurisdiction first and the fake would be
+            refused as a second claimant. Passing none restores ordinary discovery.
     """
     global _registry  # module-level cache
     _registry = None
+    if not connector_classes:
+        return
+    _registry = {}
+    for connector_class in connector_classes:
+        register_connector(connector_class)
 
 
 def connector_classes() -> Mapping[str, type[SourceConnector]]:

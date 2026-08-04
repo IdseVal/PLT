@@ -58,8 +58,7 @@ def cli_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[session
 
     monkeypatch.setattr("plt.cli.get_settings", lambda: settings)
     monkeypatch.setattr(runner, "get_session_factory", lambda: factory)
-    registry.reset_registry()
-    registry.register_connector(CliConnector)
+    registry.reset_registry(CliConnector)
     try:
         yield factory
     finally:
@@ -134,8 +133,7 @@ def test_an_interruption_exits_130(cli_env: sessionmaker[Session]) -> None:
             if source_id == NL_DOCS[1].source_id:
                 signal.raise_signal(signal.SIGINT)
 
-    registry.reset_registry()
-    registry.register_connector(Interrupting)
+    registry.reset_registry(Interrupting)
 
     assert main(["ingest", "-j", "NL"]) == 130
     assert count_cases(cli_env) == 2
@@ -157,8 +155,7 @@ def test_a_failed_run_exits_1(cli_env: sessionmaker[Session]) -> None:
                 raise_on_discover=SourceUnavailableError("data.rechtspraak.nl is down"),
             )
 
-    registry.reset_registry()
-    registry.register_connector(Broken)
+    registry.reset_registry(Broken)
 
     assert main(["ingest", "-j", "NL"]) == 1
 

@@ -42,14 +42,14 @@ def test_the_shipped_connector_package_is_scanned_without_error() -> None:
 
 
 def test_a_registered_connector_is_found() -> None:
-    registry.register_connector(FakeConnector)
+    registry.reset_registry(FakeConnector)
 
     assert registry.available_jurisdictions() == ("NL",)
     assert isinstance(registry.connector_for("nl"), FakeConnector)
 
 
 def test_a_connector_is_built_with_the_settings_it_is_given() -> None:
-    registry.register_connector(FakeConnector)
+    registry.reset_registry(FakeConnector)
     settings = build_settings()
 
     connector = registry.connector_for("NL", settings)
@@ -58,14 +58,14 @@ def test_a_connector_is_built_with_the_settings_it_is_given() -> None:
 
 
 def test_registering_the_same_class_twice_is_harmless() -> None:
-    registry.register_connector(FakeConnector)
+    registry.reset_registry(FakeConnector)
     registry.register_connector(FakeConnector)
 
     assert registry.available_jurisdictions() == ("NL",)
 
 
 def test_two_connectors_for_one_jurisdiction_are_refused() -> None:
-    registry.register_connector(FakeConnector)
+    registry.reset_registry(FakeConnector)
 
     with pytest.raises(ValueError, match="two connectors claim jurisdiction NL"):
         registry.register_connector(OtherFake)
@@ -77,14 +77,14 @@ def test_a_connector_without_a_name_is_refused() -> None:
 
 
 def test_an_unknown_jurisdiction_names_what_is_known() -> None:
-    registry.register_connector(FakeConnector)
+    registry.reset_registry(FakeConnector)
 
     with pytest.raises(ConnectorNotFoundError, match="Known jurisdictions: NL"):
         registry.connector_for("BE")
 
 
 def test_the_registry_survives_a_reset() -> None:
-    registry.register_connector(FakeConnector)
+    registry.reset_registry(FakeConnector)
     registry.reset_registry()
 
     assert "NL" not in registry.connector_classes() or issubclass(
