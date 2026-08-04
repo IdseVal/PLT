@@ -169,7 +169,15 @@ class Settings(BaseSettings):
     )
     http_backoff_max_seconds: Annotated[float, Field(gt=0, le=600)] = Field(
         default=60.0,
-        description="Ceiling on the exponential backoff delay.",
+        description="Ceiling on the exponential backoff delay the client computes itself.",
+    )
+    http_retry_after_max_seconds: Annotated[float, Field(gt=0, le=86400)] = Field(
+        default=900.0,
+        description=(
+            "Longest Retry-After a run will wait out. The header is always obeyed as sent, "
+            "never shortened; a source asking for longer than this ends the run instead, "
+            "leaving the checkpoint for the next scheduled one."
+        ),
     )
     http_requests_per_second: Annotated[float, Field(gt=0, le=100)] = Field(
         default=2.0,
@@ -184,6 +192,10 @@ class Settings(BaseSettings):
     pipeline_page_size: Annotated[int, Field(ge=1, le=1000)] = Field(
         default=100,
         description="Result-page size requested from source endpoints during discovery.",
+    )
+    pipeline_report_dir: Path = Field(
+        default=_REPO_ROOT / "reports",
+        description="Directory a --dry-run match report is written to. Git-ignored.",
     )
 
     # -- Source endpoints -----------------------------------------------------------
