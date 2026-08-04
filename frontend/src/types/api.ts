@@ -98,10 +98,20 @@ export interface CaseDocumentRef {
 /**
  * One case as a list endpoint returns it.
  *
- * The first six fields are the ones every listing needs — they are also what the home-page
- * sidebar (#12) reads, in the same spelling and with the same nullability, so both listings
- * describe a case the same way. The rest is what the All-cases listing shows on top of that
- * and is optional, so a narrower payload still satisfies the type.
+ * `docs/architecture.md` section 5 fixes the endpoints and their query parameters but not
+ * the field names of a case payload, so the names here follow the `case` table columns in
+ * section 3, which the API exposes. `jurisdiction_code` and `source_id` are the two path
+ * parameters of `GET /api/cases/<jurisdiction>/<source_id>`, so the detail link is safe to
+ * build from them.
+ *
+ * The first six fields are what the home-page sidebar (#12) reads, and what the All-cases
+ * listing needs on top of them is optional, so one type describes a case in either listing
+ * and the narrower sidebar payload still satisfies it. Everything the API cannot supply is
+ * `null` rather than absent: a source that does not name a court or date must not turn into
+ * `undefined` halfway down a component.
+ *
+ * **Every string field is untrusted court text.** Render it as text — never through
+ * `dangerouslySetInnerHTML`, and never into an `href`.
  */
 export interface CaseSummary {
   /** Jurisdiction code, `NL` or `EU` (`jurisdiction.code`). */
@@ -163,3 +173,12 @@ export interface FilterFacets {
 
 /** Formats offered by `GET /api/cases/export`. */
 export type ExportFormat = 'csv' | 'json'
+
+/**
+ * Payload of `GET /api/cases/latest?limit=20`.
+ *
+ * Section 5 says every list endpoint paginates but does not spell out whether the sidebar
+ * feed carries the pagination envelope or is a bare array, so the client accepts both and
+ * normalises. See the note in the pull request for #12.
+ */
+export type LatestCasesResponse = Paginated<CaseSummary> | CaseSummary[]

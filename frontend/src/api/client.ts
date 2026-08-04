@@ -253,5 +253,94 @@ export function caseExportUrl(query: Record<string, QueryValue>, format: ExportF
   return buildApiUrl('/cases/export', { ...query, format })
 }
 
+/** Largest `limit` that `GET /api/cases/latest` accepts (`docs/architecture.md` section 5). */
+export const LATEST_CASES_MAX_LIMIT = 50
+
+/** How many cases the home sidebar asks for (`docs/architecture.md` section 6). */
+export const LATEST_CASES_DEFAULT_LIMIT = 20
+
+/**
+ * Narrow one element of a list payload to a {@link CaseSummary}.
+ *
+ * Server data is `unknown` until something checks it. Casting instead would move a shape
+ * mismatch from this function, where it can be reported as an error state, into a component,
+ * where it is a blank page. Absent optional fields become `null` so a component never has to
+ * distinguish "missing" from "empty".
+ *
+ * @param value - Candidate element from the response body.
+ * @returns The normalised case, or `null` when the element is not one.
+ */
+function toCaseSummary(value: unknown): CaseSummary | null {
+  if (typeof value !== 'object' || value === null) return null
+
+  const record = value as Record<string, unknown>
+  const jurisdictionCode = record.jurisdiction_code
+  const sourceId = record.source_id
+  const title = record.title
+
+  if (typeof jurisdictionCode !== 'string' || jurisdictionCode === '') return null
+  if (typeof sourceId !== 'string' || sourceId === '') return null
+  if (typeof title !== 'string') return null
+
+  return {
+    jurisdiction_code: jurisdictionCode,
+    jurisdiction_name: typeof record.jurisdiction_name === 'string' ? record.jurisdiction_name : null,
+    source_id: sourceId,
+    title,
+    court_name: typeof record.court_name === 'string' ? record.court_name : null,
+    decision_date: typeof record.decision_date === 'string' ? record.decision_date : null,
+  }
+}
+
+/**
+ * Pull the item array out of a list response.
+ *
+ * @param payload - Parsed response body.
+ * @returns The raw elements.
+ * @throws {ApiError} With code `invalid_response` if the body is neither an array nor a
+ *   paginated envelope.
+ */
+function listItems(payload: unknown): readonly unknown[] {
+  if (Array.isArray(payload)) return payload
+  if (typeof payload === 'object' && payload !== null) {
+    const items = (payload as Record<string, unknown>).items
+    if (Array.isArray(items)) return items
+  }
+  throw new ApiError('The API returned a response the tracker could not read.', 0, 'invalid_response', {})
+}
+
+/**
+ * Fetch the newest cases for the home-page sidebar.
+ *
+ * `limit` is clamped to the range the endpoint documents, so a caller cannot ask for a page
+ * the API will reject.
+ *
+ * @param limit - How many cases to ask for. Clamped to 1…{@link LATEST_CASES_MAX_LIMIT}.
+ * @param signal - Optional abort signal, so an unmounting component cancels the request.
+ * @returns The cases, newest first.
+ * @throws {ApiError} On a transport failure, a non-2xx status, or an unreadable body.
+ */
+export async function getLatestCases(
+  limit: number = LATEST_CASES_DEFAULT_LIMIT,
+  signal?: AbortSignal,
+): Promise<CaseSummary[]> {
+  const bounded = Math.min(Math.max(Math.trunc(limit), 1), LATEST_CASES_MAX_LIMIT)
+  const payload = await request<unknown>('/cases/latest', {
+    query: { limit: bounded },
+    ...(signal === undefined ? {} : { signal }),
+  })
+
+  const items = listItems(payload)
+  const cases = items.map(toCaseSummary).filter((entry): entry is CaseSummary => entry !== null)
+
+  // A non-empty list in which nothing is recognisable is a contract mismatch, not an empty
+  // feed, and has to be reported as such rather than shown as "no cases yet".
+  if (items.length > 0 && cases.length === 0) {
+    throw new ApiError('The API returned cases in an unexpected format.', 0, 'invalid_response', {})
+  }
+
+  return cases
+}
+
 /** The configured API base URL, exported for diagnostics and tests. */
 export const apiBaseUrl: string = API_BASE_URL
