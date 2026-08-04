@@ -18,6 +18,20 @@ export const LABEL = 'text-plt-ink block text-sm font-medium'
 export const INPUT =
   'border-plt-border bg-plt-panel text-plt-ink placeholder:text-plt-muted block w-full rounded-sm border px-3 py-2 text-sm'
 
+/**
+ * Date inputs.
+ *
+ * A date input in Chrome is three spin fields inside the control's own shadow tree, and
+ * tabbing into it focuses one of those rather than the input itself. The host therefore
+ * matches neither `:focus` nor `:focus-visible`, and the site-wide focus ring in
+ * `styles/index.css` never applies: a keyboard user tabs into the date range and loses
+ * their place. Found by tabbing through the page in a real browser, not by reading the CSS.
+ *
+ * `:focus-within` is true whenever focus is anywhere inside the control, including on the
+ * host itself, so it covers both. Same token, same width, same offset as every other ring.
+ */
+export const DATE_INPUT = `${INPUT} focus-within:outline-plt-accent-strong focus-within:outline focus-within:outline-2 focus-within:outline-offset-2`
+
 /** Select controls. Sized like {@link INPUT} so a mixed row lines up. */
 export const SELECT =
   'border-plt-border bg-plt-panel text-plt-ink block w-full rounded-sm border px-3 py-2 text-sm'

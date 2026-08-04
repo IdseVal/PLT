@@ -18,7 +18,15 @@
 
 import { useEffect, useId, useState } from 'react'
 
-import { BUTTON_PRIMARY, BUTTON_SECONDARY, INPUT, LABEL, PANEL, SELECT } from '@/components/cases/controls'
+import {
+  BUTTON_PRIMARY,
+  BUTTON_SECONDARY,
+  DATE_INPUT,
+  INPUT,
+  LABEL,
+  PANEL,
+  SELECT,
+} from '@/components/cases/controls'
 import { activeFilterCount, type CaseFilterState } from '@/utils/caseFilters'
 import { cleanInlineText } from '@/utils/caseText'
 import type { FilterFacets } from '@/types/api'
@@ -337,7 +345,7 @@ export default function CaseFilters({
             </label>
             <input
               id={`${fieldId}-date-from`}
-              className={INPUT}
+              className={DATE_INPUT}
               type="date"
               value={draft.date_from}
               min={facets?.earliest_decision_date ?? undefined}
@@ -354,7 +362,7 @@ export default function CaseFilters({
             </label>
             <input
               id={`${fieldId}-date-to`}
-              className={INPUT}
+              className={DATE_INPUT}
               type="date"
               value={draft.date_to}
               min={facets?.earliest_decision_date ?? undefined}
