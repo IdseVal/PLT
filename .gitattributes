@@ -10,5 +10,9 @@
 *.woff binary
 *.woff2 binary
 
+# Recorded source responses. The point of a fixture is that it is byte for byte what the
+# endpoint returned, so its line endings are left exactly as they were captured.
+backend/tests/fixtures/** -text
+
 # Generated; keep it out of diffs and language statistics.
 frontend/package-lock.json linguist-generated=true -diff

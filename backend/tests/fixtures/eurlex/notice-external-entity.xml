@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand-written attack payload, not a recorded response: an external entity pointing at a
+  local file, which a parser with entity resolution left on would splice into the notice.
+  The connector must return the document without the file's contents, or refuse it.
+-->
+<!DOCTYPE NOTICE [
+  <!ENTITY secret SYSTEM "file:///etc/passwd">
+]>
+<NOTICE decoding="eng" type="object">
+   <WORK>
+      <RESOURCE_LEGAL_ID_CELEX type="data">
+         <VALUE>62017CJ0616</VALUE>
+      </RESOURCE_LEGAL_ID_CELEX>
+      <CASE-LAW_NATIONAL-JUDGEMENT type="data">
+         <VALUE>&secret;</VALUE>
+      </CASE-LAW_NATIONAL-JUDGEMENT>
+   </WORK>
+</NOTICE>

@@ -433,8 +433,7 @@ def test_the_runner_closes_a_connector_it_built_itself(harness: Harness) -> None
             super().__init__(settings, docs=documents(1), raise_on_discover=RuntimeError("boom"))
             built.append(self)
 
-    registry.reset_registry()
-    registry.register_connector(Recording)
+    registry.reset_registry(Recording)
     try:
         report = run_jurisdiction("NL", settings=harness.settings, session_factory=harness.factory)
     finally:

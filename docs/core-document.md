@@ -331,9 +331,30 @@ recorded here as each jurisdiction is onboarded.
 
 | Jurisdiction | Endpoint | Notes |
 | --- | --- | --- |
-| NL | `https://data.rechtspraak.nl/uitspraken/zoeken` | Atom feed. Parameters include `max` (≤1000), `from` (offset), `date` (repeatable, from/to), `modified`, `subject` (rechtsgebied URI), `creator` (instantie URI), `type`, `return=DOC\|META`, `sort`. **No full-text search** — topical selection must happen client-side (§2.5). |
+| NL | `https://data.rechtspraak.nl/uitspraken/zoeken` | Atom feed. Parameters include `max` (≤1000), `from` (offset), `date` (repeatable, from/to), `modified`, `subject` (rechtsgebied URI), `creator` (instantie URI), `type`, `sort`, and `return=DOC`. **`DOC` is the only accepted value of `return`** — `META`, `ALL` and anything else give HTTP 400 (verified 4 August 2026; an earlier version of this row wrongly documented `return=DOC\|META`). Omitting `return` yields **all** ECLIs, including metadata-only records with no document body; `return=DOC` yields only those with a body. The difference is large — for 1 July 2026, **819 without the parameter against 322 with it**, so roughly 60% of published Dutch ECLIs carry metadata but no full text. A connector must decide deliberately which it wants: metadata-only records cannot be keyword-filtered on full text (§2.5), but omitting them from discovery means never seeing them. **No full-text search** — topical selection must happen client-side (§2.5). |
 | NL | `https://data.rechtspraak.nl/uitspraken/content?id=<ECLI>` | Rechtspraak XML: Dublin Core metadata block, `inhoudsindicatie` (abstract) and `uitspraak` (full text). |
 | NL | `https://data.rechtspraak.nl/Waardelijst/{Rechtsgebieden,Instanties,Proceduresoorten}` | Controlled vocabularies; seed the reference tables from these rather than hard-coding. |
 | EU | `https://publications.europa.eu/webapi/rdf/sparql` | CELLAR SPARQL 1.1 endpoint over the CDM ontology. Used to enumerate case law works by CELEX sector 6 and by document date. From 1 January 2026 a single search returns at most 10,000 results — page by date window. |
-| EU | `http://publications.europa.eu/resource/celex/<CELEX>` | CELLAR REST. `Accept: application/xml;notice=object` returns the full metadata notice; `Accept: text/html` with `Accept-Language` returns the language manifestation of the full text. |
+| EU | `http://publications.europa.eu/resource/celex/<CELEX>` | CELLAR REST. `Accept: application/xml;notice=object` returns the full metadata notice; `Accept: application/xhtml+xml` with an `Accept-Language` (ISO 639-3, e.g. `eng`) returns the language manifestation of the full text. Expect a 303 to the cellar URI. |
 | EU | EUR-Lex SOAP webservice | Alternative to SPARQL, supports full-text queries, but **requires registered credentials** and cannot return document files. Kept as a fallback, not the primary route. |
+
+> **EU rows corrected 4 August 2026**, while building the connector (issue #8). Three
+> details in the row above were not as recorded, and each of them costs documents rather
+> than merely style:
+>
+> - **`Accept: text/html` is answered with a 404** for most judgments; the same document is
+>   served as `application/xhtml+xml`. Older judgments do come back as `text/html`, so the
+>   connector offers both and parses whichever arrives.
+> - **The CELEX number must be percent-encoded into the path.** A corrigendum or a second
+>   order in a case carries a parenthesised suffix — `62021TO0601(01)` — and CELLAR 404s the
+>   unencoded form while serving `62021TO0601%2801%29`.
+> - **`cdm:resource_legal_id_sector` is typed `xsd:string`.** A plain `"6"` in a SPARQL
+>   filter matches nothing, silently: the query succeeds and returns an empty result set,
+>   which is indistinguishable from a quiet week.
+>
+> Two further facts worth recording for whoever reads this next. A single CELEX resolves to
+> several cellar works and to one expression per language, so the enumeration groups by
+> CELEX and the language versions become documents of one case. And **not every decision has
+> a retrievable full text**: some carry only a metadata notice, in any language and any
+> format, so the pipeline stores the notice and moves on rather than treating it as a
+> failure.
