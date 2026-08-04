@@ -219,6 +219,17 @@ describe('AllCases', () => {
       )
     })
 
+    it('follows the page count the API reports rather than recomputing it', async () => {
+      // `page_count` is the server's own arithmetic (architecture section 5.1). If the two
+      // ever disagree — a filter applied after the count, say — the API is right.
+      stubApi(casePage([caseSummary()], { page: 1, page_size: 20, total: 120, page_count: 3 }))
+      renderPage()
+
+      const pagination = await screen.findByRole('navigation', { name: 'Pagination' })
+      expect(within(pagination).getByText('Page 1 of 3')).toBeInTheDocument()
+      expect(within(pagination).queryByRole('link', { name: 'Page 6' })).not.toBeInTheDocument()
+    })
+
     it('keeps the active filters in every page link', async () => {
       stubApi(casePage([caseSummary()], { page: 1, page_size: 20, total: 60 }))
       renderPage('?q=glyfosaat&jurisdiction=NL')
