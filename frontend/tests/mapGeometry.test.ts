@@ -235,6 +235,52 @@ function pointsOf(path: string): readonly (readonly [number, number])[] {
   )
 }
 
+/**
+ * The rings of a generated path, largest first.
+ *
+ * @param path - The `d` attribute.
+ * @returns One point list per `M … Z` subpath, ordered by descending area.
+ */
+function ringsOf(path: string): readonly (readonly (readonly [number, number])[])[] {
+  return path
+    .split('M')
+    .filter((ring) => ring.length > 0)
+    .map(pointsOf)
+    .sort((a, b) => Math.abs(doubleArea(b)) - Math.abs(doubleArea(a)))
+}
+
+/**
+ * Twice the signed area of a ring, by the shoelace formula.
+ *
+ * @param ring - The ring, in user units.
+ * @returns Twice its signed area.
+ */
+function doubleArea(ring: readonly (readonly [number, number])[]): number {
+  return ring.reduce((total, [x1, y1], index) => {
+    const [x2, y2] = ring[(index + 1) % ring.length] ?? [x1, y1]
+    return total + x1 * y2 - x2 * y1
+  }, 0)
+}
+
+/**
+ * Centroid of a ring.
+ *
+ * @param ring - The ring, in user units.
+ * @returns Its area centroid.
+ */
+function ringCentroid(ring: readonly (readonly [number, number])[]): readonly [number, number] {
+  const area = doubleArea(ring)
+  let x = 0
+  let y = 0
+  for (const [index, [x1, y1]] of ring.entries()) {
+    const [x2, y2] = ring[(index + 1) % ring.length] ?? [x1, y1]
+    const cross = x1 * y2 - x2 * y1
+    x += (x1 + x2) * cross
+    y += (y1 + y2) * cross
+  }
+  return [x / (3 * area), y / (3 * area)]
+}
+
 describe('map geometry', () => {
   it('covers exactly the member states Annex 2 lists', () => {
     expect([...JURISDICTION_SHAPES.map((shape) => shape.name)].sort()).toEqual(
@@ -326,6 +372,29 @@ describe('map geometry', () => {
       )
 
       expect(nearest[0], `the outline drawn for ${shape.name} is closest to`).toBe(shape.name)
+    }
+  })
+
+  it('labels every shape at the centre of that very shape', () => {
+    // The geographic pins above catch an outline taken from the wrong country, because the
+    // anchor is measured from the geometry and moves with it. They cannot catch the geometry
+    // being moved afterwards: paths exchanged between two entries in the generated file leave
+    // the anchors, the names and the codes all correct. This does catch that, without knowing
+    // anything about the projection — a label point is the centroid of the largest ring of the
+    // path it belongs to, so a shape that has been given someone else's outline is labelled
+    // hundreds of user units away from itself.
+    for (const shape of JURISDICTION_SHAPES) {
+      const largest = ringsOf(shape.path)[0]
+      expect(largest, `${shape.code} has a ring`).toBeDefined()
+      if (largest === undefined) continue
+
+      const [x, y] = ringCentroid(largest)
+      const drift = Math.hypot(x - shape.labelPoint.x, y - shape.labelPoint.y)
+      expect(
+        drift,
+        `${shape.name} is labelled at (${shape.labelPoint.x}, ${shape.labelPoint.y}) ` +
+          `but the shape it labels is centred at (${x.toFixed(1)}, ${y.toFixed(1)})`,
+      ).toBeLessThan(1)
     }
   })
 
