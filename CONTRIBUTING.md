@@ -94,11 +94,19 @@ change the script and re-run it. `--check` fails when the committed file is out 
 the script needs the network only on a first run, after which the source data is cached.
 
 Which jurisdictions the map draws is decided by `docs/core-document.md` Annex 2, which both the
-script and `tests/mapGeometry.test.ts` read. The annex carries no ISO codes, so a member state
-added to it needs its alpha-2 code written in **two** places on purpose: `GEOMETRY_BY_JURISDICTION`
-in the script, and `JURISDICTION_CODES` in that test. The second is what makes a code paired with
-the wrong country fail a test instead of quietly putting one member state's case count on
-another's shape.
+script and `tests/mapGeometry.test.ts` read. The annex carries names only — no ISO codes and no
+geometry — so a member state added to it needs two things written in the test as well as in the
+script's `GEOMETRY_BY_JURISDICTION`, on purpose:
+
+| In the test | What it stops |
+| --- | --- |
+| `JURISDICTION_CODES`: the alpha-2 code | A code paired with the wrong country, which puts one member state's case count and `/cases` link on another's shape. |
+| `JURISDICTION_LOCATIONS`: roughly where the country is, in lon/lat | An outline taken from the wrong Natural Earth id, which draws one member state's coastline under another's name. |
+
+Both are one line each, and both are held against ISO 3166-1 as Node's region data reports it,
+so editing a pin until it agrees with a broken asset does not make the test pass. Write the
+location from an atlas or from memory — a rough centre to a tenth of a degree is what is wanted,
+and the tolerance is measured in hundreds of kilometres.
 
 ## 4. Tests and checks
 
