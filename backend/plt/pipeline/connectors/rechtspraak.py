@@ -31,11 +31,20 @@ Four properties of the endpoint drove the design, each verified against the live
    honoured. The window is therefore converted to Dutch local time on the way out and every
    entry is checked again against the caller's UTC bounds on the way in, so the window a
    caller asked for is the window it gets.
-2. **``return=DOC`` restricts the feed to documents that carry text.** The excluded ECLIs are
-   registrations with no ``inhoudsindicatie`` and no body at all — nothing for the keyword
-   filter to read — and they are roughly three fifths of the feed. Fetching them would triple
-   the load on a public endpoint for no recall, so ``rechtspraak_documents_only`` defaults to
-   restricting; an operator who wants the bare registrations can turn it off.
+2. **``return=DOC`` restricts the feed to the ECLIs that carry text, and ``DOC`` is the only
+   value the parameter accepts** — ``META`` is answered with a ``400``. Excluding the rest is
+   a deliberate decision under the no-false-negatives policy of ``docs/core-document.md``
+   section 2.7, and it rests on two measurements rather than on convenience. First, the
+   excluded records carry **no text at all**: 42 of 42 sampled across 2015, 2020 and 2026 had
+   neither an ``inhoudsindicatie`` nor a body, a median of 1.8 kB of registration metadata
+   each. No stage that reads text could ever select one, so leaving them out cannot lose a
+   case that would otherwise have been found. Second, they are not merely *not published yet*:
+   the share is between 61 and 78% and flat for decision dates from 2015 to 2026, so an
+   eleven-year-old registration is still a registration. Should one ever gain a text, its
+   ``modified`` advances and it enters this feed in a later incremental window, so the design
+   recovers that case for free. Including them would cost roughly 11,500 further requests a
+   month on a public court endpoint for no attainable match. The setting
+   ``rechtspraak_documents_only`` makes it an operator's decision all the same.
 3. **The Atom ``updated`` is a revision marker.** It goes on the candidate as its
    ``content_hash``, so the weekly re-run skips an unchanged document *without fetching it*
    (``docs/architecture.md`` section 4.2).
@@ -471,6 +480,29 @@ def _first_attribute(described: Described, key: str, attribute: str) -> str | No
         if attribute in attributes:
             return str(attributes[attribute])
     return None
+
+
+def _labelled(described: Described, key: str) -> list[dict[str, str | None]]:
+    """Lift every occurrence of a controlled value as a label and its vocabulary URI.
+
+    Args:
+        described: A projected description block.
+        key: Qualified element name of a repeatable, controlled element such as
+            ``dcterms:subject`` or ``psi:procedure``.
+
+    Returns:
+        One entry per occurrence, in document order. A list even when the document carries a
+        single value, because the element may repeat: a case classified under two
+        *rechtsgebieden*, or heard under both an ``eersteAanlegMeervoudig`` procedure and a
+        ``proceskostenveroordeling``, must not lose the second one.
+    """
+    return [
+        {
+            "label": str(entry["value"]) if entry.get("value") is not None else None,
+            "uri": _attributes_of(entry).get("resourceIdentifier"),
+        }
+        for entry in described.get(key, ())
+    ]
 
 
 def _parse_date(value: str | None) -> date | None:
@@ -1166,6 +1198,14 @@ class RechtspraakConnector(SourceConnector):
             block, verbatim and unflattened; the named keys beside it are the values a report
             or a later classifier reads most often, lifted out so nothing has to walk the
             block to find them.
+
+            **A lifted key has the cardinality of the element it comes from.** Every element
+            the Rechtspraak schema allows to repeat is lifted as a list, even when a
+            particular document happens to carry one — ``psi:zaaknummer``,
+            ``dcterms:subject``, ``psi:procedure``, ``dcterms:spatial`` and the *vindplaatsen*.
+            Anything singular in the schema is lifted as a scalar. A reader can therefore tell
+            from the key alone whether a second value is possible, instead of discovering on
+            some later document that a field it treated as one value is actually two.
         """
         return {
             "dublin_core": {name: list(entries) for name, entries in described.items()},
@@ -1173,15 +1213,10 @@ class RechtspraakConnector(SourceConnector):
             "deeplink": self._deeplink(deeplink, blocks),
             "modified": _first_value(described, "dcterms:modified"),
             "coverage": _first_value(described, "dcterms:coverage"),
-            "zittingsplaats": _first_value(described, "dcterms:spatial"),
+            "zittingsplaatsen": _values(described, "dcterms:spatial"),
             "zaaknummers": _values(described, "psi:zaaknummer"),
-            "rechtsgebieden": [
-                {
-                    "label": entry.get("value"),
-                    "uri": _attributes_of(entry).get("resourceIdentifier"),
-                }
-                for entry in described.get("dcterms:subject", ())
-            ],
+            "rechtsgebieden": _labelled(described, "dcterms:subject"),
+            "procedures": _labelled(described, "psi:procedure"),
             "vindplaatsen": [
                 item
                 for entry in described.get("dcterms:hasVersion", ())
@@ -1195,10 +1230,6 @@ class RechtspraakConnector(SourceConnector):
             "document_type": {
                 "label": _first_value(described, "dcterms:type"),
                 "uri": _first_attribute(described, "dcterms:type", "resourceIdentifier"),
-            },
-            "procedure": {
-                "label": _first_value(described, "psi:procedure"),
-                "uri": _first_attribute(described, "psi:procedure", "resourceIdentifier"),
             },
             "publisher": {
                 "name": _first_value(described, "dcterms:publisher"),

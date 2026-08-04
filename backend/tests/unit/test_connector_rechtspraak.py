@@ -462,7 +462,7 @@ def test_the_metadata_block_is_kept_whole(cbb: RechtspraakConnector) -> None:
     case = normalise(cbb, "ECLI:NL:CBB:2024:147")
     metadata = case.source_metadata
 
-    assert metadata["zittingsplaats"] == "Den Haag"
+    assert metadata["zittingsplaatsen"] == ["Den Haag"]
     assert metadata["coverage"] == "NL"
     assert metadata["modified"] == "2024-03-05T13:14:06"
     assert metadata["access_rights"] == "public"
@@ -481,8 +481,22 @@ def test_the_metadata_block_is_kept_whole(cbb: RechtspraakConnector) -> None:
     assert block["dcterms:subject"][0]["attributes"]["resourceIdentifier"].endswith(
         "#bestuursrecht"
     )
-    # A repeated element is several entries, never one overwriting another.
+    # A repeated element is several entries, never one overwriting another - in the verbatim
+    # block and in the lifted view alike, which is what makes the lifted key safe to read.
     assert len(block["psi:procedure"]) == 2
+    assert [entry["label"] for entry in metadata["procedures"]] == [
+        "Eerste aanleg - meervoudig",
+        "Proceskostenveroordeling",
+    ]
+    assert metadata["procedures"][1]["uri"].endswith("#proceskostenveroordeling")
+    # A key whose element is repeatable is a list even when this document carries one value,
+    # so a reader can tell from the key alone whether a second value is possible.
+    assert metadata["rechtsgebieden"] == [
+        {
+            "label": "Bestuursrecht",
+            "uri": "http://psi.rechtspraak.nl/rechtsgebied#bestuursrecht",
+        }
+    ]
 
 
 def test_the_judgment_text_is_extracted_for_the_filter(cbb: RechtspraakConnector) -> None:
@@ -615,6 +629,12 @@ def test_repeated_fields_stay_lists(multivalued: RechtspraakConnector) -> None:
         "Bestuursrecht; Omgevingsrecht",
         "Bestuursrecht; Europees bestuursrecht",
     ]
+    assert [entry["label"] for entry in case.source_metadata["procedures"]] == [
+        "Eerste en enige aanleg",
+        "Proceskostenveroordeling",
+    ]
+    # The column holds one procedure because the schema has one column; the list keeps both.
+    assert case.procedure_type == "Eerste en enige aanleg"
     assert case.source_metadata["vindplaatsen"] == [
         "Rechtspraak.nl",
         "AB 2024/211 met annotatie van A. Voorbeeld",

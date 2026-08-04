@@ -58,6 +58,9 @@ def cli_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[session
 
     monkeypatch.setattr("plt.cli.get_settings", lambda: settings)
     monkeypatch.setattr(runner, "get_session_factory", lambda: factory)
+    # Seeding the registry rather than adding to it: ordinary registration runs discovery,
+    # which finds the shipped connectors too, and ``--all`` would then drive them against
+    # their live endpoints from a unit test.
     registry.reset_registry(CliConnector)
     try:
         yield factory
