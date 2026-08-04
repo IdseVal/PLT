@@ -116,6 +116,47 @@ class TestJurisdictionStats:
         assert "count" in selects[0].lower()
 
 
+class TestPayloadContract:
+    """The aggregate wire shapes pinned in architecture section 5.1."""
+
+    def test_a_map_entry(self, client: FlaskClient, api_corpus: Session) -> None:
+        payload = client.get("/api/stats/jurisdictions").get_json()
+
+        assert set(payload[0]) == {
+            "code",
+            "name",
+            "type",
+            "map_feature_id",
+            "is_active",
+            "case_count",
+            "latest_decision_date",
+        }
+
+    def test_the_facet_payload(self, client: FlaskClient, api_corpus: Session) -> None:
+        payload = client.get("/api/filters").get_json()
+
+        assert set(payload) == {
+            "jurisdictions",
+            "courts",
+            "law_domains",
+            "law_subfields",
+            "languages",
+            "topics",
+            "decision_date_range",
+            "sorts",
+            "export_formats",
+            "page_size_default",
+            "page_size_max",
+            "latest_limit_max",
+        }
+        assert set(payload["decision_date_range"]) == {"from", "to"}
+
+    def test_the_health_payload(self, client: FlaskClient, api_corpus: Session) -> None:
+        payload = client.get("/api/health").get_json()
+
+        assert set(payload) == {"status", "service", "version", "database", "ingest"}
+
+
 class TestFilters:
     """``GET /api/filters`` - the facet payload behind the All-cases filter UI."""
 

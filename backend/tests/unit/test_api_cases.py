@@ -272,6 +272,145 @@ class TestLatest:
         assert source_ids(body) == PUBLISHED_NEWEST_FIRST[:2]
 
 
+class TestPayloadContract:
+    """The exact wire shapes pinned in architecture section 5.1.
+
+    Three frontend streams build against this JSON independently, so the field names are a
+    contract rather than an implementation detail: a rename here breaks a page elsewhere,
+    and these assertions are what turns that into a failing test instead of a blank card.
+    """
+
+    def test_the_paginated_envelope(self, client: FlaskClient, api_corpus: Session) -> None:
+        body = get_json(client, "/api/cases")
+
+        assert set(body) == {"items", "page", "page_size", "total", "page_count", "has_next"}
+
+    def test_the_latest_feed_is_an_object_not_a_bare_array(
+        self, client: FlaskClient, api_corpus: Session
+    ) -> None:
+        body = get_json(client, "/api/cases/latest")
+
+        assert set(body) == {"items", "limit"}
+
+    def test_a_case_summary(self, client: FlaskClient, api_corpus: Session) -> None:
+        item = get_json(client, "/api/cases")["items"][0]
+
+        assert set(item) == {
+            "id",
+            "jurisdiction",
+            "source_id",
+            "source_system",
+            "court",
+            "title",
+            "abstract",
+            "decision_date",
+            "publication_date",
+            "case_numbers",
+            "language",
+            "law_domain",
+            "law_subfield",
+            "procedure_type",
+            "outcome",
+            "source_url",
+        }
+        assert set(item["jurisdiction"]) == {"code", "name"}
+        assert set(item["court"]) == {"id", "name"}
+
+    def test_the_feed_and_the_search_results_share_one_shape(
+        self, client: FlaskClient, api_corpus: Session
+    ) -> None:
+        searched = get_json(client, "/api/cases")["items"][0]
+        fed = get_json(client, "/api/cases/latest")["items"][0]
+
+        assert fed == searched
+
+    def test_an_absent_value_is_null_rather_than_missing(
+        self, client: FlaskClient, api_corpus: Session
+    ) -> None:
+        item = next(
+            entry
+            for entry in get_json(client, "/api/cases")["items"]
+            if entry["source_id"] == "62019CJ0616"
+        )
+
+        assert item["court"] is None
+        assert item["law_subfield"] is None
+
+    def test_a_case_detail(self, client: FlaskClient, api_corpus: Session) -> None:
+        body = get_json(client, "/api/cases/NL/ECLI:NL:RVS:2024:1")
+        summary = get_json(client, "/api/cases", q="glyphosate")["items"][0]
+
+        assert set(body) - set(summary) == {
+            "filing_date",
+            "revision",
+            "first_seen_at",
+            "last_seen_at",
+            "updated_at",
+            "documents",
+            "parties",
+            "topics",
+            "keyword_matches",
+            "citations",
+        }
+        assert set(summary) - set(body) == set()
+
+    @pytest.mark.parametrize(
+        ("member", "fields"),
+        [
+            (
+                "documents",
+                {
+                    "id",
+                    "language",
+                    "doc_type",
+                    "format",
+                    "full_text",
+                    "source_url",
+                    "byte_size",
+                    "retrieved_at",
+                },
+            ),
+            ("parties", {"id", "name", "role", "party_type", "ordinal"}),
+            ("topics", {"slug", "label", "confidence", "assigned_by"}),
+            (
+                "keyword_matches",
+                {
+                    "term_id",
+                    "term",
+                    "list_version",
+                    "field",
+                    "weight_applied",
+                    "match_count",
+                    "snippet",
+                },
+            ),
+            (
+                "citations",
+                {
+                    "target_identifier",
+                    "target_scheme",
+                    "citation_type",
+                    "target_title",
+                    "target_url",
+                },
+            ),
+        ],
+    )
+    def test_a_detail_list_member(
+        self, client: FlaskClient, api_corpus: Session, member: str, fields: set[str]
+    ) -> None:
+        body = get_json(client, "/api/cases/NL/ECLI:NL:RVS:2024:1")
+
+        assert set(body[member][0]) == fields
+
+    def test_the_editorial_switch_is_not_part_of_the_wire_format(
+        self, client: FlaskClient, api_corpus: Session
+    ) -> None:
+        body = get_json(client, "/api/cases/NL/ECLI:NL:RVS:2024:1")
+
+        assert "is_published" not in body
+
+
 class TestCaseDetail:
     """``GET /api/cases/<jurisdiction>/<source_id>``."""
 

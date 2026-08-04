@@ -194,16 +194,103 @@ Base path `/api`. JSON only. All list endpoints paginate. Errors use one envelop
 | `GET` | `/api/cases` | Search + filter + paginate. Query params: `q` (full text), `jurisdiction` (repeatable), `law_domain`, `law_subfield`, `topic`, `court`, `language`, `date_from`, `date_to`, `sort` (`date_desc` default, `date_asc`, `relevance`), `page`, `page_size` (default 20, max 100) |
 | `GET` | `/api/cases/latest?limit=20` | Sidebar feed, newest first, `limit` max 50 |
 | `GET` | `/api/cases/<jurisdiction>/<source_id>` | Single case with documents, parties, topics, matched terms |
-| `GET` | `/api/cases/export` | Same filters as `/api/cases`, returns CSV or JSON-Lines including metadata |
-| `GET` | `/api/stats/jurisdictions` | Map payload: `[{code, name, type, map_feature_id, case_count, latest_decision_date}]` — **one query, all jurisdictions, EU included** |
+| `GET` | `/api/cases/export` | Same filters as `/api/cases`, plus `format` (`csv` default, or `jsonl`). Not paginated: it streams every match |
+| `GET` | `/api/stats/jurisdictions` | Map payload — **one query, all jurisdictions, EU included** |
 | `GET` | `/api/filters` | Facet values for the All-cases filter UI |
 | `GET` | `/api/health` | Liveness + last successful ingest per jurisdiction |
 
+### 5.1 Response shapes
+
+Fixed here, not left to the implementation: several frontend streams build against the same
+JSON. **A field that has no value is present and `null`; it is never omitted**, and no list
+endpoint returns a bare array except `/api/stats/jurisdictions`, whose payload *is* the
+array below. Dates are `YYYY-MM-DD`; timestamps are ISO 8601 with a UTC offset.
+
+**Paginated envelope** — `/api/cases`:
+
+```json
+{ "items": [CaseSummary], "page": 1, "page_size": 20,
+  "total": 137, "page_count": 7, "has_next": true }
+```
+
+**`/api/cases/latest`** is a feed, not a page: `{ "items": [CaseSummary], "limit": 20 }`.
+
+**`CaseSummary`** — one search result or feed entry, everything a card renders:
+
+```json
+{ "id": 42,
+  "jurisdiction": { "code": "NL", "name": "Netherlands" },
+  "source_id": "ECLI:NL:RVS:2024:1", "source_system": "rechtspraak",
+  "court": { "id": 3, "name": "Raad van State" },
+  "title": "...", "abstract": "...",
+  "decision_date": "2024-05-01", "publication_date": "2024-05-03",
+  "case_numbers": ["202301234/1/A3"], "language": "nl",
+  "law_domain": "public", "law_subfield": "environmental",
+  "procedure_type": "appeal", "outcome": "dismissed",
+  "source_url": "https://..." }
+```
+
+`court` is `null` when the source named no court. `law_domain` is one of `public`,
+`private`, `criminal`, `other`.
+
+**`CaseDetail`** — `/api/cases/<jurisdiction>/<source_id>`: every `CaseSummary` field, plus
+`filing_date`, `revision`, `first_seen_at`, `last_seen_at`, `updated_at` and five lists:
+
+| List | Members |
+| --- | --- |
+| `documents` | `id`, `language`, `doc_type`, `format`, `full_text`, `source_url`, `byte_size`, `retrieved_at` |
+| `parties` | `id`, `name`, `role`, `party_type`, `ordinal` |
+| `topics` | `slug`, `label`, `confidence`, `assigned_by` |
+| `keyword_matches` | `term_id`, `term`, `list_version`, `field`, `weight_applied`, `match_count`, `snippet` |
+| `citations` | `target_identifier`, `target_scheme`, `citation_type`, `target_title`, `target_url` |
+
+`case_document.raw_payload` is **never** exposed: it is the verbatim source response, kept
+for reclassification, and can be megabytes of markup. Nor is `case.is_published` — an
+unpublished case is reported as a 404, not as a flag a client could read.
+
+**`/api/stats/jurisdictions`** — a bare array, one entry per jurisdiction, ordered by code,
+**including jurisdictions whose `case_count` is `0`** so the map renders intended coverage
+in its muted state rather than dropping the shape:
+
+```json
+[{ "code": "EU", "name": "European Union", "type": "supranational",
+   "map_feature_id": "EU", "is_active": true,
+   "case_count": 12, "latest_decision_date": "2024-05-01" }]
+```
+
+**`/api/filters`** — `jurisdictions: [{code, name}]`, `courts: [{id, name}]`,
+`topics: [{slug, label}]`, the string lists `law_domains`, `law_subfields`, `languages`,
+`sorts` and `export_formats`, `decision_date_range: {from, to}`, and the bounds the server
+enforces (`page_size_default`, `page_size_max`, `latest_limit_max`) so the filter UI reads
+them rather than repeating them.
+
+**`/api/health`** — `{ "status": "ok", "service": "plt-api", "version": "0.1.0",
+"database": "ok" | "unavailable", "ingest": { "NL": "2026-07-01T09:30:00+00:00" } }`.
+`ingest` maps a jurisdiction code onto the finishing timestamp of its last *successful*
+run and is empty until the pipeline has completed one. A database that cannot be reached
+does not fail the endpoint: liveness is about the process, so it is reported in `database`.
+
+**`/api/cases/export`** — `format=csv` returns a header row of flat columns
+(`id`, `jurisdiction_code`, `jurisdiction_name`, `source_id`, `source_system`, `court_name`,
+`title`, `abstract`, `decision_date`, `filing_date`, `publication_date`, `case_numbers`,
+`language`, `law_domain`, `law_subfield`, `procedure_type`, `outcome`, `source_url`,
+`revision`, `first_seen_at`, `last_seen_at`) followed by one row per case. `format=jsonl`
+emits a first line describing the export (`record_type: "metadata"`, `generated_at`, the
+filters used) and then one `record_type: "case"` object per line carrying the same fields.
+
+### 5.2 Errors and limits
+
+Every failure, including 404, 405 and 429, uses the envelope above. `details` names the
+offending parameter for a validation error, e.g.
+`{"parameter": "page_size", "value": "5000", "minimum": 1, "maximum": 100}`.
+
 **Security requirements** (not optional, these are public endpoints):
 parameterised queries only; validate and bound every query parameter server-side;
-`page_size` and `limit` clamped; rate limiting on all endpoints and a stricter limit on
-`/api/cases/export`; CORS restricted to configured origins; no stack traces or SQL in
-responses.
+`page_size` and `limit` bounded by configuration, and a value outside the bound **rejected
+with a 400 rather than silently coerced**; rate limiting on all endpoints (per endpoint,
+per client) and a stricter limit on `/api/cases/export`; CORS restricted to configured
+origins; no stack traces, SQL or file paths in responses — an unexpected exception logs
+server-side and answers with a generic `internal_error` envelope.
 
 ---
 
