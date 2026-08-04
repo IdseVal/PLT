@@ -95,7 +95,7 @@ const MARKER_AREA_THRESHOLD = 90
 const MARKER_RADIUS = 9
 
 /** Where the EU marker sits, in the North Sea, and how big it is. */
-const EU_MARKER = { longitude: 2.6, latitude: 56.4, radius: 21 }
+const EU_MARKER = { longitude: 2.6, latitude: 56.4, radius: 26 }
 
 /** Smallest acceptable gap between the EU marker and any rendered coastline, in user units. */
 const MIN_EU_CLEARANCE = 3

@@ -6,16 +6,17 @@
  * and a right-hand sidebar of the twenty most recent cases with a button through to the
  * all-cases page.
  *
- * The map itself is issue #13. Its position is held by `MapPlaceholder`, which that issue
- * replaces with `JurisdictionMap`; see the note in that file.
- *
  * On narrow viewports the two-column grid collapses to one column, so the sidebar moves
  * below the main column rather than disappearing. It follows the map in the document, so
  * reading order and visual order agree at every width.
+ *
+ * The map's cell is `minmax(0, 1fr)`, whose minimum is zero rather than `auto`: the map
+ * scales to the width it is given and never asks for more, so the grid cannot be pushed
+ * wider than its container at any viewport.
  */
 
+import JurisdictionMap from '@/components/JurisdictionMap'
 import LatestCasesSidebar from '@/components/LatestCasesSidebar'
-import MapPlaceholder from '@/components/MapPlaceholder'
 import SearchBar from '@/components/SearchBar'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 
@@ -36,7 +37,7 @@ export default function Home(): JSX.Element {
       </div>
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <MapPlaceholder className="min-h-[22rem]" />
+        <JurisdictionMap className="min-h-[22rem]" />
         <LatestCasesSidebar />
       </div>
     </div>

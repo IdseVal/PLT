@@ -29,14 +29,14 @@ export interface JurisdictionShape {
 export const MAP_VIEW_BOX = { width: 820, height: 797 } as const
 
 /** Radius of the pointer target given to a jurisdiction whose shape is too small to hit. */
-export const MARKER_RADIUS = 6.5
+export const MARKER_RADIUS = 9
 
 /**
  * The EU marker, in the North Sea. The generator refuses to write this file unless the
  * marker clears every rendered coastline; the clearance measured for these values was
- * 51.9 user units against a radius of 21.
+ * 51.9 user units against a radius of 26.
  */
-export const EU_MARKER = { x: 303.1, y: 324.6, radius: 21 } as const
+export const EU_MARKER = { x: 303.1, y: 324.6, radius: 26 } as const
 
 /** Every country outside Annex 2, as one path: context for the reader, never interactive. */
 export const CONTEXT_PATH =
