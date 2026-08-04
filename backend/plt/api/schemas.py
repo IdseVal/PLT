@@ -559,10 +559,15 @@ def _enum_value(value: enum.StrEnum | None) -> str | None:
 def case_summary_payload(case: Case) -> dict[str, Any]:
     """Serialise a case for a list response.
 
-    The jurisdiction and court are emitted as ``{code, name}`` objects so a result card
-    needs no second request to render. Both are many-to-one relationships resolved through
-    the session's identity map, so a page of results costs one extra query per distinct
-    jurisdiction and court, not one per row.
+    The jurisdiction and court names are flattened onto the record rather than nested in
+    an object, so a result card needs neither a second request nor a lookup table, and the
+    JSON, the JSON-Lines export and the CSV export all name a field the same way.
+    ``court_id`` is carried alongside the name because the ``court`` filter takes an id, so
+    a card can link to "other cases from this court" without resolving the name first.
+
+    Both names come from many-to-one relationships resolved through the session's identity
+    map, so a page of results costs one extra query per distinct jurisdiction and court,
+    not one per row.
 
     Args:
         case: The case to serialise.
@@ -572,10 +577,12 @@ def case_summary_payload(case: Case) -> dict[str, Any]:
     """
     return {
         "id": case.id,
-        "jurisdiction": {"code": case.jurisdiction_code, "name": case.jurisdiction.name},
+        "jurisdiction_code": case.jurisdiction_code,
+        "jurisdiction_name": case.jurisdiction.name,
         "source_id": case.source_id,
         "source_system": case.source_system,
-        "court": None if case.court is None else {"id": case.court.id, "name": case.court.name},
+        "court_id": case.court_id,
+        "court_name": None if case.court is None else case.court.name,
         "title": case.title,
         "abstract": case.abstract,
         "decision_date": _iso(case.decision_date),

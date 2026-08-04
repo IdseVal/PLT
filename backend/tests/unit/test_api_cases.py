@@ -65,8 +65,9 @@ class TestListCases:
         body = get_json(client, "/api/cases", q="glyphosate")
         item = body["items"][0]
 
-        assert item["jurisdiction"] == {"code": "NL", "name": "Netherlands"}
-        assert item["court"]["name"] == "Raad van State"
+        assert item["jurisdiction_code"] == "NL"
+        assert item["jurisdiction_name"] == "Netherlands"
+        assert item["court_name"] == "Raad van State"
         assert item["decision_date"] == "2024-05-01"
         assert item["law_domain"] == "public"
         assert item["case_numbers"] == ["202301234/1/A3"]
@@ -297,10 +298,12 @@ class TestPayloadContract:
 
         assert set(item) == {
             "id",
-            "jurisdiction",
+            "jurisdiction_code",
+            "jurisdiction_name",
             "source_id",
             "source_system",
-            "court",
+            "court_id",
+            "court_name",
             "title",
             "abstract",
             "decision_date",
@@ -313,8 +316,14 @@ class TestPayloadContract:
             "outcome",
             "source_url",
         }
-        assert set(item["jurisdiction"]) == {"code", "name"}
-        assert set(item["court"]) == {"id", "name"}
+
+    def test_the_summary_field_names_match_the_export_columns(
+        self, client: FlaskClient, api_corpus: Session
+    ) -> None:
+        item = get_json(client, "/api/cases")["items"][0]
+
+        assert {"jurisdiction_code", "jurisdiction_name", "court_name"} <= set(item)
+        assert "jurisdiction" not in item
 
     def test_the_feed_and_the_search_results_share_one_shape(
         self, client: FlaskClient, api_corpus: Session
@@ -333,7 +342,8 @@ class TestPayloadContract:
             if entry["source_id"] == "62019CJ0616"
         )
 
-        assert item["court"] is None
+        assert item["court_id"] is None
+        assert item["court_name"] is None
         assert item["law_subfield"] is None
 
     def test_a_case_detail(self, client: FlaskClient, api_corpus: Session) -> None:

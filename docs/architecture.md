@@ -219,9 +219,9 @@ array below. Dates are `YYYY-MM-DD`; timestamps are ISO 8601 with a UTC offset.
 
 ```json
 { "id": 42,
-  "jurisdiction": { "code": "NL", "name": "Netherlands" },
+  "jurisdiction_code": "NL", "jurisdiction_name": "Netherlands",
   "source_id": "ECLI:NL:RVS:2024:1", "source_system": "rechtspraak",
-  "court": { "id": 3, "name": "Raad van State" },
+  "court_id": 3, "court_name": "Raad van State",
   "title": "...", "abstract": "...",
   "decision_date": "2024-05-01", "publication_date": "2024-05-03",
   "case_numbers": ["202301234/1/A3"], "language": "nl",
@@ -230,8 +230,11 @@ array below. Dates are `YYYY-MM-DD`; timestamps are ISO 8601 with a UTC offset.
   "source_url": "https://..." }
 ```
 
-`court` is `null` when the source named no court. `law_domain` is one of `public`,
-`private`, `criminal`, `other`.
+Names are flattened rather than nested, so the JSON, the JSON-Lines export and the CSV
+export name a field the same way. `court_id` and `court_name` are both `null` when the
+source named no court; `court_id` is carried because the `court` filter takes an id, so a
+card can link to the rest of that court's cases without resolving the name first.
+`law_domain` is one of `public`, `private`, `criminal`, `other`.
 
 **`CaseDetail`** — `/api/cases/<jurisdiction>/<source_id>`: every `CaseSummary` field, plus
 `filing_date`, `revision`, `first_seen_at`, `last_seen_at`, `updated_at` and five lists:
