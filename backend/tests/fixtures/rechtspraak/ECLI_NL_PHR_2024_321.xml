@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<open-rechtspraak>
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:ecli="https://e-justice.europa.eu/ecli" xmlns:tr="http://tuchtrecht.overheid.nl/" xmlns:eu="http://publications.europa.eu/celex/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:bwb="bwb-dl" xmlns:cvdr="http://decentrale.regelgeving.overheid.nl/cvdr/" xmlns:psi="http://psi.rechtspraak.nl/" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <rdf:Description>
+      <dcterms:identifier>ECLI:NL:PHR:2024:321</dcterms:identifier>
+      <dcterms:format>text/xml</dcterms:format>
+      <dcterms:accessRights>public</dcterms:accessRights>
+      <dcterms:modified>2024-04-16T12:45:19</dcterms:modified>
+      <dcterms:issued rdfs:label="Publicatiedatum">2024-03-19</dcterms:issued>
+      <dcterms:publisher resourceIdentifier="http://rechtspraak.nl/">Raad voor de Rechtspraak</dcterms:publisher>
+      <dcterms:language>nl</dcterms:language>
+      <dcterms:creator rdfs:label="Instantie" resourceIdentifier="http://standaarden.overheid.nl/owms/terms/Parket_bij_de_Hoge_Raad" scheme="overheid.RechterlijkeMacht">Parket bij de Hoge Raad</dcterms:creator>
+      <dcterms:date rdfs:label="Datum genomen">2024-03-26</dcterms:date>
+      <psi:zaaknummer rdfs:label="Zaaknr">22/03836</psi:zaaknummer>
+      <dcterms:type rdf:language="nl" resourceIdentifier="http://psi.rechtspraak.nl/conclusie">Conclusie</dcterms:type>
+      <dcterms:coverage>NL</dcterms:coverage>
+      <dcterms:subject rdfs:label="Rechtsgebied" resourceIdentifier="http://psi.rechtspraak.nl/rechtsgebied#strafrecht">Strafrecht</dcterms:subject>
+      <dcterms:relation rdfs:label="Formele relatie" ecli:resourceIdentifier="ECLI:NL:HR:2024:591" psi:type="http://psi.rechtspraak.nl/conclusie" psi:aanleg="http://psi.rechtspraak.nl/latereAanleg">Arrest Hoge Raad: ECLI:NL:HR:2024:591</dcterms:relation>
+      <dcterms:hasVersion rdfs:label="Vindplaatsen" resourceIdentifier="http://psi.rechtspraak.nl/vindplaats">
+        <rdf:list>
+          <rdf:li>Rechtspraak.nl</rdf:li>
+        </rdf:list>
+      </dcterms:hasVersion>
+    </rdf:Description>
+    <rdf:Description rdf:about="http://deeplink.rechtspraak.nl/uitspraak?id=ECLI:NL:PHR:2024:321">
+      <dcterms:identifier>http://deeplink.rechtspraak.nl/uitspraak?id=ECLI:NL:PHR:2024:321</dcterms:identifier>
+      <dcterms:format>text/html</dcterms:format>
+      <dcterms:accessRights>public</dcterms:accessRights>
+      <dcterms:modified>2024-03-25T13:28:33</dcterms:modified>
+      <dcterms:issued rdfs:label="Publicatiedatum">2024-03-26</dcterms:issued>
+      <dcterms:publisher resourceIdentifier="http://rechtspraak.nl/">Raad voor de Rechtspraak</dcterms:publisher>
+      <dcterms:language>nl</dcterms:language>
+      <dcterms:title rdf:language="nl">ECLI:NL:PHR:2024:321 Parket bij de Hoge Raad , 26-03-2024 / 22/03836</dcterms:title>
+      <dcterms:abstract resourceIdentifier="../../rs:inhoudsindicatie" />
+    </rdf:Description>
+  </rdf:RDF>
+  <inhoudsindicatie id="ECLI:NL:PHR:2024:321:INH" lang="nl" xml:space="preserve" xmlns="http://www.rechtspraak.nl/schema/rechtspraak-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <para>Conclusie AG. Liquidatie 64-jarige man op drukke kruising te Rotterdam. Klacht over het bewijs van voorwaardelijk opzet op de dood van de bestuurder van de bestelwagen die zich achter het voertuig van het beoogde slachtoffer had opgesteld. Conclusie strekt tot vermindering van straf wegens overschrijding r.t. in h.b. en tot verwerping van het beroep voor het overige. Samenhang met 22/03817.</para>
+    </inhoudsindicatie>
+  <conclusie id="ECLI:NL:PHR:2024:321:DOC" lang="nl" xml:space="preserve" xmlns="http://www.rechtspraak.nl/schema/rechtspraak-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <parablock>
+    <para>PROCUREUR-GENERAAL</para>
+  </parablock>
+  <parablock>
+    <para>BIJ DE</para>
+  </parablock>
+  <parablock>
+    <para>HOGE RAAD DER NEDERLANDEN</para>
+  </parablock>
+  <section>
+    <title>Nummer22/03836 </title>
+    <para>
+      <emphasis role="bold">Zitting</emphasis>	26 maart 2024</para>
+    <para />
+    <para />
+    <parablock>
+      <para>CONCLUSIE</para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>D.J.C. Aben</para>
+    </parablock>
+    <para />
+    <para />
+    <parablock>
+      <para>In de zaak</para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>
+        [verdachte] ,</para>
+      <para>geboren te [geboorteplaats] op [geboortedatum] 1995,</para>
+      <para>hierna: de verdachte</para>
+    </parablock>
+    <para />
+  </section>
+  <section>
+    <title>Inleiding</title>
+    <para />
+    <para>1. De verdachte is bij arrest van 11 oktober 2022 door het gerechtshof Den Haag wegens onder 1 “<emphasis role="italic">moord</emphasis>” en onder 2 en 3 “<emphasis role="italic">de eendaadse samenloop van: poging tot doodslag en opzettelijk en wederrechtelijk enig goed dat geheel of ten dele aan een ander toebehoort, beschadigen</emphasis>”, veroordeeld tot een gevangenisstraf voor de duur van 23 jaren onder aftrek als bedoeld in artikel 27 Sv. Daarnaast heeft het hof beslissingen genomen omtrent de vorderingen van de benadeelde partijen, een en ander zoals nader in het arrest bepaald. </para>
+    <para />
+    <para>2. Er bestaat samenhang met de zaak 22/03817. In deze zaak zal ik vandaag ook concluderen.</para>
+    <para />
+    <para>3. Het cassatieberoep is ingesteld namens de verdachte. R.J. Baumgardt en M.J. van Berlo, beiden advocaat te Rotterdam, hebben twee middelen van cassatie voorgesteld.</para>
+    <para />
+    <para>4. Het eerste middel komt op tegen het oordeel van het hof dat de verdachte bij de onder 2 ten laste gelegde poging tot doodslag heeft gehandeld met voorwaardelijk opzet op de dood van [slachtoffer 2] . Het tweede middel behelst de klacht dat de redelijke termijn als bedoeld in artikel 6 lid 1 EVRM is overschreden, omdat de stukken te laat door het hof zijn ingezonden.</para>
+    <para />
+  </section>
+  <section>
+    <title>De zaak</title>
+    <para />
+    <parablock>
+      <para>5. Het gaat in deze zaak om de moord op [slachtoffer 1] (64) op 17 oktober 2018 te Rotterdam. [slachtoffer 1] werd door de bestuurder van een scooter (de verdachte) met een pistoolmitrailleur beschoten op een moment dat hij zich bevond in een Volkswagen Polo die stilstond op een druk kruispunt. Het hof heeft – in cassatie onbetwist – vastgesteld dat de verdachte met een pistoolmitrailleur (ten minste) twaalf keer heeft geschoten in de richting van de auto met daarin [slachtoffer 1] . Daarbij heeft één kogel het bestelbusje geraakt dat zich achter het voertuig van [slachtoffer 1] had opgesteld. [slachtoffer 1] overleed acht dagen later aan zijn schotverwondingen. De inzittende van die bestelbus, [slachtoffer 2] , is ongedeerd gebleven. </para>
+    </parablock>
+    <para />
+  </section>
+  <section>
+    <title>De bewijsconstructie van het hof</title>
+    <para />
+    <para>6. Voorafgaand aan de bespreking van de middelen, zal ik eerst – voor zover relevant – de bewezenverklaring en de bewijsoverwegingen weergeven. </para>
+    <para />
+    <para>7. Ten laste van de verdachte is onder 2 en 3 bewezen verklaard dat:</para>
+    <para />
+    <parablock>
+      <para>“<emphasis role="italic">2. hij op 17 oktober 2018 te Rotterdam ter uitvoering van het door verdachte voorgenomen misdrijf om opzettelijk een persoon genaamd [slachtoffer 2] van het leven te beroven, met dat opzet met een vuurwapen kogels heeft afgeschoten in de richting van die [slachtoffer 2] , terwijl de uitvoering van dat voorgenomen misdrijf niet is voltooid; </emphasis></para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>
+        <emphasis role="italic">3. hij op 17 oktober 2018 te Rotterdam opzettelijk en wederrechtelijk een bedrijfsbus kenteken [kenteken] toebehorende aan [bedrijf], heeft beschadigd door met een vuurwapen een kogel in de richting van voornoemde bedrijfsbus af te schieten</emphasis>.”</para>
+    </parablock>
+    <para />
+    <para>8. Het hof heeft ten aanzien van de bewijsvoering het volgende overwogen: </para>
+    <para />
+    <parablock>
+      <para>“<emphasis role="italic">Nadere bewijsoverweging ten aanzien van feit 2</emphasis></para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>
+        <emphasis role="italic">“De verdediging heeft aangevoerd dat de verdachte van dit feit dient te worden vrijgesproken, omdat niet kan worden vastgesteld dat sprake is van een aanmerkelijke kans op de dood en/of zwaar lichamelijk letsel ten aanzien van [slachtoffer 2] .</emphasis>
+      </para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>
+        <emphasis role="italic">Het hof verwerpt dit verweer en overweegt hiertoe als volgt. Vast staat dat direct achter de auto van [slachtoffer 1] op het moment van het schieten door de verdachte een bedrijfsbus stond, bestuurd door [slachtoffer 2] . Uit de uiterlijke verschijningvorm van het handelen van de verdachte, te weten het minimaal twaalf keer schieten met waarschijnlijk een Uzi op klaarlichte dag op een druk kruispunt in de richting van de auto waarin [slachtoffer 1] zich bevond en aldus ook in de richting van de bestelbus van [slachtoffer 2] , kan niet anders, worden afgeleid dan dat de verdachte welbewust de aanmerkelijke kans heeft aanvaard dat [slachtoffer 2] door zijn handelen om het leven zou (kunnen) komen</emphasis>.”</para>
+    </parablock>
+    <para />
+  </section>
+  <section>
+    <title>Het eerste middel</title>
+    <para />
+    <para>9. Het eerste middel bevat een klacht over het oordeel van het hof dat bij de verdachte voorwaardelijk opzet op de dood van [slachtoffer 2] bestond. </para>
+    <para />
+    <para>10. De toelichting op het middel lees ik zo dat met het middel wordt beoogd te klagen over het oordeel dat zich een aanmerkelijke kans op de dood van [slachtoffer 2] heeft voorgedaan.  Bij gebreke van bewijs voor het bestaan van een kans die als ‘aanmerkelijk’ kan worden bestempeld, zo begrijp ik de toelichting, mankeert eveneens het oordeel dat de verdachte die aanmerkelijke kans welbewust heeft aanvaard. Als gevolg daarvan is het oordeel dat voorwaardelijk opzet op de dood van [slachtoffer 2] bewezen is, onbegrijpelijk. Tevens is dat oordeel ontoereikend gemotiveerd, namelijk vanwege het ontbreken van vaststellingen over “<emphasis role="italic">de richting, hoogte of kracht van de inslag van deze ene kogel en daarenboven niet of in ieder geval niet zonder meer gesteld kan worden dat een enkele rondvliegende kogel een aanmerkelijke kans op de dood in het leven roept kan niet of in ieder geval niet zonder meer gesteld worden dat verdachte (naar uiterlijke verschijningsvorm) met zijn handelen welbewust de aanmerkelijke kans op de dood van aangever [slachtoffer 2] heeft aanvaard.</emphasis>”</para>
+    <para />
+  </section>
+  <section role="overwegingen">
+    <title>De beoordeling van het eerste middel</title>
+    <para />
+    <para>11. Uit de bewijsmotivering van het hof kan het volgende worden afgeleid. De verdachte heeft bij de (onder 1 bewezen verklaarde) moord op [slachtoffer 1] gebruikgemaakt van een pistoolmitrailleur (uzi). Zo’n wapen is ontworpen voor vuurgevechten op betrekkelijk korte afstand. Het wapen kan in korte tijd een aanzienlijke hoeveelheid kogels afvuren en is daarmee – zeker op korte afstand – zeer dodelijk. De bestelbus waarin [slachtoffer 2] zich bevond, stond vlak achter de Volkswagen Polo van het beoogde slachtoffer. De verdachte stond schuin voor die Volkswagen Polo en vuurde in korte tijd met de pistoolmitrailleur (minstens) twaalf kogels af. </para>
+    <para />
+    <para>12. Gelet op het aantal kogels dat is afgevuurd met de pistoolmitrailleur en op het feit dat het bestelbusje waarin [slachtoffer 2] zich bevond, stond opgesteld op betrekkelijk korte afstand en (in bepaalde marges) binnen het schootsveld van dit vuurwapen, heeft het hof kunnen oordelen dat zich een aanmerkelijke kans heeft voorgedaan dat [slachtoffer 2] in vitale delen van het lichaam door ten minste één kogel zou worden getroffen.<footnote-ref linkend="_0e21eb3d-73d7-4207-920d-5a9f74c20c8d" /> In aanmerking genomen dat de verdachte het plan om [slachtoffer 1] van het leven te beroven heeft uitgevoerd op klaarlichte dag op een druk kruispunt en dat uit niets blijkt dat de verdachte daarbij ook maar enige voorzorgsmaatregel heeft getroffen om te vermijden dat derden geraakt zouden worden, heeft het hof eveneens kunnen oordelen dat de verdachte deze aanmerkelijke kans op de dood van [slachtoffer 2] welbewust heeft aanvaard.<footnote-ref linkend="_49f6cdad-fcec-4bfc-b034-82e05a07c20f" /> Tot een nadere motivering was het hof niet gehouden.</para>
+    <para />
+    <para>13. Hetgeen ik hiervoor heb overwogen omtrent het voorwaardelijk opzet van de verdachte op de dood van [slachtoffer 2] gaat ook op voor de klacht dat de bewezenverklaring van feit 3 (vernieling) ontoereikend is gemotiveerd omdat uit de bewijsmiddelen niet zou kunnen worden afgeleid dat de verdachte opzettelijk met een vuurwapen een kogel in de richting van de bestelbus heeft geschoten. </para>
+    <para />
+    <para>14. Het middel faalt.</para>
+    <para />
+  </section>
+  <section>
+    <title>Het tweede middel</title>
+    <para />
+    <para>15. Het tweede middel behelst de klacht dat de redelijke termijn als bedoeld in artikel 6 lid 1 EVRM is overschreden, omdat de stukken te laat door het hof zijn ingezonden. </para>
+    <para />
+    <para>16. Namens de verdachte is op 14 oktober 2022 beroep in cassatie ingesteld. De stukken van het geding zijn op 8 juni 2023 bij de Hoge Raad binnengekomen, derhalve ongeveer acht maanden na het instellen van het cassatieberoep. Dat brengt met zich dat de inzendtermijn van zes maanden is overschreden.<footnote-ref linkend="_45b5fcd9-bcbb-4e36-ba9e-fc837d5442d5" /> Het middel klaagt daarover terecht. Dit dient te leiden tot vermindering van de aan de verdachte opgelegde gevangenisstraf.</para>
+    <para />
+    <para>17. Verder merk ik ambtshalve op dat de termijn van twee jaren na het instellen van het cassatieberoep niet zal worden gehaald. </para>
+    <para />
+  </section>
+  <section role="beslissing">
+    <title>Slotsom</title>
+    <para />
+    <para>18. Het eerste middel faalt en kan worden afgedaan met een aan artikel 81 lid 1 RO ontleende motivering. Het tweede middel is terecht voorgesteld.</para>
+    <para />
+    <para>19. Ambtshalve heb ik geen gronden aangetroffen die tot vernietiging van de bestreden uitspraak aanleiding behoren te geven.</para>
+    <para />
+    <para>20. Deze conclusie strekt tot vernietiging van de bestreden uitspraak, maar uitsluitend wat betreft de hoogte van de gevangenisstraf, tot vermindering daarvan naar de gebruikelijke maatstaf en tot verwerping van het beroep voor het overige.</para>
+    <para />
+    <parablock>
+      <para>De procureur-generaal</para>
+      <para>bij de Hoge Raad der Nederlanden</para>
+    </parablock>
+    <para />
+    <para />
+    <parablock>
+      <para>AG</para>
+    </parablock>
+    <para />
+    <para />
+  </section>
+  <footnote id="_0e21eb3d-73d7-4207-920d-5a9f74c20c8d" label="1">
+    <para> Vgl. HR 18 april 2006, ECLI:NL:HR:2006:AV4871, waarin de verdachte eerst op een afstand van zes meter en daarna nogmaals van dertig meter met een ‘riotgun’ kogeltjes afschoot op het slachtoffer. Het hof stelde onder meer vast dat “<emphasis role="italic">er ook bij een schot op dertig meter afstand met eenzelfde wapen als door de verdachte is gebruikt, kans op dodelijk letsel aanwezig moet worden geacht, omdat de kogeltjes bij die afstand nog 6,5 centimeter in het spierweefsel kunnen doordringen en bijvoorbeeld de halsslagader kunnen treffen</emphasis>.” Volgens de Hoge Raad gaf het oordeel van het hof dat de verdachte, die op de door het Hof vastgestelde afstand twee maal gericht op het slachtoffer heeft geschoten, waarbij het slachtoffer is geraakt in achterhoofd en schouder, bewust de aanmerkelijke kans heeft aanvaard dat het slachtoffer daardoor zou komen te overlijden, geen blijk van een verkeerde rechtsopvatting en was dat oordeel niet onbegrijpelijk.</para>
+  </footnote>
+  <footnote id="_49f6cdad-fcec-4bfc-b034-82e05a07c20f" label="2">
+    <para> Vgl. HR 30 januari 2018, ECLI:NL:HR:2018:117, waarin de verdachte met een vuurwapen schoot op een auto terwijl zich daarin drie personen bevonden en een persoon zich in de directe nabijheid bevond. HR: “<emphasis role="italic">Het Hof heeft geoordeeld dat de verdachte voorwaardelijk opzet heeft gehad om [slachtoffer 1], [slachtoffer 2], [slachtoffer 3] en [slachtoffer 4] te doden, aangezien het schieten op een auto "terwijl daar personen in zitten of zich in de directe nabijheid van de auto bevinden, (...) naar de uiterlijke verschijningsvorm zodanig [is] gericht op het doden van die personen dat de verdachte minst genomen de aanmerkelijke kans op het intreden van de dood van deze personen bewust heeft aanvaard". Dit oordeel geeft niet blijk van een onjuiste rechtsopvatting en is evenmin onbegrijpelijk.</emphasis>”</para>
+    <para>Vgl. de conclusie van A-G Hofstee van 9 mei 2023, ECLI:PHR:2023:475. In deze zaak schoot de verdachte op straat met een automatisch militair aanvalsgeweer in de richting van een man en raakte hij daarbij ook de op dat moment passerende tram. Het hof nam aan dat de verdachte ook voorwaardelijk opzet had op de dood van de inzittenden van de tram en dat hij bovendien had gehandeld met voorbedachte raad. Mijn ambtsgenoot Hofstee overwoog: ‘<emphasis role="italic">In de overwegingen van het hof is genoegzaam tot uitdrukking gebracht dat de verdachte vanaf de gezamenlijke voorbereidingen voldoende tijd en gelegenheid heeft gehad om zich te beraden op het besluit om gebruik te maken van het volautomatisch aanvalsgeweer bij de acties in en nabij de shishalounge en dat geen (contra-indicatieve) feiten en omstandigheden aannemelijk zijn geworden waaruit kan volgen dat de verdachte niet in overeenstemming met dat besluit is blijven handelen of anderszins kenbaar van dat genomen besluit afstand heeft genomen.</emphasis>’ De Hoge Raad deed het middel af met de aan artikel 81 lid 1 RO ontleende motivering.</para>
+  </footnote>
+  <footnote id="_45b5fcd9-bcbb-4e36-ba9e-fc837d5442d5" label="3">
+    <para>HR 17 juni 2008, ECLI:NL:HR:2008:BD2578. </para>
+  </footnote>
+</conclusie>
+</open-rechtspraak>
