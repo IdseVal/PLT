@@ -519,10 +519,13 @@ class EurLexConnector(SourceConnector):
                 }
             },
         )
-        for window in self._windows(start, stop):
-            yield from self._candidates(window)
+        for window, count in self._windows(start, stop):
+            # A backfill from 1952 walks hundreds of windows CELLAR holds nothing in; the
+            # count already said so, so none of them costs a page query as well.
+            if count:
+                yield from self._candidates(window)
 
-    def _windows(self, start: datetime, stop: datetime) -> Iterator[_Window]:
+    def _windows(self, start: datetime, stop: datetime) -> Iterator[tuple[_Window, int]]:
         """Yield date windows each holding fewer results than CELLAR will return.
 
         Every window is counted before it is paged. One that reaches the cap is halved and
@@ -536,7 +539,8 @@ class EurLexConnector(SourceConnector):
             stop: Exclusive upper bound.
 
         Yields:
-            Windows, oldest first, covering the range without gaps or overlap.
+            Each window and the number of cases in it, oldest first, covering the range
+            without gaps or overlap.
         """
         cap = self.settings.eurlex_max_results
         floor = timedelta(seconds=self.settings.eurlex_min_window_seconds)
@@ -560,7 +564,7 @@ class EurLexConnector(SourceConnector):
                     "discovery window",
                     extra={"context": {"window": window.cursor(0), "cases": count}},
                 )
-            yield window
+            yield window, count
             cursor = window.stop
 
     def _candidates(self, window: _Window) -> Iterator[Candidate]:
