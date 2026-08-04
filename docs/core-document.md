@@ -161,6 +161,57 @@ The pipeline runs on a schedule (weekly) and must be safely re-runnable:
 - A content hash per document detects genuine upstream revisions, which update the existing
   record rather than creating a second one.
 
+### 2.7 Selection policy: no false negatives, and a review queue
+
+> *Added 4 August 2026. Decision by the project owner, following the first live dry run.*
+
+**The PLT optimises for recall, not precision.** A missed judgment is the expensive error: a
+false positive costs a content manager a minute, a false negative is a case the tracker
+implicitly claims does not exist. An open-access research database is judged on what it
+fails to contain, and a researcher cannot audit an absence.
+
+Two consequences bind the filter chain:
+
+1. **Thresholds are not raised to buy precision.** The first EU dry run (1,548 CJEU decisions
+   across 2024) showed that raising `min_score` from 3 to 6 would remove 21 cases, of which
+   roughly two were genuinely in scope. That trade was declined. Any future proposal to
+   tighten selection must be assessed the same way: what does it *lose*.
+2. **Precision is handled downstream, by review.** Cases that pass but score near the
+   threshold are ingested and published as normal, and additionally flagged for a content
+   manager to confirm or reject. Selection admits; review curates.
+
+This is supported by the shape of the evidence rather than assumed: in that run the false
+positives were not spread across the score range but concentrated immediately above
+`min_score`, while the high-scoring band was almost entirely genuine. A borderline flag
+therefore targets the affected population without touching the rest.
+
+**The content manager may be a person or an agent.** That is deliberately undecided, so the
+review queue must not assume either — the same queue, record and audit trail has to serve
+both.
+
+### 2.8 Methodology must be transparent, explainable and repeatable
+
+> *Added 4 August 2026. Standing constraint on all selection and classification work.*
+
+The PLT publishes its methodology (see the site's Methodology page) because a research
+database that cannot account for its own contents is not usable as a source. Three
+requirements follow, and they bound what the filter chain may become:
+
+- **Transparent.** How a case was selected is public, not internal. The criteria, the term
+  lists and the thresholds are published artefacts.
+- **Explainable.** For any individual case it must be possible to say *why it is in the
+  database* — which terms matched, in which field, with what weight, against which version
+  of which list. This is what `keyword_match` records, and why it is not optional.
+- **Repeatable.** Re-running the same selection over the same corpus with the same list
+  version must produce the same result. Lists are versioned data in git; scores are
+  deterministic; every run is recorded in `ingest_run`.
+
+**A technique that cannot meet all three is out of scope, however well it performs.** This
+applies directly to the "later stages" contemplated in §2.5: a classifier that improves
+precision but cannot explain an individual verdict, or cannot be re-run to the same answer,
+does not qualify for this pipeline as it stands. If such a stage is ever wanted, the
+requirement above has to be revisited deliberately, not worked around.
+
 ---
 
 ## 3. Design and layout
