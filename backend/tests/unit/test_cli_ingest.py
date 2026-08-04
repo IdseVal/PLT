@@ -60,6 +60,10 @@ def cli_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[session
     monkeypatch.setattr(runner, "get_session_factory", lambda: factory)
     registry.reset_registry()
     registry.register_connector(CliConnector)
+    # Registration runs discovery, which also finds the shipped connectors; ``--all`` would
+    # then drive them against their live endpoints from a unit test. Pin the registry to the
+    # fake instead, so this file tests the CLI rather than the internet.
+    monkeypatch.setattr(registry, "_registry", {"NL": CliConnector})
     try:
         yield factory
     finally:

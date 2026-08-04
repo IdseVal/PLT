@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand-written attack payload: nested entities that expand to gigabytes on a parser that
+  resolves them. The connector must not.
+-->
+<!DOCTYPE NOTICE [
+  <!ENTITY a "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">
+  <!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">
+  <!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">
+  <!ENTITY d "&c;&c;&c;&c;&c;&c;&c;&c;&c;&c;">
+  <!ENTITY e "&d;&d;&d;&d;&d;&d;&d;&d;&d;&d;">
+  <!ENTITY f "&e;&e;&e;&e;&e;&e;&e;&e;&e;&e;">
+]>
+<NOTICE decoding="eng" type="object">
+   <WORK>
+      <RESOURCE_LEGAL_ID_CELEX type="data">
+         <VALUE>62017CJ0616</VALUE>
+      </RESOURCE_LEGAL_ID_CELEX>
+      <CASE-LAW_NATIONAL-JUDGEMENT type="data">
+         <VALUE>&f;</VALUE>
+      </CASE-LAW_NATIONAL-JUDGEMENT>
+   </WORK>
+</NOTICE>
