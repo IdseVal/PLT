@@ -1,0 +1,84 @@
+# Pinned dependency set for CI. The backend's equivalent of frontend/package-lock.json.
+#
+# Why this file exists
+# --------------------
+# pyproject.toml declares version *ranges*, so `pip install -e ".[dev]"` resolves whatever is
+# newest at install time. That made CI unreproducible: dev went red between two pull requests
+# that changed no backend file, because alembic 1.19.0 was released in between (issue #47).
+# A green run has to stay green until someone deliberately changes something.
+#
+# This is a constraints file, not a requirements file. It pins the version pip may choose for
+# a package without asserting that the package is installed at all, so it stays correct across
+# platforms: the entries below that are Windows-only (colorama, tzdata) are simply unused on
+# the Linux runner. pyproject.toml remains the single source of truth for what the package
+# *requires*; this file only decides what CI *installs*.
+#
+# How to regenerate
+# -----------------
+# Deliberately, in its own pull request, so a dependency bump is reviewed like any other change:
+#
+#     cd backend
+#     python -m venv .venv-lock && .venv-lock/Scripts/activate   # Linux: .venv-lock/bin/activate
+#     pip install -e ".[dev]"                                    # no -c: resolve freely
+#     pip freeze --exclude-editable | sort -f > constraints.txt   # then restore this header
+#
+# Run the full suite against the result before committing it.
+#
+# Resolved 2026-08-04 on Python 3.11, the version CI runs.
+
+alembic==1.19.0
+annotated-types==0.8.0
+anyio==4.14.2
+attrs==26.1.0
+blinker==1.9.0
+certifi==2026.7.22
+click==8.4.2
+colorama==0.4.6
+coverage==7.15.3
+Deprecated==1.3.1
+Flask==3.1.3
+flask-cors==6.0.5
+Flask-Limiter==3.12
+greenlet==3.5.4
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.18
+iniconfig==2.3.0
+itsdangerous==2.2.0
+Jinja2==3.1.6
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+librt==0.13.0
+limits==5.8.0
+lxml==6.1.1
+lxml-stubs==0.5.1
+Mako==1.4.0
+markdown-it-py==4.2.0
+MarkupSafe==3.0.3
+mdurl==0.1.2
+mypy==1.20.2
+mypy_extensions==1.1.0
+ordered-set==4.1.0
+packaging==26.3
+pathspec==1.1.1
+pluggy==1.6.0
+pydantic==2.13.4
+pydantic-settings==2.14.2
+pydantic_core==2.46.4
+Pygments==2.20.0
+pytest==8.4.2
+pytest-cov==7.1.0
+python-dotenv==1.2.2
+referencing==0.37.0
+rich==13.9.4
+rpds-py==2026.6.3
+ruff==0.16.1
+SQLAlchemy==2.0.51
+types-Flask-Cors==6.0.3.20260712
+types-jsonschema==4.26.0.20260518
+typing-inspection==0.4.2
+typing_extensions==4.16.0
+tzdata==2026.3
+Werkzeug==3.1.8
+wrapt==2.3.0

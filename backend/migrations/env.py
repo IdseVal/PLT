@@ -17,7 +17,7 @@ from sqlalchemy import engine_from_config, pool
 
 import plt.db.models  # noqa: F401 - imported for its side effect of registering models
 from plt.config import get_settings
-from plt.db.base import UtcDateTime, metadata
+from plt.db.base import UtcDateTime, include_object, metadata
 
 config = context.config
 
@@ -61,6 +61,7 @@ def run_migrations_offline() -> None:
         compare_type=True,
         render_as_batch=True,
         render_item=render_item,
+        include_object=include_object,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -83,6 +84,7 @@ def run_migrations_online() -> None:
                 # PostgreSQL deployments on the same revisions.
                 render_as_batch=True,
                 render_item=render_item,
+                include_object=include_object,
             )
             with context.begin_transaction():
                 context.run_migrations()

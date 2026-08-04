@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Instanties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Instantie>
+    <Identifier>http://standaarden.overheid.nl/owms/terms/Gerechtshof_Amsterdam</Identifier>
+    <Naam>Gerechtshof Amsterdam</Naam>
+    <Afkorting>GHAMS</Afkorting>
+    <Type>Gerechtshof</Type>
+    <BeginDate>1913-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://standaarden.overheid.nl/owms/terms/Parket_bij_de_Hoge_Raad</Identifier>
+    <Naam>Parket bij de Hoge Raad</Naam>
+    <Afkorting>PHR</Afkorting>
+    <Type>Parket</Type>
+    <BeginDate>1838-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://standaarden.overheid.nl/owms/terms/Rechtbank_Breda</Identifier>
+    <Naam>Rechtbank Breda</Naam>
+    <Afkorting>RBBRE</Afkorting>
+    <Type>Rechtbank</Type>
+    <BeginDate>1913-01-01</BeginDate>
+    <EndDate>2012-12-31</EndDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://standaarden.overheid.nl/owms/terms/Rechtbank_Den_Haag</Identifier>
+    <Naam>Rechtbank Den Haag</Naam>
+    <Afkorting>RBDHA</Afkorting>
+    <Type>Rechtbank</Type>
+    <BeginDate>2013-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://standaarden.overheid.nl/owms/terms/Rechtbank_Rotterdam</Identifier>
+    <Naam>Rechtbank Rotterdam</Naam>
+    <Afkorting>RBROT</Afkorting>
+    <Type>Rechtbank</Type>
+    <BeginDate>1913-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://standaarden.overheid.nl/owms/terms/College_van_Beroep_voor_het_bedrijfsleven</Identifier>
+    <Naam>College van Beroep voor het bedrijfsleven</Naam>
+    <Afkorting>CBB</Afkorting>
+    <Type>TypeCBb</Type>
+    <BeginDate>1913-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://standaarden.overheid.nl/owms/terms/Centrale_Raad_van_Beroep</Identifier>
+    <Naam>Centrale Raad van Beroep</Naam>
+    <Afkorting>CRVB</Afkorting>
+    <Type>TypeCRvB</Type>
+    <BeginDate>1913-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://standaarden.overheid.nl/owms/terms/Hoge_Raad_der_Nederlanden</Identifier>
+    <Naam>Hoge Raad</Naam>
+    <Afkorting>HR</Afkorting>
+    <Type>TypeHr</Type>
+    <BeginDate>1838-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://standaarden.overheid.nl/owms/terms/Raad_van_State</Identifier>
+    <Naam>Raad van State</Naam>
+    <Afkorting>RVS</Afkorting>
+    <Type>TypeRvS</Type>
+    <BeginDate>1913-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://psi.rechtspraak.nl/AG DH</Identifier>
+    <Naam>Ambtenarengerecht 's-Gravenhage</Naam>
+    <Afkorting>AGSGR</Afkorting>
+    <Type>AndereGerechtelijkeInstantie</Type>
+    <BeginDate>1913-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://psi.rechtspraak.nl/instantie#Kantongerecht_'s-Gravenhage</Identifier>
+    <Naam>Kantongerecht 's-Gravenhage</Naam>
+    <Afkorting>KTGSGR</Afkorting>
+    <Type>Kantongerecht</Type>
+    <BeginDate>1913-01-01</BeginDate>
+    <EndDate>2001-12-31</EndDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://psi.rechtspraak.nl/OCHM</Identifier>
+    <Naam>Constitutioneel Hof Sint Maarten</Naam>
+    <Afkorting>OCHM</Afkorting>
+    <Type>Koninkrijksinstantie</Type>
+    <BeginDate>2010-10-10</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://standaarden.overheid.nl/owms/terms/tacakn</Identifier>
+    <Naam>Accountantskamer NIVRA</Naam>
+    <Afkorting>TACAKN</Afkorting>
+    <Type>TuchtrechtelijkeInstantie</Type>
+    <BeginDate>1950-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
+    <Identifier>http://psi.rechtspraak.nl/buitenlandseInstantie</Identifier>
+    <Naam>Buitenlandse instanties</Naam>
+    <Afkorting>XX</Afkorting>
+    <Type>http://psi.rechtspraak.nl/buitenlandseInstantie</Type>
+  </Instantie>
+</Instanties>

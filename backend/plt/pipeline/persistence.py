@@ -358,9 +358,31 @@ def update_case(
         court=resolve_court(session, case.jurisdiction_code, case.court),
         now=moment,
     )
+    _clear_children(session, row)
     _rebuild_children(row, case, result, moment)
     session.flush()
     return row
+
+
+def _clear_children(session: Session, row: Case) -> None:
+    """Delete the child rows this run is about to replace, before the replacements exist.
+
+    A unit of work orders inserts before deletes within one flush, so replacing a collection
+    in place would insert the new rows while the old ones are still there. ``citation`` is
+    unique on ``(case_id, target_identifier, citation_type)``, and a revision that still
+    cites the same instrument — which is to say almost every revision — would violate it and
+    take the whole batch down. Emptying the collections and flushing first costs one
+    statement per table and makes the replacement mean what it says.
+
+    Args:
+        session: Open database session.
+        row: The case row whose children are about to be rebuilt.
+    """
+    row.documents.clear()
+    row.parties.clear()
+    row.citations.clear()
+    row.keyword_matches.clear()
+    session.flush()
 
 
 def persist_case(
