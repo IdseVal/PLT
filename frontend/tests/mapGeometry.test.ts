@@ -5,12 +5,21 @@
  * `src/components/map/geometry.generated.ts` is written by
  * `scripts/generate-map-geometry.mjs` from Natural Earth data. Nobody reviews eighty
  * kilobytes of path data by eye, so the properties the map depends on are asserted here
- * instead: that the coverage is exactly Annex 2 of the core document, that every shape is
- * inside the frame, and that the EU marker really does sit in open sea.
+ * instead: that the coverage is exactly Annex 2 of the core document, that every shape
+ * carries the ISO code of the country it draws, that every shape is inside the frame, and
+ * that the EU marker really does sit in open sea.
  *
- * The Annex 2 list is restated here rather than imported from the geometry, so that a
- * jurisdiction quietly added to or dropped from the generator fails this test instead of
- * silently redefining what the tracker claims to cover.
+ * Two things the map must get right, and neither is checked by reading the geometry:
+ *
+ * - **which** jurisdictions are drawn. That is decided by Annex 2, so {@link annexMemberStates}
+ *   reads the annex rather than restating it: a jurisdiction added to or dropped from the
+ *   generator fails here instead of silently redefining what the tracker claims to cover.
+ * - **under which code** each one is drawn. Annex 2 names jurisdictions and carries no ISO
+ *   codes, so it cannot guard that half, and the mapping lives only in the generator. It is
+ *   therefore written out again in {@link JURISDICTION_CODES}, by hand, so that a code that
+ *   drifted from the country it draws fails by name.
+ *
+ * Both statements are independent of the asset they check. Neither is derived from it.
  */
 
 import { readFileSync } from 'node:fs'
@@ -33,6 +42,53 @@ const ANNEX_HEADING = '## Annex 2: project data sources'
 
 /** The Union's row: a jurisdiction, but drawn as a mark rather than as a shape. */
 const EU_JURISDICTION = 'EU'
+
+/**
+ * The ISO 3166-1 alpha-2 code each Annex 2 jurisdiction must be drawn under.
+ *
+ * The map resolves a jurisdiction against `map_feature_id` (`docs/architecture.md` section 3),
+ * which is this code: it carries the case count into the tooltip and the shape's link into
+ * `/cases?jurisdiction=<code>`. Two codes exchanged between two countries leaves every shape
+ * well-formed and every count plausible, and puts one member state's litigation on another's
+ * outline — wrong data, confidently presented, on the signature element of the tracker.
+ *
+ * Annex 2 lists names and no codes, so the pairing exists nowhere but in the generator's
+ * `GEOMETRY_BY_JURISDICTION`, and reading the generated asset to check the asset would only
+ * agree with itself. This table is therefore written out by hand: the one part of the map's
+ * definition the annex cannot express, and the only part restated here.
+ *
+ * Adding a member state to Annex 2 is meant to require a deliberate line here. That is the
+ * cost of the guard, and it is one line.
+ */
+const JURISDICTION_CODES: Readonly<Record<string, string>> = {
+  Austria: 'AT',
+  Belgium: 'BE',
+  Bulgaria: 'BG',
+  Croatia: 'HR',
+  Cyprus: 'CY',
+  Czechia: 'CZ',
+  Denmark: 'DK',
+  Estonia: 'EE',
+  Finland: 'FI',
+  France: 'FR',
+  Germany: 'DE',
+  Greece: 'GR',
+  Hungary: 'HU',
+  Ireland: 'IE',
+  Italy: 'IT',
+  Latvia: 'LV',
+  Lithuania: 'LT',
+  Luxembourg: 'LU',
+  Malta: 'MT',
+  Netherlands: 'NL',
+  Poland: 'PL',
+  Portugal: 'PT',
+  Romania: 'RO',
+  Slovakia: 'SK',
+  Slovenia: 'SI',
+  Spain: 'ES',
+  Sweden: 'SE',
+}
 
 /**
  * The jurisdictions Annex 2 lists, read from the document itself.
@@ -86,15 +142,32 @@ describe('map geometry', () => {
     )
   })
 
-  it('identifies every jurisdiction by a distinct ISO 3166-1 alpha-2 code', () => {
-    const codes = JURISDICTION_SHAPES.map((shape) => shape.code)
+  it('knows a code for every member state Annex 2 lists, and for no one else', () => {
+    // Keyed on the annex rather than on the geometry, so this table cannot quietly fall behind
+    // the document either: a jurisdiction added to Annex 2 fails here until a code is written.
+    expect(Object.keys(JURISDICTION_CODES).sort()).toEqual([...annexMemberStates()].sort())
+  })
 
-    for (const code of codes) expect(code).toMatch(/^[A-Z]{2}$/)
-    expect(new Set(codes).size).toBe(codes.length)
-    // The map resolves a jurisdiction against `map_feature_id`, so a code that drifted from the
-    // country it draws would put a count on the wrong shape. Two spot checks, written out.
-    expect(JURISDICTION_SHAPES.find((shape) => shape.name === 'Netherlands')?.code).toBe('NL')
-    expect(JURISDICTION_SHAPES.find((shape) => shape.name === 'Sweden')?.code).toBe('SE')
+  it('pins codes that ISO 3166-1 itself agrees name those countries', () => {
+    // The table above is only as good as the hand that wrote it, and the tempting way to fix a
+    // failure below is to edit it until it matches the asset. So it is checked against an
+    // authority outside this repository: the ICU region names Node ships with. A transposed or
+    // mistyped code names the wrong country, or no country, and fails here.
+    const isoName = new Intl.DisplayNames(['en'], { type: 'region' })
+
+    for (const [name, code] of Object.entries(JURISDICTION_CODES)) {
+      expect(code, `${name} needs an alpha-2 code`).toMatch(/^[A-Z]{2}$/)
+      expect(isoName.of(code), `ISO 3166-1 reads ${code} as`).toBe(name)
+    }
+  })
+
+  it('draws every jurisdiction under its own ISO 3166-1 alpha-2 code', () => {
+    for (const shape of JURISDICTION_SHAPES) {
+      expect(shape.code, `${shape.name} is drawn under`).toBe(JURISDICTION_CODES[shape.name])
+    }
+
+    const codes = JURISDICTION_SHAPES.map((shape) => shape.code)
+    expect(new Set(codes).size, 'no two shapes share a code').toBe(codes.length)
   })
 
   it('gives every jurisdiction a drawable shape', () => {
