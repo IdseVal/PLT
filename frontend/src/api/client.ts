@@ -6,7 +6,7 @@
  * that timeouts, cancellation and the uniform error envelope are handled in one place.
  */
 
-import type { ApiErrorEnvelope, CaseSummary, HealthResponse } from '@/types/api'
+import type { ApiErrorEnvelope, CaseSummary, HealthResponse, JurisdictionStat } from '@/types/api'
 
 /** Base URL every request is resolved against. Empty means "the site's own origin". */
 const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
@@ -254,6 +254,77 @@ export async function getLatestCases(
   }
 
   return cases
+}
+
+/**
+ * Narrow one element of the map payload to a {@link JurisdictionStat}.
+ *
+ * `docs/architecture.md` section 5.1 fixes this shape exactly, so this is a check rather
+ * than a negotiation: an element missing a required field is dropped rather than patched up,
+ * because a jurisdiction the map cannot name or count is one it must not draw a number for.
+ * Absent values are `null` in that contract and never omitted, which is why
+ * `latest_decision_date` is read as "a string or null" and nothing else.
+ *
+ * @param value - Candidate element from the response body.
+ * @returns The jurisdiction, or `null` when the element is not one.
+ */
+function toJurisdictionStat(value: unknown): JurisdictionStat | null {
+  if (typeof value !== 'object' || value === null) return null
+
+  const record = value as Record<string, unknown>
+  const code = record.code
+  const name = record.name
+  const mapFeatureId = record.map_feature_id
+  const caseCount = record.case_count
+  const type = record.type
+
+  if (typeof code !== 'string' || code === '') return null
+  if (typeof name !== 'string' || name === '') return null
+  if (typeof mapFeatureId !== 'string' || mapFeatureId === '') return null
+  if (typeof caseCount !== 'number' || !Number.isFinite(caseCount) || caseCount < 0) return null
+
+  return {
+    code,
+    name,
+    type: type === 'supranational' ? 'supranational' : 'state',
+    map_feature_id: mapFeatureId,
+    is_active: record.is_active !== false,
+    case_count: Math.trunc(caseCount),
+    latest_decision_date:
+      typeof record.latest_decision_date === 'string' ? record.latest_decision_date : null,
+  }
+}
+
+/**
+ * Fetch the per-jurisdiction case counts the map renders.
+ *
+ * One call answers the whole map: section 5.1 fixes the payload as a bare array covering
+ * every jurisdiction, zero-case ones included, and the endpoint resolves in a single
+ * aggregate query. Nothing here is per-jurisdiction, so hovering a shape never causes a
+ * request.
+ *
+ * @param signal - Optional abort signal, so an unmounting component cancels the request.
+ * @returns The jurisdictions, in the order the API returned them.
+ * @throws {ApiError} On a transport failure, a non-2xx status, or an unreadable body.
+ */
+export async function getJurisdictionStats(signal?: AbortSignal): Promise<JurisdictionStat[]> {
+  const payload = await request<unknown>('/stats/jurisdictions', signal === undefined ? {} : { signal })
+
+  if (!Array.isArray(payload)) {
+    throw new ApiError('The API returned a response the tracker could not read.', 0, 'invalid_response', {})
+  }
+
+  const stats = payload
+    .map(toJurisdictionStat)
+    .filter((entry): entry is JurisdictionStat => entry !== null)
+
+  // A non-empty payload in which nothing is recognisable is a contract mismatch, not an
+  // empty database, and has to be reported rather than drawn as a map with no cases on it.
+  if (payload.length > 0 && stats.length === 0) {
+    throw new ApiError('The API returned jurisdictions in an unexpected format.', 0, 'invalid_response', {})
+  }
+
+  return stats
 }
 
 /** The configured API base URL, exported for diagnostics and tests. */
