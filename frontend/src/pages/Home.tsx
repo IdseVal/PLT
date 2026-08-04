@@ -1,36 +1,44 @@
 /**
  * Home page.
  *
- * PLACEHOLDER composition: the shell issue renders the title and the standfirst only. The
- * search bar (submitting to `/cases?q=…`), the Europe map and the latest-cases sidebar are
- * added by the issues that own them (`docs/architecture.md` section 6), which replace the
- * body of this component.
+ * The composition is fixed by `docs/architecture.md` section 6 and core document section
+ * 3.3: the title, a prominent search bar directly beneath it, the map below the search bar,
+ * and a right-hand sidebar of the twenty most recent cases with a button through to the
+ * all-cases page.
+ *
+ * The map itself is issue #13. Its position is held by `MapPlaceholder`, which that issue
+ * replaces with `JurisdictionMap`; see the note in that file.
+ *
+ * On narrow viewports the two-column grid collapses to one column, so the sidebar moves
+ * below the main column rather than disappearing. It follows the map in the document, so
+ * reading order and visual order agree at every width.
  */
 
-import { Link } from 'react-router-dom'
-
+import LatestCasesSidebar from '@/components/LatestCasesSidebar'
+import MapPlaceholder from '@/components/MapPlaceholder'
+import SearchBar from '@/components/SearchBar'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 
 export default function Home(): JSX.Element {
   useDocumentTitle('')
 
   return (
-    <section className="space-y-6">
-      <h1 className="text-plt-accent-deep font-display text-3xl font-bold sm:text-4xl">
-        Pesticide Litigation Tracker (PLT)
-      </h1>
-      <p className="text-plt-muted max-w-prose text-lg leading-relaxed">
-        An open-access, automatically updated database of pesticide-related case law from the
-        European Union and its member states, by Wageningen Law.
-      </p>
-      <p className="border-plt-border text-plt-muted max-w-prose border-l-4 pl-4 text-sm">
-        The search bar, the map of jurisdictions and the feed of the twenty most recent cases
-        arrive in a coming release. In the meantime, the{' '}
-        <Link className="text-plt-accent-strong rounded-sm underline underline-offset-4" to="/methodology">
-          methodology
-        </Link>{' '}
-        describes how the collection is assembled.
-      </p>
-    </section>
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <h1 className="text-plt-accent-deep font-display text-3xl font-bold sm:text-4xl">
+          Pesticide Litigation Tracker (PLT)
+        </h1>
+        <p className="text-plt-muted max-w-prose text-lg leading-relaxed">
+          An open-access, automatically updated database of pesticide-related case law from the
+          European Union and its member states, by Wageningen Law.
+        </p>
+        <SearchBar />
+      </div>
+
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <MapPlaceholder className="min-h-[22rem]" />
+        <LatestCasesSidebar />
+      </div>
+    </div>
   )
 }

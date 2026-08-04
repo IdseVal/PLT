@@ -64,12 +64,20 @@ Only set `case_sensitive` where the lowercase form is a common word or would ove
 Four authority terms keep a spelled-out name as an alias and are therefore **not** compliant
 with the rule above: `nl-nvwa-gewas`, `nl-efsa`, `en-efsa`, `en-echa`.
 
-They are exceptions on purpose. Their aliases are institution names that are always
-capitalised in practice, so the exposure is theoretical — and splitting them would change
-scoring rather than just structure. Because `count_term_once` counts per **term**, splitting
-a weight-1 term in two either doubles the score of a document that names the authority both
-ways, or halves the score of one that names it once, depending on how the halves are
-weighted. Neither is acceptable for a contextual term sitting one point below the threshold.
+They are exceptions on purpose, because splitting them would change scoring rather than just
+structure. `count_term_once` counts per **term**, so splitting a weight-1 term in two either
+doubles the score of a document that names the authority both ways, or halves the score of
+one that names it once, depending on how the halves are weighted. Neither is acceptable for
+a contextual term sitting one point below the threshold, and there is no weighting that is
+right in both shapes.
+
+**The status quo is not cost-free**, and whoever decides #24 should know what it costs:
+
+| Term | Exposure |
+| --- | --- |
+| `en-efsa`, `en-echa` | Negligible. `European Food Safety Authority` and `European Chemicals Agency` are capitalised in every realistic rendering. |
+| `nl-nvwa-gewas` | Low. `Nederlandse Voedsel- en Warenautoriteit` is a proper noun and rarely lower-cased. |
+| `nl-efsa` | **Real.** Its alias `Europese Autoriteit voor voedselveiligheid` already carries lower-case `voor` and `voedselveiligheid`, and Dutch prose commonly writes *"de Europese autoriteit voor voedselveiligheid"* with a lower-case `a`. **That spelling is missed today.** |
 
 Resolving this properly needs a curation decision (issue #24) about whether contextual
 authority terms should be *gated* on a pesticide term rather than merely weighted. Note that
