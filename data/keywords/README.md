@@ -88,26 +88,36 @@ The same holds for all four terms: `Nederlandse voedsel- en Warenautoriteit`,
 `European food safety authority` and `European chemicals agency` all score 0.00 today.
 
 What limits the damage is **not** that these names are always capitalised — they are not.
-Nor is it that the acronym is case-robust, which is what an earlier version of this section
-claimed. **The acronym is case-sensitive too**, so `efsa`, `Efsa`, `nvwa` and `echa` also
-score 0.00, and nothing else in either list catches them. Under `case_sensitive`, *every*
-form of these terms matches only the exact curated casing.
+Nor is it that the acronym is case-robust, which an earlier version of this section claimed.
+**The acronym is case-sensitive too**, so `efsa`, `Efsa`, `nvwa` and `echa` all score 0.00,
+and nothing else in either list catches them. Under `case_sensitive`, *every* form of these
+terms matches only the exact curated casing.
 
-What actually bounds the cost is the **weight**. All four are weight-1 contextual terms
-against a `min_score` of 3, so a miss costs at most one point and can never by itself be the
-reason a document is rejected. It changes a verdict only for a document already sitting at
-2.x from other terms:
+What bounds the cost is the **weight** — but the bound is larger than the weight column
+suggests, because `scoring.fields` multiplies it. A weight-1 term contributes:
+
+| Field it matched in | Contribution |
+| --- | ---: |
+| `full_text` (×1.0) | 1.00 |
+| `abstract` (×1.5) | **1.50** |
+| `title` (×1.5) | **1.50** |
+
+So a miss costs up to **1.50** against a `min_score` of 3, and the vulnerable band is any
+document already scoring in **`[1.50, 3.00)`** from other terms — not, as this section
+previously said, "already sitting at 2.x". Worked counterexample from the shipped `eu.json`:
 
 | Document | Score | Verdict |
 | --- | ---: | --- |
-| Two contextual terms alone | 2.00 | rejected |
-| …plus `EFSA` (matches) | 3.00 | **accepted** |
-| …plus `efsa` (misses) | 2.00 | rejected |
+| `Aarhus information request` in the abstract | 1.50 | rejected |
+| …plus `European Chemicals Agency` in the title | 3.00 | **accepted** |
+| …plus `European chemicals agency` (two letters lower-cased) | 1.50 | rejected |
 
-So the exposure is bounded but not nil, and the band where it bites — a document two
-contextual points short — is exactly the band these terms exist to tip. **Treat all four as
-equally brittle**; there is no safe one among them, and no casing of any of them is safe
-except the one curated string.
+Two characters of casing decide whether that case enters the database.
+
+Bounded, then, but across a wider band than the raw weights imply, and the band is exactly
+where these contextual terms exist to tip the balance. **Treat all four as equally brittle**:
+there is no safe one among them, and no casing of any of them is safe except the one curated
+string.
 
 **Gating on a pesticide term — the proposal in #24 — does not fix any of this.** The two
 problems are independent. If these terms are restructured anyway, dropping `case_sensitive`
