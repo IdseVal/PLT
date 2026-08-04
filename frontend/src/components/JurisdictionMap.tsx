@@ -58,8 +58,14 @@ const EU_NAME = 'European Union'
 /** Attribute the pointer and focus handlers read a jurisdiction out of the DOM with. */
 const FEATURE_ATTRIBUTE = 'data-jurisdiction'
 
-/** Hairline between neighbouring countries, in user units. */
-const BORDER_WIDTH = 0.7
+/**
+ * Hairline between neighbouring countries, in **CSS pixels**.
+ *
+ * Scaled into user units from the map's rendered width like everything else that has to keep
+ * its size on screen. Fixed in user units it would thin to a quarter of a pixel on a phone,
+ * and a dozen neighbouring jurisdictions with no cases yet would read as one shape.
+ */
+const BORDER_WIDTH = 0.6
 
 /** Width of the outline drawn round the jurisdiction under the pointer, in CSS pixels. */
 const HIGHLIGHT_WIDTH = 2
@@ -302,6 +308,7 @@ export default function JurisdictionMap({ className = '' }: JurisdictionMapProps
 
   const markerRadius = MARKER_RADIUS * unit
   const highlightWidth = HIGHLIGHT_WIDTH * unit
+  const borderWidth = BORDER_WIDTH * unit
   const anchor = active === null ? null : (hovered !== null ? pointer : null) ?? active.labelPoint
 
   return (
@@ -343,7 +350,7 @@ export default function JurisdictionMap({ className = '' }: JurisdictionMapProps
         preserveAspectRatio="xMidYMid meet"
         role="group"
         aria-label="Map of Europe"
-        className="mx-auto block h-auto w-full max-w-[36rem]"
+        className="mx-auto block h-auto w-full max-w-[44rem]"
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
         onFocus={handleFocus}
@@ -356,13 +363,13 @@ export default function JurisdictionMap({ className = '' }: JurisdictionMapProps
           height={MAP_VIEW_BOX.height}
           rx={4}
           className="fill-plt-surface stroke-plt-border"
-          strokeWidth={1}
+          strokeWidth={unit}
         />
         <path
           d={CONTEXT_PATH}
           aria-hidden="true"
           className="fill-plt-border stroke-plt-panel"
-          strokeWidth={BORDER_WIDTH}
+          strokeWidth={borderWidth}
         />
 
         {features.map((feature) => (
@@ -385,7 +392,7 @@ export default function JurisdictionMap({ className = '' }: JurisdictionMapProps
               <path
                 d={feature.path}
                 className={`${BAND_FILL[feature.band]} stroke-plt-panel`}
-                strokeWidth={BORDER_WIDTH}
+                strokeWidth={borderWidth}
               />
             )}
             {feature.needsMarker && (
@@ -404,7 +411,7 @@ export default function JurisdictionMap({ className = '' }: JurisdictionMapProps
                   cy={EU_MARKER.y}
                   r={EU_MARKER.radius}
                   className={`${BAND_FILL[feature.band]} stroke-plt-accent-deep`}
-                  strokeWidth={BORDER_WIDTH * 2}
+                  strokeWidth={borderWidth * 2}
                 />
                 <circle
                   cx={EU_MARKER.x}

@@ -220,7 +220,12 @@ responses.
   `/api/stats/jurisdictions`. An **EU logo positioned in the North Sea** is hoverable on the
   same footing and links through to `/cases?jurisdiction=EU`. Jurisdictions with no data
   render in a muted "no cases yet" state rather than disappearing. Keyboard-accessible: the
-  hover affordance must have a focus equivalent.
+  hover affordance must have a focus equivalent. Coverage is `docs/core-document.md` Annex 2
+  and comes from the geometry, not from the response, so a jurisdiction the API does not
+  mention is still drawn. The geometry is a **generated local asset**
+  (`frontend/src/components/map/geometry.generated.ts`, written by
+  `frontend/scripts/generate-map-geometry.mjs`): no mapping library, no tile server, no
+  runtime third-party request.
 - **Search submits to `/cases?q=…`** — the home search bar does not render results in place.
 - All server data flows through `src/api/client.ts`. No component calls `fetch` directly.
 - Tailwind, with all colours and type defined once as theme tokens, never as ad-hoc hex
