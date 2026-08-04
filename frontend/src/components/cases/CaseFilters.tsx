@@ -348,8 +348,8 @@ export default function CaseFilters({
               className={DATE_INPUT}
               type="date"
               value={draft.date_from}
-              min={facets?.earliest_decision_date ?? undefined}
-              max={facets?.latest_decision_date ?? undefined}
+              min={facets?.decision_date_range?.from ?? undefined}
+              max={facets?.decision_date_range?.to ?? undefined}
               aria-describedby={rangeError === '' ? undefined : errorId}
               onChange={(event) => {
                 edit({ date_from: event.target.value })
@@ -365,8 +365,8 @@ export default function CaseFilters({
               className={DATE_INPUT}
               type="date"
               value={draft.date_to}
-              min={facets?.earliest_decision_date ?? undefined}
-              max={facets?.latest_decision_date ?? undefined}
+              min={facets?.decision_date_range?.from ?? undefined}
+              max={facets?.decision_date_range?.to ?? undefined}
               aria-describedby={rangeError === '' ? undefined : errorId}
               onChange={(event) => {
                 edit({ date_to: event.target.value })

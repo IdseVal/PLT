@@ -32,6 +32,7 @@ import {
   toSearchQuery,
   withFilterChanges,
   DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
   PAGE_SIZE_OPTIONS,
   SORT_OPTIONS,
   type CaseFilterState,
@@ -112,9 +113,19 @@ export default function AllCases(): JSX.Element {
     [filters],
   )
 
+  // The server publishes the page size it will accept (`docs/architecture.md` section 5.1),
+  // and section 5.2 has it reject anything larger with a 400 rather than coercing it, so the
+  // control offers what the server allows instead of what this file happens to believe.
+  const pageSizeLimit = facets.data?.page_size_max ?? MAX_PAGE_SIZE
+  const pageSizeOptions = PAGE_SIZE_OPTIONS.filter((size) => size <= pageSizeLimit)
+
   const result = results.data
   const total = result?.total ?? null
-  const totalPages = result === null ? 1 : pageCount(result.total, result.page_size)
+  // The server does this arithmetic too (`page_count`, `docs/architecture.md` section 5.1).
+  // Preferring its answer keeps the paginator from disagreeing with the API about where the
+  // last page is; the local calculation is the fallback for a response without the field.
+  const totalPages =
+    result === null ? 1 : (result.page_count ?? pageCount(result.total, result.page_size))
   const items = result?.items ?? []
 
   return (
@@ -194,7 +205,7 @@ export default function AllCases(): JSX.Element {
                     })
                   }}
                 >
-                  {PAGE_SIZE_OPTIONS.map((size) => (
+                  {pageSizeOptions.map((size) => (
                     <option key={size} value={size}>
                       {size}
                     </option>

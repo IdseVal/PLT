@@ -18,12 +18,21 @@ export interface ApiErrorEnvelope {
   }
 }
 
-/** Shape shared by every paginated list endpoint. */
+/**
+ * Shape shared by every paginated list endpoint (`docs/architecture.md` section 5.1).
+ *
+ * `page_count` and `has_next` are the server's own arithmetic. A paginator that recomputes
+ * them from `total` and `page_size` can disagree with the API about where the last page is;
+ * these are optional here only because the envelope predates section 5.1, and a caller
+ * should prefer them and fall back rather than ignore them.
+ */
 export interface Paginated<T> {
   items: T[]
   page: number
   page_size: number
   total: number
+  page_count?: number
+  has_next?: boolean
 }
 
 /** Payload of `GET /api/health`. */
@@ -39,49 +48,56 @@ export interface HealthResponse {
 export type CaseSort = 'date_desc' | 'date_asc' | 'relevance'
 
 /**
- * Case-law payloads.
+ * Case-law payloads, as `docs/architecture.md` section 5.1 fixes them.
  *
- * `docs/architecture.md` section 5 fixes the endpoints, their query parameters and the error
- * envelope, but not the field-by-field shape of a case response. The types below therefore
- * mirror the database contract in section 3 — the same column names, in the same
- * lower-case-with-underscores spelling the API is required to expose for enumerated values —
- * so the wire format needs no translation layer. **They are the frontend's reading of the
- * contract, not the contract itself**: when the API issue (#10) lands, section 5 should gain
- * an explicit response table and these interfaces should be reconciled against it.
+ * Section 5.1 is the authority for every field below: names, nesting and nullability. Two
+ * of its rules shape these declarations.
+ *
+ * **A field with no value is present and `null`, never omitted.** So the code reads `null`,
+ * not `undefined`. Fields are nevertheless declared optional where the home-page sidebar
+ * (#12) builds a `CaseSummary` from a narrower normaliser: one type has to satisfy both the
+ * full search payload and that six-field object, and widening is the only way to do it
+ * without rewriting a page this issue does not own. Read them as `value ?? null`.
+ *
+ * **Names are flat, not nested** — `court_name` and `court_id` rather than `court: {...}` —
+ * so the JSON, the JSON-Lines export and the CSV export all name a field the same way.
  *
  * Everything here is data the pipeline copied out of a court's publication system, so every
  * string in it is untrusted input. It is rendered as text, never as markup — see
  * `src/utils/caseText.ts` — and any URL is checked against `isSafeHref` before it reaches an
  * `href`.
- *
- * The six fields of {@link CaseSummary} that the home-page sidebar also reads are spelled
- * exactly as issue #12 spells them, deliberately: one shape for a case, whichever list it
- * appears in. Everything the listing needs on top of that is optional, so the narrower
- * sidebar payload still satisfies the type.
  */
 
-/** One topic assigned to a case (`topic` table, section 3, classification label 6). */
+/** One topic assigned to a case (section 5.1, classification label 6 of §2.2). */
 export interface TopicRef {
   slug: string
   label: string
+  /** Classifier confidence, `null` for a manual assignment. */
+  confidence?: number | null
+  /** How the topic was assigned, e.g. `manual` or `classifier`. */
+  assigned_by?: string | null
 }
 
-/** A litigating party (`party` table, section 3, classification label 4). */
+/** A litigating party (section 5.1, classification label 4 of §2.2). */
 export interface PartyRef {
+  id?: number
   name: string
   /** `applicant` | `defendant` | `intervener` | `other`, persisted as the enum value. */
   role: string
   party_type?: string | null
+  /** Position within its role, as the source listed the parties. */
+  ordinal?: number | null
 }
 
 /** Kinds of document a case can carry (`case_document.doc_type`, section 3). */
 export type CaseDocumentType = 'judgment' | 'opinion' | 'summary' | 'attachment' | 'other'
 
 /**
- * One full text or attachment belonging to a case.
+ * One full text or attachment belonging to a case (section 5.1).
  *
- * `raw_payload` is deliberately absent: the frontend never renders the verbatim source
- * response, only the extracted plain text.
+ * `raw_payload` is deliberately absent, and section 5.1 states it is never on the wire: it
+ * is the verbatim source response, can be megabytes of markup, and the frontend renders only
+ * the extracted plain text.
  */
 export interface CaseDocumentRef {
   id: number
@@ -93,22 +109,41 @@ export interface CaseDocumentRef {
   /** Plain text of the document. Untrusted: rendered as text only. */
   full_text?: string | null
   source_url?: string | null
+  byte_size?: number | null
+  /** ISO 8601 timestamp of the fetch that produced this text. */
+  retrieved_at?: string | null
+}
+
+/** A term the keyword filter matched on a case (section 5.1). */
+export interface KeywordMatchRef {
+  term_id: string
+  term?: string | null
+  list_version?: string | null
+  /** Which field the term was found in, e.g. `title` or `full_text`. */
+  field?: string | null
+  weight_applied?: number | null
+  match_count?: number | null
+  /** Untrusted: an excerpt of the judgment around the match. */
+  snippet?: string | null
+}
+
+/** An instrument or judgment a case cites (section 5.1). */
+export interface CitationRef {
+  target_identifier: string
+  /** Identifier scheme, e.g. `celex` or `ecli`. */
+  target_scheme?: string | null
+  citation_type?: string | null
+  target_title?: string | null
+  target_url?: string | null
 }
 
 /**
- * One case as a list endpoint returns it.
+ * One case as a list endpoint returns it: `CaseSummary` in section 5.1.
  *
- * `docs/architecture.md` section 5 fixes the endpoints and their query parameters but not
- * the field names of a case payload, so the names here follow the `case` table columns in
- * section 3, which the API exposes. `jurisdiction_code` and `source_id` are the two path
- * parameters of `GET /api/cases/<jurisdiction>/<source_id>`, so the detail link is safe to
- * build from them.
- *
- * The first six fields are what the home-page sidebar (#12) reads, and what the All-cases
- * listing needs on top of them is optional, so one type describes a case in either listing
- * and the narrower sidebar payload still satisfies it. Everything the API cannot supply is
- * `null` rather than absent: a source that does not name a court or date must not turn into
- * `undefined` halfway down a component.
+ * `jurisdiction_code` and `source_id` are the two path parameters of
+ * `GET /api/cases/<jurisdiction>/<source_id>`, so the detail link is safe to build from
+ * them. `court_id` is carried beside `court_name` because the `court` filter takes an id,
+ * so a card can link to the rest of a court's cases without resolving the name first.
  *
  * **Every string field is untrusted court text.** Render it as text — never through
  * `dangerouslySetInnerHTML`, and never into an `href`.
@@ -127,58 +162,86 @@ export interface CaseSummary {
   /** Decision date as an ISO-8601 string (`YYYY-MM-DD` or a full timestamp). */
   decision_date: string | null
 
-  /** Database identifier, when the API exposes one. */
+  /** Database identifier. */
   id?: number
   /** Connector the case came from, e.g. `rechtspraak`. */
   source_system?: string | null
+  /** Id of the deciding court, the value the `court` filter takes. */
+  court_id?: number | null
   abstract?: string | null
+  publication_date?: string | null
+  /** The court's own case numbers, which are not the ECLI. */
+  case_numbers?: string[] | null
   /** ISO 639-1 code of the language the case was issued in. */
   language?: string | null
-  /** `public` | `private` | `criminal` (section 2.2 label 2). */
+  /** `public` | `private` | `criminal` | `other` (section 2.2 label 2). */
   law_domain?: string | null
   law_subfield?: string | null
-  topics?: TopicRef[]
-  /** The case's page in the court's own publication system. */
-  source_url?: string | null
-}
-
-/** A single case with everything the detail page shows. */
-export interface CaseRecord extends CaseSummary {
-  filing_date?: string | null
-  publication_date?: string | null
-  case_numbers?: string[]
   procedure_type?: string | null
   outcome?: string | null
-  parties?: PartyRef[]
-  documents?: CaseDocumentRef[]
+  /** The case's page in the court's own publication system. */
+  source_url?: string | null
+  /**
+   * Topics assigned to the case.
+   *
+   * Section 5.1 lists `topics` under `CaseDetail` rather than `CaseSummary`; it is declared
+   * here because a result card shows them when they are present and simply omits them when
+   * they are not.
+   */
+  topics?: TopicRef[]
 }
 
 /**
- * Facet values behind the All-cases filters (`GET /api/filters`).
+ * A single case: `CaseDetail` in section 5.1, every summary field plus the lists.
  *
- * Mirrors `plt.db.repositories.FacetValues`, which returns only values that occur on a
- * published case, so the UI cannot offer a filter that yields nothing.
+ * Named `CaseRecord` rather than `CaseDetail` only because `CaseDetail` is the route
+ * component that renders it.
+ */
+export interface CaseRecord extends CaseSummary {
+  filing_date?: string | null
+  /** How many times the source document has changed since it was first seen. */
+  revision?: number | null
+  /** ISO 8601 timestamps of the tracker's own handling of the case. */
+  first_seen_at?: string | null
+  last_seen_at?: string | null
+  updated_at?: string | null
+  documents?: CaseDocumentRef[]
+  parties?: PartyRef[]
+  keyword_matches?: KeywordMatchRef[]
+  citations?: CitationRef[]
+}
+
+/**
+ * Facet values behind the All-cases filters (`GET /api/filters`, section 5.1).
+ *
+ * Only values that occur on a published case are returned, so the UI cannot offer a filter
+ * that yields nothing. The payload also carries the bounds the server enforces, so the
+ * filter UI reads them rather than repeating them.
  */
 export interface FilterFacets {
   jurisdictions: { code: string; name: string }[]
   courts: { id: number; name: string }[]
+  topics: TopicRef[]
   law_domains: string[]
   law_subfields: string[]
   languages: string[]
-  topics: TopicRef[]
-  /** ISO dates bounding the collection, for the date-range inputs. */
-  earliest_decision_date?: string | null
-  latest_decision_date?: string | null
+  sorts?: string[]
+  export_formats?: string[]
+  /** Decision dates bounding the collection, for the date-range inputs. */
+  decision_date_range?: { from: string | null; to: string | null }
+  page_size_default?: number
+  page_size_max?: number
+  latest_limit_max?: number
 }
 
-/** Formats offered by `GET /api/cases/export`. */
-export type ExportFormat = 'csv' | 'json'
+/** Formats offered by `GET /api/cases/export` (section 5.1): CSV, or JSON Lines. */
+export type ExportFormat = 'csv' | 'jsonl'
 
 /**
  * Payload of `GET /api/cases/latest?limit=20`.
  *
- * Section 5 says every list endpoint paginates but does not spell out whether the sidebar
- * feed carries the pagination envelope or is a bare array, so the client accepts both and
- * normalises. See the note in the pull request for #12.
+ * Section 5.1 has since pinned this down: the feed is `{items, limit}`, an object and never
+ * a bare array. The union is kept for now because `getLatestCases` still normalises both
+ * and #12 owns that code; the array arm is dead once the contract is relied on.
  */
 export type LatestCasesResponse = Paginated<CaseSummary> | CaseSummary[]

@@ -153,11 +153,16 @@ export function casePage(
   items: CaseSummary[],
   overrides: Partial<Omit<Paginated<CaseSummary>, 'items'>> = {},
 ): Paginated<CaseSummary> {
+  const paging = { page: 1, page_size: 20, total: items.length, ...overrides }
+
+  // `page_count` and `has_next` are part of the envelope (`docs/architecture.md` section
+  // 5.1), so a fixture that leaves them out would not be the payload the page will meet. A
+  // test that needs them to disagree with the arithmetic passes them explicitly.
   return {
     items,
-    page: 1,
-    page_size: 20,
-    total: items.length,
+    ...paging,
+    page_count: Math.max(1, Math.ceil(paging.total / paging.page_size)),
+    has_next: paging.page * paging.page_size < paging.total,
     ...overrides,
   }
 }
@@ -185,8 +190,12 @@ export function filterFacets(overrides: Partial<FilterFacets> = {}): FilterFacet
       { slug: 'spray-zones', label: 'Spray zones' },
       { slug: 'authorisation', label: 'Authorisation' },
     ],
-    earliest_decision_date: '2001-01-15',
-    latest_decision_date: '2026-06-30',
+    decision_date_range: { from: '2001-01-15', to: '2026-06-30' },
+    sorts: ['date_desc', 'date_asc', 'relevance'],
+    export_formats: ['csv', 'jsonl'],
+    page_size_default: 20,
+    page_size_max: 100,
+    latest_limit_max: 50,
     ...overrides,
   }
 }

@@ -46,9 +46,12 @@ export default function ExportLinks({ filters, total }: ExportLinksProps): JSX.E
         CSV
         <span className="sr-only"> — download the current selection as a spreadsheet</span>
       </a>
-      <a className={BUTTON_SECONDARY} href={caseExportUrl(query, 'json')} download>
-        JSON
-        <span className="sr-only"> — download the current selection with its full metadata</span>
+      <a className={BUTTON_SECONDARY} href={caseExportUrl(query, 'jsonl')} download>
+        JSON Lines
+        <span className="sr-only">
+          {' '}
+          — download the current selection with its full metadata, one case per line
+        </span>
       </a>
     </div>
   )

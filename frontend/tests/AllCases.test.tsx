@@ -247,7 +247,7 @@ describe('AllCases', () => {
       renderPage('?q=glyfosaat&jurisdiction=NL&court=7&page=2&page_size=50')
 
       const csv = await screen.findByRole('link', { name: /^CSV/ })
-      const json = screen.getByRole('link', { name: /^JSON/ })
+      const json = screen.getByRole('link', { name: /^JSON Lines/ })
 
       const csvUrl = new URL(csv.getAttribute('href') ?? '', 'http://localhost')
       expect(csvUrl.pathname).toBe('/api/cases/export')
@@ -259,7 +259,7 @@ describe('AllCases', () => {
       expect(csvUrl.searchParams.get('page_size')).toBeNull()
 
       expect(new URL(json.getAttribute('href') ?? '', 'http://localhost').searchParams.get('format')).toBe(
-        'json',
+        'jsonl',
       )
     })
   })
