@@ -20,6 +20,9 @@ const DECISION_DATE_FORMAT = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'UTC',
 })
 
+/** Counts are formatted in the same fixed locale, so a result total reads alike for everyone. */
+const COUNT_FORMAT = new Intl.NumberFormat('en-GB')
+
 /**
  * Format a decision date for display.
  *
@@ -34,4 +37,14 @@ export function formatDecisionDate(value: string | null): string | null {
   if (Number.isNaN(parsed.getTime())) return null
 
   return DECISION_DATE_FORMAT.format(parsed)
+}
+
+/**
+ * Format a whole number with thousands separators, for result counts and page numbers.
+ *
+ * @param value - The number to format.
+ * @returns The formatted number, e.g. `1,284`.
+ */
+export function formatCount(value: number): string {
+  return COUNT_FORMAT.format(value)
 }

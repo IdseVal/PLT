@@ -132,6 +132,9 @@ lists. Do not treat it as optional.
 - `jurisdiction.map_feature_id` is the identifier the frontend map resolves a jurisdiction
   against: the ISO 3166-1 alpha-2 code for a state (`NL`), and the sentinel `EU` for the
   Union, which the map renders as the hoverable North Sea logo instead of a shape.
+- The subject-matter classification a connector reads — the *rechtsgebied* for the
+  Netherlands — has no column here and is stored as `case.source_metadata["subject"]`. It is
+  a **scored** field of the filter chain nonetheless; see §4.2.
 
 **Repository helpers** (`plt/db/repositories.py`) are the only SQL the API layer calls:
 `search_cases` / `count_cases` / `stream_cases` (all taking a `CaseSearchCriteria`),
@@ -144,12 +147,21 @@ zero-case jurisdictions retained), `list_facets` and `latest_successful_runs`. C
 
 ## 4. Pipeline interfaces
 
+Onboarding a jurisdiction is **one connector class and one keyword list, and nothing else**.
+Nothing under `plt/pipeline/` outside `connectors/` may name a jurisdiction, and the registry
+discovers connector modules rather than listing them, so there is no third file to forget.
+
+### 4.1 The connector
+
 ```python
 class SourceConnector(ABC):
     """One jurisdiction's data source."""
 
-    jurisdiction_code: str
-    name: str
+    jurisdiction_code: ClassVar[str]     # "NL"; the registry keys on it
+    name: ClassVar[str]                  # "rechtspraak"; ingest_run.connector and the
+                                         # ingest_checkpoint primary key
+
+    def __init__(self, settings: Settings | None = None) -> None: ...
 
     @abstractmethod
     def discover(self, since: datetime | None, until: datetime | None) -> Iterator[Candidate]:
@@ -163,24 +175,117 @@ class SourceConnector(ABC):
     def normalise(self, raw: RawDocument) -> NormalisedCase:
         """Map source fields onto the schema in section 3, preserving everything else
         in source_metadata."""
+
+    def close(self) -> None: ...          # called in a finally, interruptions included
 ```
+
+Drop the module into `plt/pipeline/connectors/`; `plt.pipeline.registry` imports it, reads
+the two class attributes and builds it with `cls(settings)`. Two connectors claiming one
+jurisdiction is an error, not last-one-wins.
+
+**Fetch through `plt.pipeline.http.PoliteClient`.** It applies the configured request rate,
+exponential backoff with jitter on 429/5xx, the descriptive `User-Agent`, and abandons a
+backoff as soon as the run is asked to stop. A connector composing `httpx` calls itself
+silently loses all four. An explicit `Retry-After` is obeyed **as the source sent it** and is
+never shortened to the jitter ceiling; a pause longer than `http_retry_after_max_seconds`
+ends the run instead, leaving the checkpoint for the next scheduled one.
+
+**Errors.** `DocumentUnavailableError` scopes a failure to one document: the runner logs it,
+counts it, holds the checkpoint back and carries on. `SourceUnavailableError` ends the run
+without advancing the checkpoint. Anything else raised per document is treated as the former,
+with a stack trace.
+
+### 4.2 What crosses the stages
+
+| Type | Purpose | Notes |
+| --- | --- | --- |
+| `Candidate` | What discovery found | `source_id`, `jurisdiction_code`, `modified_at` (drives the checkpoint), optional `content_hash`, `cursor`, `title`, `source_url`, `source_metadata` |
+| `RawDocument` | The response verbatim | `payload`, `media_format`, `retrieved_at`; stored as `case_document.raw_payload` (rule 2.6) |
+| `NormalisedCase` | Section 3, in memory | Every named column, plus `subject`, `court`, `documents`, `parties`, `citations`, `source_metadata` |
+| `NormalisedDocument` | One `case_document` row | `doc_type`, `language`, `full_text`, `raw_payload`, `media_format` |
+
+Two properties of `NormalisedCase` matter to every connector:
+
+- **`full_text` is computed.** The schema keeps full texts on `case_document`, one row per
+  language, so a case may carry several, while a filter stage wants one text to scan.
+  `NormalisedCase.full_text` joins the text-bearing documents, the case's own `language`
+  first and the rest in a stable order. A term in any language version therefore qualifies
+  the case, which is what a multilingual jurisdiction needs; a case with a single document
+  passes that document's text through by reference rather than copying it. Consequently the
+  members of `FilterableDocument` are declared **read-only**: a stage only reads them, and a
+  settable-attribute protocol would reject a computed one.
+- **`subject` is scored.** The *rechtsgebied* for the Netherlands, the subject-matter heading
+  for the EU. Both shipped keyword lists weight it — the EU list at 1.2, above plain full
+  text — so a connector that leaves it `None` throws away a strong signal. It has no column
+  of its own in section 3 and is persisted under `case.source_metadata["subject"]`.
+
+**Content hash.** `case.content_hash` is resolved in this order: the hash the connector set
+on the `NormalisedCase`; otherwise the one discovery put on the `Candidate`; otherwise a
+SHA-256 fingerprint of the normalised content. A connector that exposes a cheap revision
+marker at discovery (an Atom `updated`, a CELLAR modification date) should put it on the
+`Candidate` and leave `NormalisedCase.content_hash` unset — the two then live in one hash
+space, which is what lets the pre-check skip a document **without fetching it**.
+
+### 4.3 The filter chain
 
 ```python
 class Filter(ABC):
     """A stage in the filter chain."""
 
     @abstractmethod
-    def evaluate(self, case: NormalisedCase) -> FilterResult:
+    def evaluate(self, case: FilterableDocument) -> FilterResult:
         """FilterResult carries passed: bool, score: float, matches: list[TermMatch],
         and a human-readable reason for the pipeline report."""
 ```
 
-Runner order per jurisdiction: `discover → dedup pre-check (skip known unchanged) → fetch →
-normalise → filter chain → persist → checkpoint`. The dedup pre-check exists so unchanged
-documents are never re-fetched.
+`FilterableDocument` is a structural protocol over `jurisdiction_code`, `title`, `abstract`,
+`subject` and `full_text`, so no import couples a stage to the connector work stream. Stage 1
+is the keyword matcher; a later stage appends to the `FilterChain` and touches no connector.
 
-`run_jurisdiction(code, since=None, until=None, dry_run=False)` must support `dry_run`,
-which runs everything and writes a match report but no database changes.
+### 4.4 The runner
+
+```python
+run_jurisdiction(code, since=None, until=None, dry_run=False, *, connector=None, chain=None,
+                 settings=None, session_factory=None, batch_size=None,
+                 report_path=None) -> IngestReport
+```
+
+Order per jurisdiction: `discover → dedup pre-check (skip known unchanged) → fetch →
+normalise → filter chain → persist → checkpoint`. The pre-check exists so unchanged documents
+are never re-fetched. The keyword-only arguments are injection points for the CLI and for
+tests; the positional signature is the contract.
+
+- **Streaming.** `discover` is consumed lazily and sliced into `pipeline_batch_size` batches,
+  each committed in its own session. Peak memory is one batch plus the document in hand.
+- **Per-document isolation.** Each document runs inside a savepoint, so a failure rolls back
+  that document alone and the batch keeps its other work.
+- **Interruption.** `SIGINT`/`SIGTERM` set a flag: the document in flight finishes, its batch
+  commits, the checkpoint records exactly what was committed, and the run row closes as
+  `interrupted`. A second signal falls through to the default handler.
+- **Checkpoint safety.** The position advances only over documents that were processed
+  successfully *and* committed, and stops advancing at the first failure of the run, so
+  nothing after a failed document is ever considered done. A failed run writes no checkpoint.
+  The lower bound of a window is inclusive; deduplication absorbs the overlap.
+- **`dry_run`** runs every stage and writes the match report, and makes **no database
+  changes**. It still *reads* the database, because the deduplication pre-check has to.
+- **Reporting.** Every non-dry run writes an `ingest_run` row with accurate
+  fetched/matched/inserted/updated/skipped/error counts, the checkpoint before and after, and
+  a status of `success`, `partial`, `failed` or `interrupted`. The same numbers come back as
+  an `IngestReport`. A failed run is reported through that status rather than by raising, so
+  `--all` continues to the next jurisdiction.
+
+The match report is JSON Lines, one object per document judged — accepted *and* rejected,
+because a recall problem is invisible in a report that lists only successes — written to
+`PLT_PIPELINE_REPORT_DIR` and flushed per line.
+
+### 4.5 The CLI
+
+```
+plt ingest --jurisdiction NL [--since ...] [--until ...] [--dry-run] [--report PATH]
+plt ingest --all
+```
+
+Timestamps are parsed as UTC. Exit codes: `0` completed, `1` failed, `130` interrupted.
 
 ---
 
@@ -212,6 +317,19 @@ array below. Dates are `YYYY-MM-DD`; timestamps are ISO 8601 with a UTC offset.
 { "items": [CaseSummary], "page": 1, "page_size": 20,
   "total": 137, "page_count": 7, "has_next": true }
 ```
+
+Paging is forgiving on purpose, because a client pages through a corpus that grows and
+shrinks underneath it as ingestion runs:
+
+- **A `page` beyond the last one is `200` with an empty `items` array**, not a `404` or a
+  `400`. `page`, `total` and `page_count` are still reported, so a client that overshot can
+  see it did and step back. Only a `page` below 1 is a validation error.
+- **`page_count` is never `0`.** An empty result set is one empty page: `total: 0`,
+  `page_count: 1`, `has_next: false`, so a paginator renders "1 of 1" rather than "1 of 0".
+- **`sort=relevance` with no `q` falls back to `date_desc`** rather than being rejected:
+  there is nothing to rank, and a UI that keeps `sort=relevance` in the URL while the user
+  clears the search box must still get results. A blank or whitespace-only `q` is treated
+  as no `q` throughout.
 
 **`/api/cases/latest`** is a feed, not a page: `{ "items": [CaseSummary], "limit": 20 }`.
 

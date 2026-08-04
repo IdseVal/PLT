@@ -28,6 +28,7 @@ class StubCase:
     jurisdiction_code: str = "NL"
     title: str | None = None
     abstract: str | None = None
+    subject: str | None = None
     full_text: str | None = None
 
 
