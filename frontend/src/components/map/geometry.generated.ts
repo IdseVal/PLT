@@ -264,3 +264,56 @@ export const JURISDICTION_SHAPES: readonly JurisdictionShape[] = [
       'M551.3 471.8L549.2 480.1L547.5 482.8L547.5 486.4L542.4 488.1L538.2 484.4L533.1 486L530.3 485.5L525.3 486.5L523.7 491.5L518.2 495.5L514.2 494L513.4 494.3L512.3 496.5L504.9 498.5L503.3 499.7L502.9 501.9L503.4 502.7L502.8 504.1L492.1 505.5L489.5 505.6L487.7 504.9L483.1 501.6L479.9 500.8L476.3 493.9L477.6 487.8L479.4 484.3L486 483.8L489.6 480.3L491.4 479.4L492.5 474.7L495.1 472.9L497.9 469.4L502.4 468.9L503 470.9L505.4 470.6L506.5 468.2L508.9 466.2L511.8 469.8L513.8 470.3L513.9 473.8L514.5 474L516 473.2L518 473.8L519 470.9L521.6 469.2L524.9 468.7L529.5 469.7L531 467.4L534.5 466.7L538.4 466.5L541.9 467.5L544 470L551.3 471.8Z',
   },
 ]
+
+/** Where a jurisdiction's outline lies on the globe, in degrees east and north. */
+export interface GeographicAnchor {
+  /** Longitude, positive east of Greenwich. */
+  readonly lon: number
+  /** Latitude, positive north of the equator. */
+  readonly lat: number
+}
+
+/**
+ * Where each outline above was taken from, in unprojected lon/lat, keyed by ISO alpha-2 code.
+ *
+ * **Nothing renders this**, and nothing should: the map is drawn from `path`, and these
+ * degrees never reach the browser. They are the geometry's own account of *which country*
+ * each shape is — measured on the globe, before the projection touched it — so that
+ * `tests/mapGeometry.test.ts` can hold every shape against ordinary geographic knowledge of
+ * where that country is. An outline drawn from the wrong Natural Earth id is a plausible map
+ * of the wrong country and nothing in the path data can tell; its anchor lands hundreds of
+ * kilometres from where the named country belongs, and fails.
+ *
+ * Each is the centroid of the largest ring the generator kept for that jurisdiction, to a
+ * tenth of a degree — around eleven kilometres, which is far finer than the question being
+ * asked of it.
+ */
+export const JURISDICTION_ANCHORS: Readonly<Record<string, GeographicAnchor>> = {
+  AT: { lon: 14.1, lat: 47.6 },
+  BE: { lon: 4.6, lat: 50.6 },
+  BG: { lon: 25.2, lat: 42.8 },
+  CY: { lon: 33, lat: 34.9 },
+  CZ: { lon: 15.3, lat: 49.7 },
+  DE: { lon: 10.4, lat: 51.1 },
+  DK: { lon: 9.4, lat: 56.2 },
+  EE: { lon: 25.8, lat: 58.7 },
+  ES: { lon: -3.6, lat: 40.4 },
+  FI: { lon: 26.3, lat: 64.5 },
+  FR: { lon: 2.5, lat: 46.6 },
+  GR: { lon: 22.6, lat: 39.5 },
+  HR: { lon: 16.4, lat: 45.2 },
+  HU: { lon: 19.4, lat: 47.2 },
+  IE: { lon: -8.1, lat: 53.2 },
+  IT: { lon: 12.1, lat: 43.5 },
+  LT: { lon: 23.9, lat: 55.3 },
+  LU: { lon: 6.1, lat: 49.8 },
+  LV: { lon: 24.9, lat: 56.9 },
+  MT: { lon: 14.4, lat: 35.9 },
+  NL: { lon: 5.6, lat: 52.3 },
+  PL: { lon: 19.4, lat: 52.1 },
+  PT: { lon: -8, lat: 39.7 },
+  RO: { lon: 25, lat: 45.9 },
+  SE: { lon: 16.7, lat: 62.8 },
+  SI: { lon: 14.8, lat: 46.1 },
+  SK: { lon: 19.5, lat: 48.7 },
+}
