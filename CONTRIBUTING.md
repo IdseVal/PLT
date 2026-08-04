@@ -84,6 +84,14 @@ reach the browser bundle — never put a secret in one.
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | ESLint, type-aware |
 | `npm run test` | Vitest once (`npm run test:watch` to iterate) |
+| `node scripts/generate-map-geometry.mjs` | Regenerate the map's geometry asset (see below) |
+
+The jurisdiction map ships **pre-projected**: `scripts/generate-map-geometry.mjs` turns Natural
+Earth data into plain SVG path strings once, and
+`src/components/map/geometry.generated.ts` is committed. Nothing in the browser projects
+geometry or contacts a tile server, so the map works offline. Do not edit the generated file;
+change the script and re-run it. `--check` fails when the committed file is out of date, and
+the script needs the network only on a first run, after which the source data is cached.
 
 ## 4. Tests and checks
 

@@ -192,6 +192,38 @@ export interface CaseSummary {
 }
 
 /**
+ * One jurisdiction's entry in the map payload.
+ *
+ * Fixed field by field by `docs/architecture.md` section 5.1. Two rules from there shape
+ * this type: a value the API has none of is **present and `null`**, never omitted — which is
+ * why `latest_decision_date` is `string | null` and not optional — and the endpoint includes
+ * jurisdictions whose `case_count` is `0`, so the map can render intended coverage rather
+ * than only what has been ingested.
+ */
+export interface JurisdictionStat {
+  /** Jurisdiction code (`jurisdiction.code`), e.g. `NL` or `EU`. */
+  code: string
+  /** Human-readable name, e.g. `Netherlands`. */
+  name: string
+  /** Whether the jurisdiction is a state or the Union itself. */
+  type: 'state' | 'supranational'
+  /**
+   * The identifier the map resolves a jurisdiction against (`docs/architecture.md` section
+   * 3): the ISO 3166-1 alpha-2 code for a state, and the sentinel `EU` for the Union.
+   */
+  map_feature_id: string
+  /** Whether the jurisdiction is being ingested. */
+  is_active: boolean
+  /** How many published cases the tracker holds. Zero is a value, not an absence. */
+  case_count: number
+  /** Newest decision date held, `YYYY-MM-DD`, or `null` when there are no cases. */
+  latest_decision_date: string | null
+}
+
+/** Payload of `GET /api/stats/jurisdictions`: a bare array, ordered by code (section 5.1). */
+export type JurisdictionStatsResponse = JurisdictionStat[]
+
+/**
  * A single case: `CaseDetail` in section 5.1, every summary field plus the lists.
  *
  * Named `CaseRecord` rather than `CaseDetail` only because `CaseDetail` is the route

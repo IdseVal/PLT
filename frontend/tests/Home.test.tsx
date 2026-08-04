@@ -63,6 +63,31 @@ function stubJson(body: unknown, status = 200): ReturnType<typeof vi.fn> {
 }
 
 /**
+ * Every URL the stubbed `fetch` was called with.
+ *
+ * The home page has two independent readers of the API — the latest-cases feed and the map —
+ * so a test that cares about one of them names its endpoint rather than counting calls.
+ *
+ * @param fetchMock - The stub returned by {@link stubJson}.
+ * @returns The requested URLs, in call order.
+ */
+function requestedUrls(fetchMock: ReturnType<typeof vi.fn>): string[] {
+  return fetchMock.mock.calls.map((call) => String(call[0]))
+}
+
+/**
+ * The latest-cases sidebar, for scoping a query to it.
+ *
+ * The map alongside it also has a status region, an error alert with a retry button and a
+ * list, so a bare `getByRole` on the page would match either component.
+ *
+ * @returns The sidebar element.
+ */
+function sidebar(): HTMLElement {
+  return screen.getByRole('complementary', { name: /latest cases/i })
+}
+
+/**
  * Render the home page inside a router, with a location probe beside it.
  *
  * @returns The user-event instance for driving the interaction.
@@ -157,7 +182,9 @@ describe('latest-cases sidebar', () => {
     renderHome()
 
     await screen.findByRole('link', { name: NL_CASE.title })
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('/api/cases/latest?limit=20')
+    // The map requests its own counts, so the feed's request is asserted by URL rather than
+    // by position: which effect runs first is not part of either component's contract.
+    expect(requestedUrls(fetchMock)).toContain('/api/cases/latest?limit=20')
   })
 
   it('shows the title, jurisdiction, court and decision date, linking to the case', async () => {
@@ -208,7 +235,7 @@ describe('latest-cases sidebar', () => {
     stubJson({ items: [NL_CASE], page: 1, page_size: 20, total: 1 })
     renderHome()
 
-    expect(screen.getByRole('status')).toHaveTextContent(/loading the latest cases/i)
+    expect(within(sidebar()).getByRole('status')).toHaveTextContent(/loading the latest cases/i)
   })
 
   it('explains an empty collection instead of showing an empty box', async () => {
@@ -216,7 +243,7 @@ describe('latest-cases sidebar', () => {
     renderHome()
 
     expect(await screen.findByText(/no cases have been published yet/i)).toBeInTheDocument()
-    expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
+    expect(within(sidebar()).queryByRole('listitem')).not.toBeInTheDocument()
   })
 
   it('links through to the all-cases page', async () => {
@@ -224,8 +251,7 @@ describe('latest-cases sidebar', () => {
     renderHome()
     await screen.findByText(/no cases have been published yet/i)
 
-    const sidebar = screen.getByRole('complementary', { name: /latest cases/i })
-    expect(within(sidebar).getByRole('link', { name: 'All cases' })).toHaveAttribute('href', '/cases')
+    expect(within(sidebar()).getByRole('link', { name: 'All cases' })).toHaveAttribute('href', '/cases')
   })
 })
 
@@ -234,26 +260,36 @@ describe('latest-cases sidebar failure', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
     renderHome()
 
-    const alert = await screen.findByRole('alert')
+    const alert = await within(sidebar()).findByRole('alert')
     expect(alert).toHaveTextContent(/could not be loaded/i)
     expect(alert).toHaveTextContent(/could not reach the case database/i)
 
     // The rest of the page is untouched: a failed feed does not blank the home page.
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
     expect(screen.getByRole('search', { name: /search the case law/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'All cases' })).toBeInTheDocument()
+    expect(within(sidebar()).getByRole('link', { name: 'All cases' })).toBeInTheDocument()
   })
 
   it('reloads the feed when the retry button is used', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockResolvedValue(
+    // The feed's first request fails and its second succeeds. Which request that is has to be
+    // decided by URL: the map requests its own data from the same page, and neither component
+    // promises to go first.
+    let feedRequests = 0
+    const fetchMock = vi.fn().mockImplementation((url: unknown) => {
+      if (!String(url).startsWith('/api/cases/latest')) {
+        return Promise.resolve(
+          new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } }),
+        )
+      }
+      feedRequests += 1
+      if (feedRequests === 1) return Promise.reject(new TypeError('Failed to fetch'))
+      return Promise.resolve(
         new Response(JSON.stringify({ items: [NL_CASE], page: 1, page_size: 20, total: 1 }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         }),
       )
+    })
     vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
     render(
@@ -262,28 +298,28 @@ describe('latest-cases sidebar failure', () => {
       </MemoryRouter>,
     )
 
-    await screen.findByRole('alert')
-    await user.click(screen.getByRole('button', { name: /try again/i }))
+    await within(sidebar()).findByRole('alert')
+    await user.click(within(sidebar()).getByRole('button', { name: /try again/i }))
 
     expect(await screen.findByRole('link', { name: NL_CASE.title })).toBeInTheDocument()
     await waitFor(() => {
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(within(sidebar()).queryByRole('alert')).not.toBeInTheDocument()
     })
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(requestedUrls(fetchMock).filter((url) => url.startsWith('/api/cases/latest'))).toHaveLength(2)
   })
 
   it('shows the message the API sent when it rejected the request', async () => {
     stubJson({ error: { code: 'validation_error', message: 'limit must be at most 50.' } }, 400)
     renderHome()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('limit must be at most 50.')
+    expect(await within(sidebar()).findByRole('alert')).toHaveTextContent('limit must be at most 50.')
   })
 
   it('treats an unreadable payload as an error rather than as an empty feed', async () => {
     stubJson({ items: [{ nonsense: true }] })
     renderHome()
 
-    const alert = await screen.findByRole('alert')
+    const alert = await within(sidebar()).findByRole('alert')
     expect(alert).toHaveTextContent(/could not read/i)
     expect(screen.queryByText(/no cases have been published yet/i)).not.toBeInTheDocument()
   })
