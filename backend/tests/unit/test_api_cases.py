@@ -90,6 +90,17 @@ class TestListCases:
         assert source_ids(by_date) == ["ECLI:NL:RVS:2024:1", "ECLI:NL:RBDHA:2023:2"]
         assert source_ids(by_relevance) == ["ECLI:NL:RBDHA:2023:2", "ECLI:NL:RVS:2024:1"]
 
+    @pytest.mark.parametrize("query", [{}, {"q": ""}, {"q": "   "}])
+    def test_sort_relevance_without_a_query_falls_back_to_date_desc(
+        self, client: FlaskClient, api_corpus: Session, query: dict[str, str]
+    ) -> None:
+        # A UI that keeps sort=relevance in the URL while the user clears the search box
+        # must get results, not a 400: there is nothing to rank, so the default order
+        # applies (architecture section 5.1).
+        body = get_json(client, "/api/cases", sort="relevance", **query)
+
+        assert source_ids(body) == PUBLISHED_NEWEST_FIRST
+
     def test_empty_result_set_is_an_empty_page_not_an_error(
         self, client: FlaskClient, api_corpus: Session
     ) -> None:
@@ -97,6 +108,8 @@ class TestListCases:
 
         assert body["items"] == []
         assert body["total"] == 0
+        # page_count is never 0: an empty result set is one empty page, so a paginator
+        # renders "1 of 1" rather than "1 of 0" (architecture section 5.1).
         assert body["page_count"] == 1
         assert body["has_next"] is False
 
@@ -128,11 +141,16 @@ class TestPagination:
     def test_page_beyond_the_last_is_empty_but_reports_the_total(
         self, client: FlaskClient, api_corpus: Session
     ) -> None:
+        # 200 rather than 404: the corpus grows and shrinks under a paging client as
+        # ingestion runs, and a page that briefly overshoots is not a broken URL
+        # (architecture section 5.1).
         body = get_json(client, "/api/cases", page_size=2, page=99)
 
         assert body["items"] == []
         assert body["total"] == 4
         assert body["page"] == 99
+        assert body["page_count"] == 2
+        assert body["has_next"] is False
 
     def test_page_size_of_one_walks_the_whole_corpus(
         self, client: FlaskClient, api_corpus: Session

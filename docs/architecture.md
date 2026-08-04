@@ -213,6 +213,19 @@ array below. Dates are `YYYY-MM-DD`; timestamps are ISO 8601 with a UTC offset.
   "total": 137, "page_count": 7, "has_next": true }
 ```
 
+Paging is forgiving on purpose, because a client pages through a corpus that grows and
+shrinks underneath it as ingestion runs:
+
+- **A `page` beyond the last one is `200` with an empty `items` array**, not a `404` or a
+  `400`. `page`, `total` and `page_count` are still reported, so a client that overshot can
+  see it did and step back. Only a `page` below 1 is a validation error.
+- **`page_count` is never `0`.** An empty result set is one empty page: `total: 0`,
+  `page_count: 1`, `has_next: false`, so a paginator renders "1 of 1" rather than "1 of 0".
+- **`sort=relevance` with no `q` falls back to `date_desc`** rather than being rejected:
+  there is nothing to rank, and a UI that keeps `sort=relevance` in the URL while the user
+  clears the search box must still get results. A blank or whitespace-only `q` is treated
+  as no `q` throughout.
+
 **`/api/cases/latest`** is a feed, not a page: `{ "items": [CaseSummary], "limit": 20 }`.
 
 **`CaseSummary`** — one search result or feed entry, everything a card renders:
