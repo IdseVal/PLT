@@ -71,13 +71,38 @@ one that names it once, depending on how the halves are weighted. Neither is acc
 a contextual term sitting one point below the threshold, and there is no weighting that is
 right in both shapes.
 
-**The status quo is not cost-free**, and whoever decides #24 should know what it costs:
+**The status quo is not cost-free**, and whoever decides #24 should know what it costs.
+
+The failure mode is **not** lower-casing. Under `case_sensitive: true` a spelled-out alias
+matches **only the exact string as curated** — every other casing scores zero, including
+renderings a court is likely to produce:
+
+| Text | `nl-efsa` |
+| --- | ---: |
+| `Europese Autoriteit voor voedselveiligheid` (as curated) | 1.00 |
+| `Europese Autoriteit voor Voedselveiligheid` (capital V) | **0.00** |
+| `europese autoriteit voor voedselveiligheid` | **0.00** |
+| `EUROPESE AUTORITEIT VOOR VOEDSELVEILIGHEID` (heading) | **0.00** |
+
+The same holds for all four terms: `Nederlandse voedsel- en Warenautoriteit`,
+`European food safety authority` and `European chemicals agency` all score 0.00 today.
+
+What limits the damage is **not** that these names are always capitalised — they are not.
+It is that in each pair the **acronym is the primary term** and is case-robust, and
+`count_term_once` counts per term. So the alias only decides anything in a document that
+spells the name out and **never** abbreviates it. That is uncommon in judgments, which
+typically introduce the authority once and use the acronym thereafter, but it is not rare
+enough to call the exposure nil.
 
 | Term | Exposure |
 | --- | --- |
-| `en-efsa`, `en-echa` | Negligible. `European Food Safety Authority` and `European Chemicals Agency` are capitalised in every realistic rendering. |
-| `nl-nvwa-gewas` | Low. `Nederlandse Voedsel- en Warenautoriteit` is a proper noun and rarely lower-cased. |
-| `nl-efsa` | **Real.** Its alias `Europese Autoriteit voor voedselveiligheid` already carries lower-case `voor` and `voedselveiligheid`, and Dutch prose commonly writes *"de Europese autoriteit voor voedselveiligheid"* with a lower-case `a`. **That spelling is missed today.** |
+| `en-efsa`, `en-echa` | Low — but because `EFSA`/`ECHA` almost always appear too, not because the spelled-out names are reliably capitalised. |
+| `nl-nvwa-gewas` | Low, on the same reasoning. |
+| `nl-efsa` | Highest of the four: its alias already mixes cases (`voor`, `voedselveiligheid`), so it is the most brittle string of the set. |
+
+**Gating on a pesticide term — the proposal in #24 — does not fix any of this.** The two
+problems are independent. If these terms are restructured anyway, dropping `case_sensitive`
+from the spelled-out halves closes the casing gap at the same time.
 
 Resolving this properly needs a curation decision (issue #24) about whether contextual
 authority terms should be *gated* on a pesticide term rather than merely weighted. Note that
