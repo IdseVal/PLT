@@ -99,6 +99,17 @@ describe('CaseDetail', () => {
     expect(screen.getByText('Tweede overweging.')).toBeInTheDocument()
   })
 
+  it('heads a case with no title with its identifier', async () => {
+    // Section 5.1 allows `title` to be null. The loading state is headed by the identifier
+    // too, so the loaded case is waited for before the heading is read.
+    stubCase({ title: null })
+    renderPage()
+
+    await screen.findByRole('heading', { level: 2, name: 'Classification' })
+    expect(screen.getByRole('heading', { level: 1, name: SOURCE_ID })).toBeInTheDocument()
+    expect(document.title).toBe(`${SOURCE_ID} · Pesticide Litigation Tracker`)
+  })
+
   it('links out to the original publication page', async () => {
     stubCase()
     renderPage()

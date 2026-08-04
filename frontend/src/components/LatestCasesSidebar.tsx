@@ -17,6 +17,7 @@ import { LATEST_CASES_DEFAULT_LIMIT } from '@/api/client'
 import type { ApiError } from '@/api/client'
 import { useLatestCases } from '@/hooks/useLatestCases'
 import type { CaseSummary } from '@/types/api'
+import { caseLabel, cleanInlineText } from '@/utils/caseText'
 import { formatDecisionDate } from '@/utils/dates'
 import { caseDetailPath } from '@/utils/links'
 
@@ -55,12 +56,17 @@ interface CaseRowProps {
 /**
  * One case in the feed: its title as a link, with the metadata that identifies it.
  *
+ * The label comes from `caseLabel`, so a case the source published no title for is listed
+ * under its ECLI or CELEX rather than as a nameless link. Every value here is untrusted court
+ * text and goes through `src/utils/caseText.ts` before it is rendered as a React child.
+ *
  * @param props - Component properties.
  * @returns The list row.
  */
 function CaseRow({ item }: CaseRowProps): JSX.Element {
-  const title = item.title.trim() === '' ? item.source_id : item.title
-  const jurisdiction = item.jurisdiction_name ?? item.jurisdiction_code
+  const title = caseLabel(item.title, item.source_id)
+  const jurisdiction = cleanInlineText(item.jurisdiction_name) || cleanInlineText(item.jurisdiction_code)
+  const court = cleanInlineText(item.court_name)
   const decisionDate = formatDecisionDate(item.decision_date)
 
   return (
@@ -74,11 +80,11 @@ function CaseRow({ item }: CaseRowProps): JSX.Element {
       <p className="text-plt-muted mt-1 text-xs leading-relaxed">
         <span className="sr-only">Jurisdiction: </span>
         <span>{jurisdiction}</span>
-        {item.court_name !== null && (
+        {court !== '' && (
           <>
             <span aria-hidden="true"> · </span>
             <span className="sr-only">Court: </span>
-            <span>{item.court_name}</span>
+            <span>{court}</span>
           </>
         )}
         {decisionDate !== null && item.decision_date !== null && (
