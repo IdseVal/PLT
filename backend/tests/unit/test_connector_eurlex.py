@@ -159,6 +159,7 @@ class FakeCellar:
         *,
         content_type: str = "application/xhtml+xml;charset=UTF-8",
         redirect_notices: bool = False,
+        broken: set[tuple[str, str]] | None = None,
     ) -> None:
         """Build the fake source.
 
@@ -169,12 +170,15 @@ class FakeCellar:
             content_type: Content type served for a manifestation.
             redirect_notices: Whether a notice request is answered with a redirect first, as
                 the live route does.
+            broken: ``(celex, language)`` pairs whose manifestation answers 500 however often
+                it is asked, as CELLAR does for the English version of 62022TJ0371.
         """
         self.rows = rows or []
         self.notices = notices or {}
         self.texts = texts or {}
         self.content_type = content_type
         self.redirect_notices = redirect_notices
+        self.broken = broken or set()
         self.queries: list[str] = []
         self.requests: list[tuple[str, str, str | None]] = []
 
@@ -281,6 +285,8 @@ class FakeCellar:
             return httpx.Response(
                 200, text=payload, headers={"content-type": "application/xml;notice=object"}
             )
+        if (celex, (language or "").upper()) in self.broken:
+            return httpx.Response(500, text="internal server error")
         payload = self.texts.get((celex, (language or "").upper()))
         if payload is None:
             return httpx.Response(404, text="not found")
@@ -792,6 +798,54 @@ def test_a_case_without_a_preferred_language_falls_back_to_the_procedural_one() 
     assert text.language == "fr"
     assert text.source_metadata["selected_as"] == "procedural"
     assert case.language == "fr"
+
+
+def test_a_language_version_the_source_cannot_serve_falls_back_to_another() -> None:
+    """``62022TJ0371`` really is like this: English 500s every time, French is served."""
+    source = FakeCellar(
+        notices={BLAISE: fixture(f"notice-{BLAISE}.xml")},
+        texts={(BLAISE, "FRA"): "<html><body><p>produits phytopharmaceutiques</p></body></html>"},
+        broken={(BLAISE, "ENG")},
+    )
+
+    # No retry budget: the point is what happens once it is exhausted, and the backoff
+    # itself is tested in test_pipeline_http.
+    with source.connector(settings(http_max_retries=0)) as connector:
+        case = connector.normalise(
+            connector.fetch(Candidate(source_id=BLAISE, jurisdiction_code="EU"))
+        )
+
+    [text] = [document for document in case.documents if document.has_text]
+    assert text.language == "fr"
+    assert text.source_metadata["selected_as"] == "procedural"
+    assert "phytopharmaceutiques" in (case.full_text or "")
+
+
+def test_a_case_whose_every_language_version_fails_is_left_for_the_next_run() -> None:
+    """Storing it text-free would record "no full text" and never look again."""
+    source = FakeCellar(
+        notices={BLAISE: fixture(f"notice-{BLAISE}.xml")},
+        broken={(BLAISE, "ENG"), (BLAISE, "FRA")},
+    )
+
+    with (
+        source.connector(settings(http_max_retries=0)) as connector,
+        pytest.raises(DocumentUnavailableError, match="server error"),
+    ):
+        connector.fetch(Candidate(source_id=BLAISE, jurisdiction_code="EU"))
+
+
+def test_a_case_with_no_manifestation_at_all_is_kept_rather_than_retried() -> None:
+    """A 404 means CELLAR has no document, which is a fact about the case, not a failure."""
+    source = FakeCellar(notices={BLAISE: fixture(f"notice-{BLAISE}.xml")})
+
+    with source.connector() as connector:
+        raw = connector.fetch(Candidate(source_id=BLAISE, jurisdiction_code="EU"))
+
+    assert raw.source_metadata["manifestations"] == []
+    # English (preferred), then French (procedural), then one more: three attempts, not the
+    # twenty-three languages the notice lists.
+    assert len([language for _, _, language in source.requests if language]) == 3
 
 
 def test_several_configured_languages_become_several_documents_on_one_case() -> None:

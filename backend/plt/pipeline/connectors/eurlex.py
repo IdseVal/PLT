@@ -817,6 +817,11 @@ class EurLexConnector(SourceConnector):
         CELLAR does not hold is logged and skipped — a decision whose full text is not
         published still has a notice worth storing, and the run must not stop over it.
 
+        When none of the preferred languages yields a text, the fallbacks are tried one at a
+        time until one does. That is not theoretical: ``62022TJ0371`` has an English
+        expression whose manifestation answers ``500`` every time while the French and German
+        ones are served normally (verified 4 August 2026).
+
         Args:
             candidate: The candidate to retrieve.
 
@@ -824,27 +829,50 @@ class EurLexConnector(SourceConnector):
             The notice and the manifestations, unmodified.
 
         Raises:
-            DocumentUnavailableError: If the CELEX number is malformed, or the notice is
-                missing or unreadable.
+            DocumentUnavailableError: If the CELEX number is malformed, if the notice is
+                missing or unreadable, or if every language version of a case that has one
+                failed with a server error. The runner then retries the case next run rather
+                than storing it without the text it should have had.
             SourceUnavailableError: If CELLAR itself has become unusable.
         """
         celex = _validate_celex(candidate.source_id)
         url = self._celex_url(celex)
         response = self._client.get(url, headers={"Accept": _NOTICE_ACCEPT})
         notice = _parse(response.content, what="notice", source_id=celex)
-        languages = self._languages(notice, celex)
+        preferred, fallbacks = self._language_plan(notice, celex)
+        broken: list[str] = []
         manifestations = [
             manifestation
-            for language, reason in languages
-            if (manifestation := self._manifestation(celex, language, reason)) is not None
+            for language, reason in preferred
+            if (manifestation := self._manifestation(celex, language, reason, broken)) is not None
         ]
         if not manifestations:
+            for language, reason in fallbacks:
+                manifestation = self._manifestation(celex, language, reason, broken)
+                if manifestation is not None:
+                    manifestations.append(manifestation)
+                    break
+        if manifestations and broken:
+            log.warning(
+                "a language version could not be served; another one was used instead",
+                extra={"context": {"source_id": celex, "failed_languages": broken}},
+            )
+        if not manifestations:
+            if broken:
+                # Not "this decision has no full text" but "CELLAR could not serve the one it
+                # has". Storing it as text-free would file that difference away silently and
+                # never look again, because nothing about the case would have changed.
+                message = (
+                    f"{celex}: every language version failed with a server error "
+                    f"({', '.join(broken)}); leaving it for the next run"
+                )
+                raise DocumentUnavailableError(message)
             log.info(
                 "no full text retrieved; keeping the notice alone",
                 extra={
                     "context": {
                         "source_id": celex,
-                        "languages": [code for code, _ in languages],
+                        "languages": [code for code, _ in (*preferred, *fallbacks)],
                     }
                 },
             )
@@ -860,51 +888,68 @@ class EurLexConnector(SourceConnector):
             },
         )
 
-    def _languages(self, notice: etree._Element, celex: str) -> list[tuple[str, str]]:
-        """Decide which language versions to retrieve, and why.
+    def _language_plan(
+        self, notice: etree._Element, celex: str
+    ) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+        """Decide which language versions to retrieve, and in what order to fall back.
 
-        English by default, or whatever ``eurlex_languages`` names, restricted to the
-        languages the notice says exist. A case with none of them falls back to its
-        procedural language, and failing that to the first language CELLAR lists, so a
-        French-only order is still ingested with a full text rather than as bare metadata.
+        The preferred languages are whatever ``eurlex_languages`` names — English by default
+        — restricted to the languages the notice says exist, so content negotiation is never
+        asked for one that does not. The fallbacks are the procedural language and then one
+        more, tried only if the preferred ones yield nothing: that is what saves a
+        French-only order, and a case whose English manifestation CELLAR cannot serve.
 
         Args:
             notice: The parsed object notice.
             celex: CELEX number, for the log line.
 
         Returns:
-            Pairs of ISO 639-3 code and the reason it was chosen, in retrieval order. The
-            reason is recorded on the document row, so a reader can tell a deliberate English
-            version from a fallback.
+            The preferred languages, all of which are retrieved, and the fallbacks, of which
+            at most one is. Each is a pair of ISO 639-3 code and the reason it was chosen;
+            the reason is recorded on the document row, so a reader can tell a deliberate
+            English version from a fallback.
         """
         available = _available_languages(notice)
-        chosen = [
+        preferred = [
             (code, "preferred") for code in self.settings.eurlex_languages if code in available
         ]
-        if chosen:
-            return chosen
+        tried = {code for code, _ in preferred}
+        fallbacks: list[tuple[str, str]] = []
         procedural = _procedure_language(notice)
-        if procedural and procedural in available:
-            return [(procedural, "procedural")]
-        if available:
-            return [(available[0], "only_available")]
-        log.info("the notice lists no language version", extra={"context": {"source_id": celex}})
-        return []
+        if procedural and procedural in available and procedural not in tried:
+            fallbacks.append((procedural, "procedural"))
+            tried.add(procedural)
+        for code in available:
+            if code not in tried:
+                # One more, not all 24: a case CELLAR holds no document for at all would
+                # otherwise cost two dozen requests to establish that.
+                fallbacks.append((code, "only_available"))
+                break
+        if not preferred and not fallbacks:
+            log.info(
+                "the notice lists no language version", extra={"context": {"source_id": celex}}
+            )
+        return preferred, fallbacks
 
-    def _manifestation(self, celex: str, language: str, reason: str) -> dict[str, Any] | None:
+    def _manifestation(
+        self,
+        celex: str,
+        language: str,
+        reason: str,
+        broken: list[str],
+    ) -> dict[str, Any] | None:
         """Retrieve one language version of the full text.
 
         Args:
             celex: CELEX number, already validated.
             language: ISO 639-3 code CELLAR knows the version by.
             reason: Why this language was chosen, recorded on the document row.
+            broken: Languages that failed with a server error, appended to. The caller uses
+                it to tell "this decision has no full text" from "CELLAR could not serve the
+                one it has", which are stored very differently.
 
         Returns:
-            The manifestation, or ``None`` when CELLAR does not hold it.
-
-        Raises:
-            SourceUnavailableError: If CELLAR itself has become unusable. A missing document
-                is not that, and comes back as ``None``.
+            The manifestation, or ``None`` when CELLAR does not hold it or could not serve it.
         """
         try:
             response = self._client.get(
@@ -915,6 +960,16 @@ class EurLexConnector(SourceConnector):
             log.info(
                 "no manifestation in this language",
                 extra={"context": {"source_id": celex, "language": language, "reason": str(error)}},
+            )
+            return None
+        except SourceUnavailableError as error:
+            # The notice for this same CELEX was served moments ago, so CELLAR is up and this
+            # is one broken document rather than an outage. Recorded and passed over, so the
+            # next language gets its turn; if none of them works the caller raises.
+            broken.append(language)
+            log.warning(
+                "a language version could not be served",
+                extra={"context": {"source_id": celex, "language": language, "error": str(error)}},
             )
             return None
         return {
