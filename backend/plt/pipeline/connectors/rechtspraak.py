@@ -1016,6 +1016,11 @@ class RechtspraakConnector(SourceConnector):
         way, but with no ``full_text`` — which is what keeps a metadata-only ECLI out of the
         filter's way instead of handing it an empty string to score.
 
+        The ``inhoudsindicatie`` deliberately does not become a second row. It has a column of
+        its own on ``case.abstract`` and the keyword filter scores it there at its own
+        multiplier; repeating it here would put the same sentence into ``full_text`` as well
+        and score one summary twice.
+
         Args:
             root: The document root.
             raw: The payload the row's ``raw_payload`` is taken from.

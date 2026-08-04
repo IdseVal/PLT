@@ -26,7 +26,6 @@ from plt.config import Settings, get_settings
 from plt.db.models import IngestStatus
 from plt.db.session import get_session_factory, session_scope
 from plt.pipeline.base import PipelineError
-from plt.pipeline.filters.keywords import KeywordListError
 from plt.pipeline.persistence import resolve_court
 from plt.pipeline.registry import available_jurisdictions, connector_for
 from plt.pipeline.runner import IngestReport, run_jurisdiction
@@ -210,7 +209,7 @@ def seed_vocabularies(jurisdictions: tuple[str, ...], every_jurisdiction: bool) 
     for code in codes:
         try:
             seeded = _seed_courts(code, settings, factory)
-        except (PipelineError, KeywordListError) as error:
+        except PipelineError as error:
             failures.append(f"{code}: {type(error).__name__}: {error}")
             click.echo(f"{code}: failed; {error}")
             continue
