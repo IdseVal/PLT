@@ -35,23 +35,55 @@ __all__ = [
 class FilterableDocument(Protocol):
     """The part of a normalised case a filter stage is allowed to look at.
 
-    ``NormalisedCase`` (connector work stream) satisfies this structurally. Fields a
-    jurisdiction's scoring block names but the document does not carry - ``subject``, for
-    instance - are read with :func:`getattr` and treated as absent, so a source that has no
-    such field needs no adapter.
+    :class:`plt.pipeline.base.NormalisedCase` satisfies this structurally; no import couples
+    the two modules together. A field a jurisdiction's scoring block names but a document
+    does not carry is read with :func:`getattr` and treated as absent, so a source without
+    an abstract needs no adapter.
+
+    The members are declared read-only, which is what lets a document *compute* one of them.
+    ``full_text`` is the case in point: the schema keeps full texts on ``case_document``, one
+    row per language (``docs/architecture.md`` section 3), so a case may carry several, while
+    a filter stage wants one text to scan. ``NormalisedCase.full_text`` is therefore a
+    property joining its language versions. Declaring these as plain variables would make
+    the protocol demand settable attributes and reject that property; a stage only ever reads
+    them, so read-only is both accurate and permissive.
 
     Attributes:
         jurisdiction_code: Jurisdiction the document belongs to, ``NL`` or ``EU``. Selects
             the keyword list.
         title: Case title, if the source provides one.
         abstract: Summary or headnote, if the source provides one.
-        full_text: Full text of the decision, if it was fetched.
+        subject: Subject-matter classification - the *rechtsgebied* for the Netherlands, the
+            subject-matter heading for the EU. Both shipped lists weight it, the EU list
+            above plain full text, because it is a curated signal rather than prose.
+        full_text: Full text of the decision, if it was fetched. Where a case has several
+            language versions this is all of them, joined.
     """
 
-    jurisdiction_code: str
-    title: str | None
-    abstract: str | None
-    full_text: str | None
+    @property
+    def jurisdiction_code(self) -> str:
+        """Return the jurisdiction code the document belongs to."""
+        ...
+
+    @property
+    def title(self) -> str | None:
+        """Return the case title, if the source provides one."""
+        ...
+
+    @property
+    def abstract(self) -> str | None:
+        """Return the summary or headnote, if the source provides one."""
+        ...
+
+    @property
+    def subject(self) -> str | None:
+        """Return the subject-matter classification, if the source provides one."""
+        ...
+
+    @property
+    def full_text(self) -> str | None:
+        """Return the full text of the decision, if it was fetched."""
+        ...
 
 
 @dataclass(frozen=True, slots=True)
