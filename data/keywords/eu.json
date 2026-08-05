@@ -2,13 +2,14 @@
   "schema_version": "1.0.0",
   "jurisdiction": "EU",
   "jurisdiction_name": "European Union",
-  "list_version": "1.0.2",
-  "updated": "2026-08-03",
+  "list_version": "1.1.0",
+  "updated": "2026-08-05",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": ["en", "fr", "de", "nl"],
-  "notes": "Seed list for the EUR-Lex/CELLAR connector. The EU is treated as a jurisdiction in its own right. CJEU judgments exist in all official languages; the connector fetches English where available and the procedural language otherwise, so this list carries EN plus the three most common procedural languages for pesticide cases. Add further language sections as the corpus demands. Instrument numbers (1107/2009, 528/2012) are the highest-precision signals in this jurisdiction and are language-independent. Revision 1.0.1 (issue #20): DDT split out of en-paraquat into its own case-sensitive word term, mirroring nl-ddt, so acronyms and prose words never share a term. Revision 1.0.2: the exception notes claimed these authority names are always capitalised so the exposure is theoretical. Measurement refuted that - the acronym is case-sensitive too, so efsa, Efsa, nvwa and echa all score 0. Notes now point at the README, which records the measured cost. No term, weight or threshold changed.",
+  "notes": "Seed list for the EUR-Lex/CELLAR connector. The EU is treated as a jurisdiction in its own right. CJEU judgments exist in all official languages; the connector fetches English where available and the procedural language otherwise, so this list carries EN plus the three most common procedural languages for pesticide cases. Add further language sections as the corpus demands. Instrument numbers (1107/2009, 528/2012) are the highest-precision signals in this jurisdiction and are language-independent. Revision 1.0.1 (issue #20): DDT split out of en-paraquat into its own case-sensitive word term, mirroring nl-ddt, so acronyms and prose words never share a term. Revision 1.0.2: the exception notes claimed these authority names are always capitalised so the exposure is theoretical. Measurement refuted that - the acronym is case-sensitive too, so efsa, Efsa, nvwa and echa all score 0. Notes now point at the README, which records the measured cost. No term, weight or threshold changed. Revision 1.1.0 (issue #55): scoring.review_band added, set to 3. It flags, and does not reject: a passing case scoring in [3, 6) is ingested and published as normal and additionally queued for a content manager. The number is this corpus own: in the first EU dry run (1,548 CJEU decisions across 2024, 54 passed) the false positives were concentrated at 3.0-3.9 while the >=12 band was almost entirely genuine, and raising min_score from 3 to 6 would have removed 21 cases of which roughly two were in scope. That trade was declined (core document 2.7), so the same 3-to-6 population is reviewed instead of discarded. No term, weight or threshold changed.",
   "scoring": {
     "min_score": 3,
+    "review_band": 3,
     "count_term_once": true,
     "fields": {
       "title": 1.5,

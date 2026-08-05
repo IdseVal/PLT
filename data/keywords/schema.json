@@ -54,6 +54,12 @@
           "exclusiveMinimum": 0,
           "description": "Total weight a document must reach to pass the filter. A single weight-3 term is intended to be sufficient on its own."
         },
+        "review_band": {
+          "type": "number",
+          "minimum": 0,
+          "default": 3,
+          "description": "Width, in score points above min_score, of the band within which a passing document is additionally flagged for content-manager review. A document scoring min_score <= score < min_score + review_band is ingested and published exactly like any other and placed in the review queue (core document 2.7). Set it per jurisdiction from that jurisdiction's own dry run; 0 disables flagging. Defaults to 3."
+        },
         "count_term_once": {
           "type": "boolean",
           "default": true,

@@ -2,13 +2,14 @@
   "schema_version": "1.0.0",
   "jurisdiction": "NL",
   "jurisdiction_name": "Netherlands",
-  "list_version": "1.0.2",
-  "updated": "2026-08-03",
+  "list_version": "1.1.0",
+  "updated": "2026-08-05",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": ["nl"],
-  "notes": "Seed list for the Rechtspraak.nl connector. Dutch is a compounding language: many terms occur inside compounds (gewasbeschermingsmiddelenrichtlijn, bestrijdingsmiddelengebruik), so several stems use match=substring deliberately. Weight 3 = qualifies alone; weight 2 = strong; weight 1 = contextual only. Precision and recall to be reviewed against the first full ingestion run before this list is frozen. Revision 1.0.1 (issue #20): case_sensitive applies to a term and all of its aliases, so acronyms and prose words can never share a term. nl-ddt and nl-ctgb were splitting that rule and would have missed a sentence-initial 'Lindaan' or a lower-cased 'college voor de toelating'. Revision 1.0.2: the exception notes claimed these authority names are always capitalised so the exposure is theoretical. Measurement refuted that - the acronym is case-sensitive too, so efsa, Efsa, nvwa and echa all score 0. Notes now point at the README, which records the measured cost. No term, weight or threshold changed.",
+  "notes": "Seed list for the Rechtspraak.nl connector. Dutch is a compounding language: many terms occur inside compounds (gewasbeschermingsmiddelenrichtlijn, bestrijdingsmiddelengebruik), so several stems use match=substring deliberately. Weight 3 = qualifies alone; weight 2 = strong; weight 1 = contextual only. Precision and recall to be reviewed against the first full ingestion run before this list is frozen. Revision 1.0.1 (issue #20): case_sensitive applies to a term and all of its aliases, so acronyms and prose words can never share a term. nl-ddt and nl-ctgb were splitting that rule and would have missed a sentence-initial 'Lindaan' or a lower-cased 'college voor de toelating'. Revision 1.0.2: the exception notes claimed these authority names are always capitalised so the exposure is theoretical. Measurement refuted that - the acronym is case-sensitive too, so efsa, Efsa, nvwa and echa all score 0. Notes now point at the README, which records the measured cost. No term, weight or threshold changed. Revision 1.1.0 (issue #55): scoring.review_band added, set to 2.5. It flags, and does not reject: a passing case scoring in [3, 5.5) is ingested and published as normal and additionally queued for a content manager. The number is this corpus own and deliberately not the EU one: in the first Rechtspraak dry run (10,011 documents, 38 passed) every clear false positive scored at or below 5.0 and none above it, so the band covers that population with a margin rather than being copied from a different corpus. No term, weight or threshold changed.",
   "scoring": {
     "min_score": 3,
+    "review_band": 2.5,
     "count_term_once": true,
     "fields": {
       "title": 1.5,
