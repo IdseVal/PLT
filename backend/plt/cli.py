@@ -330,20 +330,26 @@ def mirror(
 
     Raises:
         click.UsageError: If no jurisdiction was named.
-        click.ClickException: If any run failed; the message names the jurisdictions.
+        click.ClickException: If any run failed, if no connector serves a named jurisdiction,
+            or if the store itself cannot be written to. The last of those is reported rather
+            than raised through: a full or read-only disk is an operator's problem to read in
+            one line, not a traceback.
     """
     settings = get_settings()
     codes = _selected_jurisdictions(jurisdictions, every_jurisdiction=every_jurisdiction)
     reports: list[MirrorReport] = []
     for code in codes:
-        report = mirror_jurisdiction(
-            code,
-            since,
-            until,
-            settings=settings,
-            store_root=store_root,
-            limit=limit,
-        )
+        try:
+            report = mirror_jurisdiction(
+                code,
+                since,
+                until,
+                settings=settings,
+                store_root=store_root,
+                limit=limit,
+            )
+        except PipelineError as error:
+            raise click.ClickException(f"{code}: {error}") from error
         reports.append(report)
         click.echo(report.summary())
         if report.status is IngestStatus.INTERRUPTED:

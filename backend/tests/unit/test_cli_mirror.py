@@ -158,4 +158,21 @@ def test_a_partial_capture_is_only_red_when_the_caller_asks(store_root: Path) ->
 
 
 def test_naming_no_jurisdiction_is_a_usage_error(store_root: Path) -> None:
+    assert store_root.parent.is_dir()
     assert main(["mirror"]) == 2
+
+
+def test_a_jurisdiction_with_no_connector_exits_one(store_root: Path) -> None:
+    assert store_root.parent.is_dir()
+
+    assert main(["mirror", "--jurisdiction", "ZZ"]) == 1
+
+
+def test_a_store_that_cannot_be_opened_exits_one(tmp_path: Path, store_root: Path) -> None:
+    assert store_root.parent.is_dir()
+    blocked = tmp_path / "blocked"
+    blocked.mkdir()
+    (blocked / "EU").write_text("something is already here", encoding="utf-8")
+
+    # A traceback is the wrong report for a disk that is full, read-only or occupied.
+    assert main(["mirror", "--jurisdiction", "EU", "--store", str(blocked)]) == 1
