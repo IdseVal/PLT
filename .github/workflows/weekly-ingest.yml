@@ -22,14 +22,6 @@ name: Weekly ingest
 #     real network and database work and finishes; the later run waits.
 
 on:
-  # TEMPORARY PROOF HARNESS - reverted in the next commit.
-  # GitHub only lets a workflow_dispatch be sent for a workflow that already exists on the
-  # default branch, so the only way to exercise this file before it is merged is to have a
-  # push to this branch trigger it. The four lines marked "PROOF HARNESS" are the whole
-  # difference: they make the run behave exactly as `dry_run: true, since: 2026-08-01,
-  # until: 2026-08-02` would, which is the dispatch issue #9 asks for evidence of.
-  push:
-    branches: [feature/9-weekly-ingest]
   schedule:
     # Mondays, 04:20 UTC. Off the hour on purpose: GitHub queues the top of the hour
     # heavily, and a delayed scan is a scan that ran against a different window than the
@@ -62,7 +54,7 @@ env:
   PYTHON_VERSION: '3.11'
   # The schedule is the destructive path and says so by omission: `inputs` is empty on a
   # schedule, so DRY_RUN is false there and true by default for anyone dispatching by hand.
-  DRY_RUN: ${{ inputs.dry_run || github.event_name == 'push' }}  # PROOF HARNESS
+  DRY_RUN: ${{ inputs.dry_run || false }}
 
 jobs:
   plan:
@@ -215,8 +207,8 @@ jobs:
         id: ingest
         env:
           JURISDICTION: ${{ matrix.jurisdiction }}
-          SINCE: ${{ inputs.since || '2026-08-01' }}  # PROOF HARNESS: bounded window
-          UNTIL: ${{ inputs.until || '2026-08-02' }}  # PROOF HARNESS: bounded window
+          SINCE: ${{ inputs.since }}
+          UNTIL: ${{ inputs.until }}
           PLT_LOG_FORMAT: json
           PLT_PIPELINE_REPORT_DIR: ${{ runner.temp }}/reports
         run: |
