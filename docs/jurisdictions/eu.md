@@ -151,7 +151,12 @@ substitute for one.
 
 ## 4. Documented exceptions
 
-None. The EU list adds nothing to the shared method: it vetoes no document and gates no term.
+One, and it only narrows how a term matches: the EU list still vetoes no document and gates
+no term.
+
+| What it excludes | Why | What it costs |
+| --- | --- | --- |
+| The ISO common name *metam* inside longer words | It was an alias of *fipronil* and matched on word fragments because that name, at eight characters, can carry them. Five characters cannot: Dutch is one of this list's languages, and across 150,000 Dutch judgments 214 of the 217 documents holding the fragment hold *metamfetamine*, *metamorfose* or *trometamol*, against three holding the substance. Nothing gates the term, so at weight 3 each of those would have been selected on the fragment alone | Nothing measurable. Matched as a whole word it still finds *metam*, and *metam-sodium* and *metam natrium* with it, because a hyphen and a space are not word characters. The EU corpus itself has not been measured; the figures above are from the Dutch one |
 
 Two weaknesses in the list are known and are being weighed by the content manager, who owns
 curation (`docs/core-document.md` §2.3):
