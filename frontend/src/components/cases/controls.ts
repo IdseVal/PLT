@@ -30,7 +30,7 @@ export const INPUT =
  * `:focus-within` is true whenever focus is anywhere inside the control, including on the
  * host itself, so it covers both. Same token, same width, same offset as every other ring.
  */
-export const DATE_INPUT = `${INPUT} focus-within:outline-plt-accent-strong focus-within:outline focus-within:outline-2 focus-within:outline-offset-2`
+export const DATE_INPUT = INPUT
 
 /** Select controls. Sized like {@link INPUT} so a mixed row lines up. */
 export const SELECT =
