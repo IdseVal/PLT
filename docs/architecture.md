@@ -109,7 +109,7 @@ add source-specific fields to `source_metadata`.
 | Table | Purpose | Key columns |
 | --- | --- | --- |
 | `jurisdiction` | One row per jurisdiction, EU included as its own row | `code` (PK, `NL`/`EU`), `name`, `type` (`state`\|`supranational`), `iso_alpha2`, `map_feature_id`, `is_active` |
-| `court` | Courts/instances, seeded from source vocabularies | `id`, `jurisdiction_code` (FK), `source_identifier` (unique per jurisdiction), `name`, `level`, `domain` |
+| `court` | Courts/instances, seeded from source vocabularies | `id`, `jurisdiction_code` (FK), `source_identifier` (unique per jurisdiction), `name`, `level`, `domain`, `source_type` |
 | `case` | The central entity, one row per decision | `id`, `jurisdiction_code` (FK), `source_id` (**unique with jurisdiction**: ECLI or CELEX), `source_system`, `court_id` (FK), `title`, `abstract`, `decision_date`, `filing_date`, `publication_date`, `case_numbers` (JSON), `language`, `law_domain`, `law_subfield`, `procedure_type`, `outcome`, `source_url`, `content_hash`, `first_seen_at`, `last_seen_at`, `updated_at`, `source_metadata` (JSON), `is_published`, `filter_score`, `needs_review` |
 | `case_document` | Full texts and attachments per case, per language | `id`, `case_id` (FK), `language`, `doc_type` (`judgment`\|`opinion`\|`summary`), `format`, `full_text`, `raw_payload`, `retrieved_at` |
 | `party` | Litigating parties | `id`, `case_id` (FK), `name`, `role` (`applicant`\|`defendant`\|`intervener`\|`other`), `party_type` |
@@ -201,6 +201,14 @@ a deliberate minimum and adding to it is a decision, not a convenience:
 - The subject-matter classification a connector reads — the *rechtsgebied* for the
   Netherlands — has no column here and is stored as `case.source_metadata["subject"]`. It is
   a **scored** field of the filter chain nonetheless; see §4.2.
+- `court.level` and `court.domain` are this project's normalisation across jurisdictions and
+  are what the API filters on. `court.source_type` is the source's own word for the same
+  thing, verbatim, stored **beside** them and never instead of them: the normalisation is
+  deliberately lossy — Rechtspraak's `Koninkrijksinstantie`, the Caribbean courts of the
+  Kingdom, flattens onto the same `other` as every residual instance — and rule 2.6 applies
+  to a vocabulary exactly as it does to a judgment. Whatever else a court vocabulary states
+  and no column holds goes to `court.source_metadata`. Both are written on every upsert, so
+  `plt seed-vocabularies` is a re-statement of the vocabulary and not an accumulation.
 
 **Repository helpers** (`plt/db/repositories.py`) are the only SQL the API layer calls:
 `search_cases` / `count_cases` / `stream_cases` (all taking a `CaseSearchCriteria`),

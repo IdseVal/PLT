@@ -125,6 +125,13 @@ def resolve_court(
     vocabulary identifier — and never on the name, so a renamed court updates its row
     instead of becoming a second one.
 
+    Every descriptive field is written through on each call, including the raw
+    ``source_type`` and the ``source_metadata`` block: the connector's vocabulary is the
+    authority on them, so the row states what the source last said rather than an
+    accumulation. It is what makes ``plt seed-vocabularies`` an update rather than an insert,
+    and it is why a connector must supply the whole record and not only the fields it
+    changed.
+
     Args:
         session: Open database session.
         jurisdiction_code: Jurisdiction the court belongs to.
@@ -153,8 +160,10 @@ def resolve_court(
         existing.name = _clip(court.name, _LABEL_LEN) or existing.name
     existing.level = _clip(court.level, _SHORT_LEN)
     existing.domain = _clip(court.domain, _SHORT_LEN)
+    existing.source_type = _clip(court.source_type, _SHORT_LEN)
     existing.abbreviation = _clip(court.abbreviation, _SHORT_LEN)
     existing.source_url = court.source_url
+    existing.source_metadata = dict(court.source_metadata)
     session.flush()
     return existing
 

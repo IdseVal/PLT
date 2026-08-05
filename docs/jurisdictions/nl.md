@@ -71,15 +71,28 @@ What a reader has to know about them:
 
 | Signal | Where it lives | Usable today |
 | --- | --- | --- |
-| `Koninkrijksinstantie`, the court type in the portal's own `Waardelijst/Instanties` vocabulary | the source; the connector reads it | **No** — `_COURT_TYPES` maps it to level `other`, alongside `AndereGerechtelijkeInstantie`, and the raw type is not stored on the `court` row |
+| `Koninkrijksinstantie`, the court type in the portal's own `Waardelijst/Instanties` vocabulary | `court.source_type`, verbatim; the whole vocabulary entry is in `court.source_metadata` | **Yes, in the database** (issue #72, 5 August 2026) — `_COURT_TYPES` still maps it to level `other` alongside `AndereGerechtelijkeInstantie`, because that is what the normalised classification means, but the raw type is now stored beside the normalisation instead of being discarded. `SELECT … WHERE source_type = 'Koninkrijksinstantie'` answers the question directly. **No API filter or frontend facet yet** — see §6 |
 | The **ECLI court code** and the court's name | `case.ecli`, `court.name`, `court.abbreviation` | **Yes** — `ECLI:NL:OGEAM:2025:155` is the Gerecht in eerste aanleg van Sint Maarten (verified against the live endpoint, issue #62), and `OCHM` is the Constitutioneel Hof Sint Maarten (from the portal's vocabulary, `backend/tests/fixtures/rechtspraak/instanties.xml`). No exhaustive list of the Caribbean court codes has been compiled |
 
-So the information exists at the source and is **lost in normalisation**: today a researcher
-can only separate these cases by recognising the court. Surfacing the Kingdom courts as a
-filterable property — persisting the vocabulary type, or flagging the jurisdiction on the
-case — is the natural follow-up, and it is a code change in the connector and the API rather
-than a curation one. It is **not** made here. Until it is made, §6 carries it as a known
-limitation.
+The vocabulary lists **16** Kingdom courts, every one of them at level `other` (verified live,
+5 August 2026, issue #72). The information exists at the source exactly once, when the
+vocabulary is read, and until #72 it was **lost in normalisation** — which is why keeping it
+was worth a column of its own rather than a later migration: recovering it afterwards would
+have meant asking the portal for every court record again (`docs/architecture.md` rule 2.6).
+
+**Two things followed from fixing it, and the second was not expected.** For these courts, and
+only for these courts, the portal qualifies the attribute that identifies the deciding court:
+`psi:resourceIdentifier` in the `psi.rechtspraak` scheme, where a European Dutch judgment
+writes a bare `resourceIdentifier` in `overheid.RechterlijkeMacht`. The connector read only the
+unqualified form, so **every Kingdom judgment failed to resolve against the vocabulary**: it
+fell through to a key derived from the court's name, matching nothing, and was stored with no
+level, no domain and no type, against a `court` row of its own beside the one seeding had
+already created for the same court. Both are fixed together; `ECLI:NL:OGEAM:2025:155` is the
+recorded fixture that pins it.
+
+What is still not built is the *filter*: nothing in the HTTP API or the frontend exposes
+`court.source_type`, so the query above is one a person with database access can run and a
+user of the tracker cannot. §6 carries that, narrowed.
 
 ---
 
@@ -97,7 +110,9 @@ vocabulary produced **261 courts** (verified live, issue #7); the connector clas
 by the vocabulary's own type — `Rechtbank`, `Kantongerecht`, `Gerechtshof`, `TypeHr`,
 `TypeRvS`, `TypeCRvB`, `TypeCBb`, `Parket`, `TuchtrechtelijkeInstantie`,
 `Koninkrijksinstantie` and two residual types — rather than by any hard-coded list of court
-names (`backend/plt/pipeline/connectors/rechtspraak.py`).
+names (`backend/plt/pipeline/connectors/rechtspraak.py`). Since issue #72 the type itself is
+stored on the row as well as the level it maps to, so the classification can be re-derived
+from the database rather than from the portal.
 
 **This matters more than it may appear.** Most Dutch pesticide litigation is first-instance,
 so a connector restricted to the two apex courts Annex 2 lists would miss the bulk of the
@@ -650,12 +665,15 @@ scheme rather than a jurisdiction-specific exception.
    defeated by a double space before the word, and the `CTB` guard by the road base written
    without its hyphen. Both fail *open* — the document passes, scores at `min_score` and is
    caught by the review band — which is the direction §2.7 asks a failure to take.
-6. **Caribbean cases are in the Dutch jurisdiction and nothing marks them as such** (§1.1).
-   The decision to include them is deliberate; the inability to filter them is not. The portal
-   types those courts as `Koninkrijksinstantie`, but the connector maps that to level `other`
-   and does not persist the type, so today the only way to identify them is by court name or
-   ECLI court code. **A researcher filtering for Dutch pesticide litigation therefore receives
-   cases to which EU pesticide law does not apply, with nothing in the record saying so.**
+6. **Caribbean cases are in the Dutch jurisdiction, and the API still cannot filter them out**
+   (§1.1). Half of this is fixed: since issue #72 the portal's own `Koninkrijksinstantie` is
+   persisted as `court.source_type`, so the corpus can be split on it in SQL and the record no
+   longer stays silent about which cases those are. What does not exist is a query parameter
+   or a facet: `court.source_type` is exposed nowhere in the HTTP API (§5 of
+   `docs/architecture.md`) or the frontend, so **a researcher using the tracker still receives
+   cases to which EU pesticide law does not apply without being able to include or exclude
+   them.** A follow-up needs a criterion on `CaseSearchCriteria`, a join in `search_cases`, the
+   value in `list_facets`, and a facet in the UI.
 7. **One language only.** The list covers Dutch. Frisian-language judgments, if any exist in
    the corpus, would not be matched; this has not been investigated.
 8. **No rows have been written yet.** Every figure in this document comes from dry runs. The
@@ -678,11 +696,14 @@ scheme rather than a jurisdiction-specific exception.
 | 5 August 2026 | The four #57 reproductions against `nl.json` 1.1.0 and 1.2.0 | issue #57 / PR for `fix/57-nl-exceptions` | Each scored 3.00/1.00 and now scores 0.00; 26 probe documents run against both versions, tabulated in §5.4–§5.7 |
 | 5 August 2026 | Cost of each exception, in both directions | same | Recorded per exception in §5.4–§5.7; no probe that passed for a pesticide reason stopped passing |
 | 5 August 2026 | Matching cost of the three `regex` terms | same | 1 MB of full text: 90 ms at 1.1.0, 165 ms at 1.2.0, budget 500 ms |
+| 5 August 2026 | Kingdom courts in the live `Waardelijst/Instanties` | issue #72 | **16**, every one of them typed `Koninkrijksinstantie` and normalised to level `other` |
+| 5 August 2026 | `ECLI:NL:OGEAM:2025:155` end to end against the live endpoint | issue #72 | Before: court unresolved, `level`/`domain`/`source_type` all null, key derived from the court's name. After: `source_identifier` `http://psi.rechtspraak.nl/GEASM`, `abbreviation` `OGEAM`, `level` `other`, `source_type` `Koninkrijksinstantie` |
+| 5 August 2026 | The identifying attribute on `dcterms:creator` | issue #72 | Qualified as `psi:resourceIdentifier` (scheme `psi.rechtspraak`) for the Kingdom courts, bare `resourceIdentifier` (scheme `overheid.RechterlijkeMacht`) for the European Dutch ones; confirmed on `ECLI:NL:OGEAM:2025:155` and `ECLI:NL:OGHACMB:2025:1` |
 | — | Publication selection policy; size of the unpublished remainder | — | **Not verified** |
 | — | Statutory appeal route for Ctgb decisions | — | **Not verified** — CBb inferred from two dry-run cases |
 | — | Size of the historical `CTB` population (§5.6) | — | **Not measured** |
 | — | Effect of `nl.json` 1.2.0 over the June 2026 corpus | — | **Not measured** — the run wrote no rows and its report is not in the repository (§5.1) |
-| — | Number of Caribbean judgments in the corpus, and how many are pesticide cases (§1.1) | — | **Not counted** |
+| — | Number of Caribbean judgments in the corpus, and how many are pesticide cases (§1.1) | — | **Not counted** — countable in SQL since #72 (`court.source_type = 'Koninkrijksinstantie'`), but no run has written the rows to count |
 
 ---
 
@@ -707,5 +728,8 @@ scheme rather than a jurisdiction-specific exception.
   owner's decision of 5 August 2026 to handle them as documented exceptions (§5.4–§5.7).
 - **Issue #62** — the Caribbean Kingdom courts, and the owner's decision of 5 August 2026 to
   include them in the `NL` jurisdiction (§1.1).
+- **Issue #72** — the portal's court type, discarded at ingestion until 5 August 2026 and now
+  persisted as `court.source_type`, together with the qualified `psi:resourceIdentifier` that
+  had been keeping the Kingdom courts from resolving against the vocabulary at all (§1.1, §6).
 - **Issue #24** — contextual authority terms and the limits of `requires`.
 - **Issue #55** — the review queue that §2.7 puts in place of a threshold change.

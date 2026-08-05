@@ -113,15 +113,43 @@ def test_seeding_fills_the_court_table_from_the_vocabulary(
     seeding_env: sessionmaker[Session],
 ) -> None:
     assert main(["seed-vocabularies", "-j", "NL"]) == 0
-    assert count_courts(seeding_env) == 14
+    assert count_courts(seeding_env) == 15
 
     with seeding_env() as session:
         council = session.scalars(select(Court).where(Court.abbreviation == "RVS")).one()
         assert council.name == "Raad van State"
         assert council.level == "supreme"
         assert council.domain == "administrative"
+        assert council.source_type == "TypeRvS"
         # Identity is the vocabulary URI, never the name.
         assert council.source_identifier.startswith("http")
+
+
+def test_seeding_stores_the_raw_court_type_beside_the_normalised_one(
+    seeding_env: sessionmaker[Session],
+) -> None:
+    """Issue #72: the type reaches the row, and re-seeding is what backfills it.
+
+    The Caribbean courts of the Kingdom normalise onto level ``other`` together with the
+    residual instances, so ``source_type`` is the only column that distinguishes them. The
+    source states it while the vocabulary is read and nowhere else, which is why this command
+    — one request per source, upserting on the vocabulary URI — is the whole backfill, and no
+    case has to be fetched again.
+    """
+    assert main(["seed-vocabularies", "-j", "NL"]) == 0
+
+    with seeding_env() as session:
+        kingdom = session.scalars(
+            select(Court).where(Court.source_type == "Koninkrijksinstantie").order_by(Court.name)
+        ).all()
+
+    assert [court.abbreviation for court in kingdom] == ["OCHM", "OGEAM"]
+    assert {court.level for court in kingdom} == {"other"}
+    assert kingdom[1].source_metadata == {
+        "type": "Koninkrijksinstantie",
+        "begin_date": "1950-01-01",
+        "end_date": None,
+    }
 
 
 def test_seeding_twice_changes_nothing(seeding_env: sessionmaker[Session]) -> None:

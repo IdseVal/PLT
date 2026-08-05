@@ -293,21 +293,36 @@ class NormalisedCourt:
     Identified by :attr:`source_identifier` — the vocabulary URI or code the jurisdiction's
     source uses — rather than by name, so a renamed court does not become a second row.
 
+    :attr:`level` and :attr:`domain` are this project's own classification, normalised across
+    jurisdictions so the API can filter on them. :attr:`source_type` is the source's own word
+    for the same thing, kept **beside** the normalised pair rather than instead of it. The
+    normalisation is lossy on purpose — Rechtspraak's ``Koninkrijksinstantie`` and
+    ``AndereGerechtelijkeInstantie`` both flatten to level ``other`` — and the source states
+    the type exactly once, when the vocabulary is read. Discarding it here would make
+    recovering it a re-fetch rather than a migration, which is what cross-cutting rule 6 of
+    ``docs/architecture.md`` exists to prevent.
+
     Attributes:
         source_identifier: The source's own identifier for the court, unique per jurisdiction.
         name: Human-readable name.
         level: Instance in the judicial hierarchy, e.g. ``supreme``, ``appeal``.
         domain: Subject-matter domain, e.g. ``administrative``, ``civil``.
+        source_type: The source's own type for the court, verbatim and unflattened, e.g.
+            ``Koninkrijksinstantie`` or ``Rechtbank``. ``None`` when the source states none.
         abbreviation: Short form used by the source.
         source_url: URL of the court in the source's vocabulary.
+        source_metadata: Anything else the source's vocabulary exposed about the court that
+            the schema has no column for, e.g. the dates between which it sat.
     """
 
     source_identifier: str
     name: str
     level: str | None = None
     domain: str | None = None
+    source_type: str | None = None
     abbreviation: str | None = None
     source_url: str | None = None
+    source_metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

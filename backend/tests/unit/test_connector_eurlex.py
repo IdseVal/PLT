@@ -942,6 +942,10 @@ def test_the_recorded_judgment_maps_onto_the_schema(blaise_case: NormalisedCase)
     assert blaise_case.court is not None
     assert blaise_case.court.name == "Court of Justice"
     assert blaise_case.court.source_identifier.endswith("/corporate-body/CJ")
+    # The notice types the deciding body against the authority table it comes from and states
+    # nothing finer. It says it once, so it is stored rather than re-derivable (issue #72).
+    assert blaise_case.court.source_type == "corporate-body"
+    assert blaise_case.court.level is None
     assert blaise_case.source_metadata["ecli"] == "ECLI:EU:C:2019:800"
     assert blaise_case.source_metadata["celex"] == BLAISE
     assert "cellar/1c5d848d" in blaise_case.source_metadata["cellar_uri"]

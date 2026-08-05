@@ -22,6 +22,7 @@ import pytest
 
 from plt.config import Settings
 from plt.db.models import DocumentType
+from plt.pipeline.base import Candidate
 from plt.pipeline.connectors.rechtspraak import RechtspraakConnector
 from tests.conftest import build_settings
 
@@ -89,3 +90,30 @@ def test_the_court_vocabulary_is_still_published(live: RechtspraakConnector) -> 
     assert len(courts) > 100
     assert all(court.source_identifier for court in courts)
     assert any(court.level == "supreme" for court in courts)
+    # The raw type is the only thing that separates the Caribbean courts of the Kingdom from
+    # every other instance the normalised level flattens onto ``other`` (issue #72). Sixteen
+    # of them on 5 August 2026; the count is not asserted, only that the type is still stated.
+    kingdom = [court for court in courts if court.source_type == "Koninkrijksinstantie"]
+    assert kingdom
+    assert all(court.level == "other" for court in kingdom)
+
+
+def test_a_kingdom_judgment_still_resolves_against_the_vocabulary(
+    live: RechtspraakConnector,
+) -> None:
+    """The one assumption a fixture cannot notice changing, on the record it was found in.
+
+    The portal qualifies the attribute identifying the court as ``psi:resourceIdentifier`` for
+    the Caribbean courts and leaves it bare for the European Dutch ones. If that ever
+    converges, this test fails and the connector can stop reading the attribute by its local
+    name; if it changes the other way, this is what catches the Kingdom judgments silently
+    losing their court again (issue #72).
+    """
+    candidate = Candidate(source_id="ECLI:NL:OGEAM:2025:155", jurisdiction_code="NL")
+
+    case = live.normalise(live.fetch(candidate))
+
+    assert case.court is not None
+    assert case.court.source_identifier == "http://psi.rechtspraak.nl/GEASM"
+    assert case.court.source_type == "Koninkrijksinstantie"
+    assert case.court.level == "other"

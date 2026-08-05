@@ -23,7 +23,8 @@ Captured from `data.rechtspraak.nl` on 4 August 2026.
 | `ECLI_NL_HR_2024_309.xml` | A Hoge Raad judgment carrying a `dcterms:relation` to the advocate general's opinion. |
 | `ECLI_NL_PHR_2024_321.xml` | An opinion, whose body element is `conclusie` rather than `uitspraak`. |
 | `ECLI_NL_GHAMS_2026_1495.xml` | A metadata-only ECLI: no summary, no body, nothing for the filter to read. |
-| `instanties.xml` | The `Waardelijst/Instanties` vocabulary, **trimmed** to fourteen courts covering every `Type` it defines. The full list runs to 261 entries and 79 kB. |
+| `ECLI_NL_OGEAM_2025_155.xml` | A judgment of the Gerecht in eerste aanleg van Sint Maarten, captured 5 August 2026. A court of the Caribbean part of the Kingdom, typed `Koninkrijksinstantie` in the vocabulary, and the one shape in which the portal qualifies the identifying attribute: `psi:resourceIdentifier` rather than `resourceIdentifier` (issue #72). Anonymised at the source, as published. |
+| `instanties.xml` | The `Waardelijst/Instanties` vocabulary, **trimmed** to fifteen courts covering every `Type` it defines, plus the Sint Maarten court the judgment above is decided by. The full list runs to 261 entries and 79 kB. |
 
 Three files here were **not** captured from the endpoint, because no court publishes them:
 

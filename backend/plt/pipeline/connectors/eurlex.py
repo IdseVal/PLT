@@ -1287,11 +1287,17 @@ def _court(work: etree._Element) -> NormalisedCourt | None:
         The court — the Court of Justice, the General Court or the Civil Service Tribunal —
         or ``None`` when the notice names no corporate body. It is identified by its
         authority URI rather than by its name, so a renamed court does not become a second
-        row. The level and the domain are left unset rather than guessed.
+        row. The level and the domain are left unset rather than guessed, and the raw
+        ``source_type`` is CELLAR's own ``corporate-body``: the notice types the deciding
+        body against the authority table it comes from and states nothing finer, so that is
+        what is recorded. It is stored rather than inferred for the same reason as in the
+        Dutch connector — the notice says it once — even though, unlike Rechtspraak's
+        vocabulary, it does not distinguish one Union court from another.
     """
     for agent in work.findall("WORK_CREATED_BY_AGENT"):
         uri = agent.find("URI")
-        if uri is None or _find_text(uri, "TYPE") != "corporate-body":
+        agent_type = _find_text(uri, "TYPE") if uri is not None else None
+        if uri is None or agent_type != "corporate-body":
             continue
         code = _find_text(uri, "IDENTIFIER")
         name = _find_text(agent, "PREFLABEL")
@@ -1301,6 +1307,7 @@ def _court(work: etree._Element) -> NormalisedCourt | None:
         return NormalisedCourt(
             source_identifier=identifier,
             name=name,
+            source_type=agent_type,
             abbreviation=code,
             source_url=_find_text(uri, "VALUE"),
         )

@@ -87,6 +87,13 @@
     <BeginDate>2010-10-10</BeginDate>
   </Instantie>
   <Instantie>
+    <Identifier>http://psi.rechtspraak.nl/GEASM</Identifier>
+    <Naam>Gerecht in eerste aanleg van Sint Maarten</Naam>
+    <Afkorting>OGEAM</Afkorting>
+    <Type>Koninkrijksinstantie</Type>
+    <BeginDate>1950-01-01</BeginDate>
+  </Instantie>
+  <Instantie>
     <Identifier>http://standaarden.overheid.nl/owms/terms/tacakn</Identifier>
     <Naam>Accountantskamer NIVRA</Naam>
     <Afkorting>TACAKN</Afkorting>
