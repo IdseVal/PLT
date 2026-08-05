@@ -14,11 +14,13 @@ import Header from '@/components/Header'
 import About from '@/pages/About'
 import AllCases from '@/pages/AllCases'
 import CaseDetail from '@/pages/CaseDetail'
+import ConfirmSubscription from '@/pages/ConfirmSubscription'
 import Contact from '@/pages/Contact'
 import Faq from '@/pages/Faq'
 import Home from '@/pages/Home'
 import Methodology from '@/pages/Methodology'
 import NotFound from '@/pages/NotFound'
+import Unsubscribe from '@/pages/Unsubscribe'
 
 export default function App(): JSX.Element {
   return (
@@ -36,6 +38,11 @@ export default function App(): JSX.Element {
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/faq" element={<Faq />} />
           <Route path="/contact" element={<Contact />} />
+          {/* The two mailing-list routes. Neither is in the site menu: a reader reaches
+              them from the front-page form or from a link in an email, and putting them in
+              the header would clutter the four items the brief fixes. */}
+          <Route path="/subscribe/confirm" element={<ConfirmSubscription />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
