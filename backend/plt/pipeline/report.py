@@ -13,6 +13,10 @@ every line before the last is complete.
 
 Rejected documents are reported as well as accepted ones. A recall problem — the case that
 should have matched and did not — is invisible in a report that only lists successes.
+
+Each line also carries ``needs_review`` and the band it was judged against, so a dry run over
+a window shows which cases the review queue would receive without writing a row, and two runs
+over the same window can be compared line for line.
 """
 
 from __future__ import annotations
@@ -152,7 +156,10 @@ class MatchReport:
                 "content_hash": content_hash,
                 "action": action,
                 "passed": result.passed,
+                "needs_review": result.needs_review,
                 "score": round(result.score, 4),
+                "threshold": result.threshold,
+                "review_ceiling": result.review_ceiling,
                 "stage": result.stage,
                 "reason": result.reason,
                 "terms": [

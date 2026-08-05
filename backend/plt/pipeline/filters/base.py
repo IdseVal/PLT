@@ -153,6 +153,11 @@ class FilterResult:
         needs_review: Whether the document passed *within the review band* and is therefore
             flagged for confirmation. Never ``True`` on a rejection: a document that did not
             pass is not in the database and there is nothing to curate.
+        threshold: The score the stage compared against to decide :attr:`passed`, if it has
+            one. Carried with the score rather than left in the stage, so a stored verdict
+            still says what it was measured against once the list has moved on.
+        review_ceiling: The score at or above which the stage stops flagging. Together with
+            :attr:`threshold` it states the review band in full: ``[threshold, ceiling)``.
     """
 
     passed: bool
@@ -161,6 +166,8 @@ class FilterResult:
     stage: str
     matches: tuple[TermMatch, ...] = ()
     needs_review: bool = False
+    threshold: float | None = None
+    review_ceiling: float | None = None
 
     @property
     def passed_confidently(self) -> bool:

@@ -1167,6 +1167,8 @@ class KeywordFilter(Filter):
             stage=self.name,
             matches=tuple(matches),
             needs_review=needs_review,
+            threshold=self._list.min_score,
+            review_ceiling=self._list.review_ceiling,
         )
 
     def _weights(

@@ -29,6 +29,8 @@ EXPECTED_TABLES = {
     "alembic_version",
     "case",
     "case_document",
+    "case_review",
+    "case_review_decision",
     "case_topic",
     "citation",
     "court",

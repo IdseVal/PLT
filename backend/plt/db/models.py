@@ -46,6 +46,8 @@ from plt.db.base import Base, UtcDateTime, portable_enum, utcnow
 __all__ = [
     "Case",
     "CaseDocument",
+    "CaseReview",
+    "CaseReviewDecision",
     "CaseTopic",
     "Citation",
     "Court",
@@ -59,6 +61,8 @@ __all__ = [
     "LawDomain",
     "Party",
     "PartyRole",
+    "ReviewDecision",
+    "ReviewStatus",
     "Topic",
     "TopicAssignmentSource",
 ]
@@ -122,6 +126,37 @@ class TopicAssignmentSource(enum.StrEnum):
 
     PIPELINE = "pipeline"
     MANUAL = "manual"
+
+
+class ReviewDecision(enum.StrEnum):
+    """The verdict a content manager reached on a flagged case.
+
+    Both outcomes are recorded. A rejection is not a deletion: the case stops being
+    published, its ``keyword_match`` evidence stays, and the decision is part of the audit
+    trail that explains why the tracker does not show it (core document section 2.7).
+    """
+
+    CONFIRMED = "confirmed"
+    REJECTED = "rejected"
+
+
+class ReviewStatus(enum.StrEnum):
+    """Where a flagged case stands in the review queue.
+
+    ``pending`` is the queue itself. ``confirmed`` and ``rejected`` mirror the decision that
+    was taken. ``withdrawn`` covers the case that left the review band on a later evaluation
+    before anyone had decided on it: nothing was judged, so nothing is claimed, and it is
+    kept rather than deleted because a queue that silently loses items is not auditable.
+
+    A decided case whose upstream revision falls in the band again returns to ``pending``
+    while its previous decision stays on the row — re-flagged rather than silently
+    inheriting the old verdict.
+    """
+
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    REJECTED = "rejected"
+    WITHDRAWN = "withdrawn"
 
 
 class IngestStatus(enum.StrEnum):
@@ -283,6 +318,14 @@ class Case(Base):
     #: Editorial switch: unpublished cases are hidden from the public API.
     is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
 
+    #: Total weight the filter chain awarded at the last evaluation. Recorded rather than
+    #: recomputed, so the flag below can be read back against the score that produced it.
+    filter_score: Mapped[float | None] = mapped_column(Float)
+    #: Whether that score fell in the keyword list's review band. A flagged case is
+    #: published exactly like any other: the flag adds a review, it does not withhold the
+    #: case (core document section 2.7).
+    needs_review: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+
     jurisdiction: Mapped[Jurisdiction] = relationship(back_populates="cases")
     court: Mapped[Court | None] = relationship(back_populates="cases")
     documents: Mapped[list[CaseDocument]] = relationship(
@@ -299,6 +342,12 @@ class Case(Base):
     )
     citations: Mapped[list[Citation]] = relationship(
         back_populates="case", cascade="all, delete-orphan", passive_deletes=True
+    )
+    review: Mapped[CaseReview | None] = relationship(
+        back_populates="case",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        uselist=False,
     )
 
     def __repr__(self) -> str:
@@ -469,6 +518,164 @@ class KeywordMatch(Base):
     def __repr__(self) -> str:
         """Return an unambiguous representation for logs and test failures."""
         return f"KeywordMatch(id={self.id!r}, case_id={self.case_id!r}, term_id={self.term_id!r})"
+
+
+class CaseReview(Base):
+    """One case in the review queue, with the standing decision on it.
+
+    Created when the filter chain flags a case as borderline (core document section 2.7) and
+    kept afterwards, whatever the outcome: the row is the audit trail of why a case is, or is
+    no longer, in the tracker. One row per case, so ``case_id`` is unique.
+
+    Three properties are load-bearing:
+
+    1. **A decision survives re-ingestion.** The weekly run rewrites the child rows it owns —
+       documents, parties, citations, keyword matches — but never this one. An unchanged case
+       is not even re-evaluated, and a re-run over the same content leaves the row untouched.
+    2. **A genuine upstream revision re-opens the review.** When the content hash differs from
+       :attr:`flagged_content_hash` and the new score is in the band again, the status returns
+       to ``pending`` while :attr:`decision`, :attr:`decided_by` and :attr:`decided_at` stay
+       as they were. The reviewer therefore sees the previous verdict and that it no longer
+       applies to the current text, instead of the new text silently inheriting it.
+    3. **A rejection withholds publication without deleting anything.** The case row, its
+       documents and its ``keyword_match`` evidence all remain; only ``case.is_published``
+       goes false, and :attr:`suppressed_publication` records that the review is what did it,
+       so a later confirmation can undo exactly that and nothing else.
+
+    The reviewer may be a person or an agent, which is why :attr:`decided_by` is an opaque
+    identifier and nothing here assumes a user account or a screen.
+    """
+
+    __tablename__ = "case_review"
+    __table_args__ = (
+        UniqueConstraint("case_id"),
+        Index("ix_case_review_status_flagged_at", "status", "flagged_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    case_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("case.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[ReviewStatus] = mapped_column(
+        portable_enum(ReviewStatus, "review_status"),
+        nullable=False,
+        default=ReviewStatus.PENDING,
+    )
+
+    #: The score, the threshold and the band ceiling that produced the flag, and the version
+    #: of the list they came from. Stored together so the flag can be re-derived from the
+    #: row alone — the repeatability requirement of core document section 2.8.
+    score: Mapped[float | None] = mapped_column(Float)
+    min_score: Mapped[float | None] = mapped_column(Float)
+    band_ceiling: Mapped[float | None] = mapped_column(Float)
+    list_version: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
+    #: The filter chain's own sentence about the case, as shown to the reviewer.
+    reason: Mapped[str | None] = mapped_column(Text)
+
+    flagged_at: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False, default=utcnow)
+    #: ``case.revision`` and ``case.content_hash`` when the flag was last raised. The hash is
+    #: what distinguishes a re-run over the same text from a genuine upstream revision.
+    flagged_revision: Mapped[int | None] = mapped_column(Integer)
+    flagged_content_hash: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
+
+    #: The standing decision, if one has been taken. Retained across a re-flag: the status
+    #: says the case is back in the queue, these columns say what was last concluded.
+    decision: Mapped[ReviewDecision | None] = mapped_column(
+        portable_enum(ReviewDecision, "review_decision")
+    )
+    #: Who decided — a person or an agent. Opaque identifier, never a credential.
+    decided_by: Mapped[str | None] = mapped_column(String(_IDENTIFIER_LEN))
+    decided_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+    decided_revision: Mapped[int | None] = mapped_column(Integer)
+    decision_note: Mapped[str | None] = mapped_column(Text)
+    #: Whether the standing rejection is what unpublished the case, so confirming it later
+    #: restores publication only where the review withheld it.
+    suppressed_publication: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        UtcDateTime, nullable=False, default=utcnow, onupdate=utcnow
+    )
+
+    case: Mapped[Case] = relationship(back_populates="review")
+    decisions: Mapped[list[CaseReviewDecision]] = relationship(
+        back_populates="review",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="CaseReviewDecision.decided_at",
+    )
+
+    @property
+    def is_open(self) -> bool:
+        """Return whether the item is awaiting a decision."""
+        return self.status is ReviewStatus.PENDING
+
+    def apply_publication(self, case: Case) -> None:
+        """Withhold or restore the case's publication according to the standing decision.
+
+        The single place the rule lives, because both the ingestion path and the decision
+        endpoint have to apply it and they must not disagree. A rejection unpublishes; a
+        confirmation republishes **only** what a rejection had withheld, so a case an editor
+        unpublished for some other reason is not published by a reviewer confirming that it
+        is about pesticides.
+
+        Nothing is deleted either way: the case row, its documents and its ``keyword_match``
+        evidence are untouched.
+
+        Args:
+            case: The case this review belongs to.
+        """
+        if self.decision is ReviewDecision.REJECTED:
+            if case.is_published:
+                self.suppressed_publication = True
+            case.is_published = False
+        elif self.suppressed_publication:
+            case.is_published = True
+            self.suppressed_publication = False
+
+    def __repr__(self) -> str:
+        """Return an unambiguous representation for logs and test failures."""
+        return f"CaseReview(id={self.id!r}, case_id={self.case_id!r}, status={self.status!r})"
+
+
+class CaseReviewDecision(Base):
+    """One decision taken on a review item — the append-only history.
+
+    :class:`CaseReview` carries the *standing* decision so the queue can be listed in one
+    query; this table carries every decision ever taken, including the ones a later upstream
+    revision superseded. Rows are never updated and never deleted with anything but their
+    case.
+    """
+
+    __tablename__ = "case_review_decision"
+    __table_args__ = (
+        Index("ix_case_review_decision_review_id_decided_at", "review_id", "decided_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    review_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("case_review.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    decision: Mapped[ReviewDecision] = mapped_column(
+        portable_enum(ReviewDecision, "review_decision_outcome"), nullable=False
+    )
+    #: Who decided — a person or an agent.
+    decided_by: Mapped[str] = mapped_column(String(_IDENTIFIER_LEN), nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False, default=utcnow)
+    note: Mapped[str | None] = mapped_column(Text)
+    #: The revision and content hash the decision was taken on, so a superseded decision
+    #: still says what it was about.
+    case_revision: Mapped[int | None] = mapped_column(Integer)
+    content_hash: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
+
+    review: Mapped[CaseReview] = relationship(back_populates="decisions")
+
+    def __repr__(self) -> str:
+        """Return an unambiguous representation for logs and test failures."""
+        return (
+            f"CaseReviewDecision(id={self.id!r}, review_id={self.review_id!r}, "
+            f"decision={self.decision!r})"
+        )
 
 
 class Citation(Base):
