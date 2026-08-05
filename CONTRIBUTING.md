@@ -28,6 +28,7 @@ python -m venv .venv
 source .venv/bin/activate          # Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
 cp .env.example .env               # then edit; the defaults run out of the box
+alembic upgrade head               # creates ./plt.db and seeds the jurisdictions
 flask --app plt.app run
 ```
 
@@ -37,6 +38,20 @@ The API listens on <http://127.0.0.1:5000>. Check it:
 curl http://127.0.0.1:5000/api/health
 # {"ingest":{},"service":"plt-api","status":"ok","version":"0.1.0"}
 ```
+
+**If port 5000 is taken**, run the API somewhere else and point the frontend proxy at it —
+both halves, never only the first:
+
+```bash
+flask --app plt.app run --port 5055                     # backend
+# frontend/.env.local:  VITE_DEV_API_PROXY=http://127.0.0.1:5055
+```
+
+Windows and macOS both hand port 5000 out to something else — AirPlay Receiver on macOS, and
+on either, a Flask server left running in another checkout. Werkzeug does not always refuse
+to start on a port already in use, so the symptom is not an error: the page loads, the API
+calls 404, and the 404s come from a process you are not looking at. Moving the port and
+leaving `VITE_DEV_API_PROXY` alone produces exactly that.
 
 Configuration is read from the environment (`PLT_*`) or `.env`, and every variable is
 documented in [`backend/.env.example`](backend/.env.example). Nothing in the code may
@@ -74,8 +89,11 @@ npm run dev
 ```
 
 The dev server runs on <http://localhost:5173> and proxies `/api` to
-`http://127.0.0.1:5000`, so run the backend alongside it. Only `VITE_`-prefixed variables
-reach the browser bundle — never put a secret in one.
+`http://127.0.0.1:5000`, so run the backend alongside it. Both are only defaults:
+`VITE_DEV_PORT` and `VITE_DEV_API_PROXY` in `.env.local` replace them, and the startup banner
+reports the port actually in use. Only `VITE_`-prefixed variables reach the browser bundle —
+never put a secret in one. These two are the exception in the other direction: they configure
+the dev-server process rather than the bundle, so they mean nothing to a built site.
 
 | Command | What it does |
 | --- | --- |
