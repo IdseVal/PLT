@@ -35,6 +35,9 @@
  *   going quietly missing from the map;
  * - one merged path for the surrounding countries, which are context, not jurisdictions;
  * - a label point per jurisdiction, used to anchor the tooltip on keyboard focus;
+ * - a geographic anchor per jurisdiction: where on the globe, in unprojected lon/lat, the
+ *   outline that was drawn actually lies. Nothing renders it; it is what lets the tests say
+ *   that the shape labelled Austria is the country at 47°N 14°E and not its neighbour;
  * - a marker flag for jurisdictions too small to hit with a pointer (Luxembourg, Malta);
  * - the position of the EU marker in the North Sea, with the clearance measured against
  *   every rendered coastline so it cannot silently drift onto land.
@@ -43,7 +46,7 @@
 import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const FRONTEND_ROOT = resolve(HERE, '..')
@@ -125,13 +128,17 @@ const EU_JURISDICTION = 'EU'
  * naming it. That is the point: the map was a member state short of the annex for a while, and
  * every check passed, because the coverage was written down in three places and read from none.
  *
- * The codes below are **not** the last word on themselves. Annex 2 carries no ISO codes, so it
- * cannot catch a code exchanged between two countries here — that would draw one member state's
- * case count and `/cases` link on another's outline, with nothing malformed to notice.
- * `tests/mapGeometry.test.ts` states the name-to-code pairing independently and fails on it, so
- * a code changed here has to be changed there too, deliberately.
+ * Neither column below is the last word on itself, and for the same reason: Annex 2 carries
+ * names only, so it cannot catch a value exchanged between two countries here. A transposed
+ * `code` draws one member state's case count and `/cases` link on another's outline; a
+ * transposed `source` draws another country's *outline* under this one's name. Both leave every
+ * shape well-formed and every count plausible. `tests/mapGeometry.test.ts` therefore checks this
+ * table from outside: the name-to-code pairing is restated there by hand, and both columns are
+ * put to ISO 3166-1 itself through the region data Node ships — `source` is the country's ISO
+ * numeric code, which ICU resolves to an alpha-2 code, which must be the `code` beside it.
+ * That is a check no edit to this file can satisfy except a correct one.
  */
-const GEOMETRY_BY_JURISDICTION = {
+export const GEOMETRY_BY_JURISDICTION = {
   Austria: { code: 'AT', source: '040' },
   Belgium: { code: 'BE', source: '056' },
   Bulgaria: { code: 'BG', source: '100' },
@@ -587,6 +594,35 @@ function prepareRings(rings, canvas) {
 }
 
 /**
+ * Where a country's outline lies on the globe, in degrees.
+ *
+ * Deliberately computed **before** the projection, from the same rings the path is drawn from:
+ * a lon/lat position is a statement about the Earth, so it can be checked against ordinary
+ * geographic knowledge — Austria is around 47°N 14°E — by a test that knows nothing about the
+ * projection, the canvas or the frame. A label point in user units cannot do that: it moves
+ * whenever the projection is tuned, and says nothing about which country was drawn.
+ *
+ * The largest ring is the one taken, so an overseas territory or an island cannot pull the
+ * anchor away from the country the reader sees; the same {@link CULL} box the drawing uses is
+ * applied first, so what is measured is what was rendered.
+ *
+ * @param {readonly [number, number][][]} rings - The country's rings in lon/lat.
+ * @returns {{lon: number, lat: number}} The centroid of its largest rendered ring.
+ * @throws {Error} If nothing of the country survives the cull, which would leave the map with
+ *   a shape it cannot place.
+ */
+function geographicAnchor(rings) {
+  const culled = rings.map((ring) => clipRing(ring, CULL)).filter((ring) => ring.length >= 3)
+  if (culled.length === 0) throw new Error('A jurisdiction has no geometry inside the culling box.')
+
+  const largest = culled.reduce((best, ring) =>
+    Math.abs(doubleArea(ring)) > Math.abs(doubleArea(best)) ? ring : best,
+  )
+  const [lon, lat] = centroid(largest)
+  return { lon: Math.round(lon * 10) / 10, lat: Math.round(lat * 10) / 10 }
+}
+
+/**
  * Build the whole geometry payload.
  *
  * @param {object} topology - Parsed TopoJSON.
@@ -603,7 +639,8 @@ function buildGeometry(topology) {
   const coastline = []
 
   for (const geometry of topology.objects.countries.geometries) {
-    const rings = prepareRings(geometryRings(geometry, arcs), canvas)
+    const sourceRings = geometryRings(geometry, arcs)
+    const rings = prepareRings(sourceRings, canvas)
     if (rings.length === 0) continue
     for (const ring of rings) coastline.push(...ring)
 
@@ -620,6 +657,7 @@ function buildGeometry(topology) {
       name: jurisdiction.name,
       path: toPath(rings),
       labelPoint: [Number(round(labelPoint[0])), Number(round(labelPoint[1]))],
+      anchor: geographicAnchor(sourceRings),
       needsMarker: largestArea < MARKER_AREA_THRESHOLD,
       area: Math.round(largestArea),
     })
@@ -679,6 +717,10 @@ function renderModule(geometry) {
     )
     .join('\n')
 
+  const anchors = geometry.shapes
+    .map((shape) => `  ${shape.code}: { lon: ${shape.anchor.lon}, lat: ${shape.anchor.lat} },`)
+    .join('\n')
+
   return `/**
  * Pre-projected geometry for the jurisdiction map. **Generated — do not edit by hand.**
  *
@@ -730,6 +772,33 @@ export const CONTEXT_PATH =
 export const JURISDICTION_SHAPES: readonly JurisdictionShape[] = [
 ${shapes}
 ]
+
+/** Where a jurisdiction's outline lies on the globe, in degrees east and north. */
+export interface GeographicAnchor {
+  /** Longitude, positive east of Greenwich. */
+  readonly lon: number
+  /** Latitude, positive north of the equator. */
+  readonly lat: number
+}
+
+/**
+ * Where each outline above was taken from, in unprojected lon/lat, keyed by ISO alpha-2 code.
+ *
+ * **Nothing renders this**, and nothing should: the map is drawn from \`path\`, and these
+ * degrees never reach the browser. They are the geometry's own account of *which country*
+ * each shape is — measured on the globe, before the projection touched it — so that
+ * \`tests/mapGeometry.test.ts\` can hold every shape against ordinary geographic knowledge of
+ * where that country is. An outline drawn from the wrong Natural Earth id is a plausible map
+ * of the wrong country and nothing in the path data can tell; its anchor lands hundreds of
+ * kilometres from where the named country belongs, and fails.
+ *
+ * Each is the centroid of the largest ring the generator kept for that jurisdiction, to a
+ * tenth of a degree — around eleven kilometres, which is far finer than the question being
+ * asked of it.
+ */
+export const JURISDICTION_ANCHORS: Readonly<Record<string, GeographicAnchor>> = {
+${anchors}
+}
 `
 }
 
@@ -772,4 +841,8 @@ async function main() {
   )
 }
 
-await main()
+// Only when run as a command. `tests/mapGeometry.test.ts` imports GEOMETRY_BY_JURISDICTION from
+// this module to check it against ISO 3166-1, and must not set the generator going to do so.
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main()
+}
