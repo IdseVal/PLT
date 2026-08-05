@@ -40,7 +40,9 @@ backend/
       mailer.py             Console / file / SMTP backends behind one interface
       messages.py           Every message the tracker sends, as plain text
       tokens.py             Purpose-bound HMAC tokens for confirm and unsubscribe
+      pseudonyms.py         Address normalisation + the keyed digest that replaces it
       subscriptions.py      The subscribe / confirm / unsubscribe lifecycle
+      retention.py          Storage limitation: purge_subscribers, unset = not enforced
       digest.py             The weekly send: batched, resumable, interruptible
       reviews.py            The administrator's notice that the queue has items
     pipeline/
@@ -120,7 +122,7 @@ add source-specific fields to `source_metadata`.
 | `citation` | Instruments and cases cited (CELEX/ECLI) | `id`, `case_id` (FK), `target_identifier`, `citation_type` |
 | `ingest_run` | One row per pipeline execution | `id`, `jurisdiction_code`, `connector`, `started_at`, `finished_at`, `status`, `fetched_count`, `matched_count`, `inserted_count`, `updated_count`, `skipped_duplicate_count`, `error_count`, `checkpoint_before`, `checkpoint_after` |
 | `ingest_checkpoint` | Resumable position per connector | `connector` (PK), `jurisdiction_code`, `last_modified_seen`, `last_cursor`, `updated_at` |
-| `subscriber` | One address on the mailing list (§8) | `id`, `email` (**unique**), `status` (`pending`\|`confirmed`\|`unsubscribed`), `token_seed` (**unique**), `created_at`, `updated_at`, `notice_sent_at`, `confirmed_at`, `unsubscribed_at`, `last_digest_at` |
+| `subscriber` | One address on the mailing list (§8) | `id`, `email` (**unique**, null once unsubscribed), `email_digest` (**unique**, the keyed digest that replaces it), `status` (`pending`\|`confirmed`\|`unsubscribed`), `token_seed` (**unique**), `created_at`, `updated_at`, `notice_sent_at`, `confirmed_at`, `unsubscribed_at`, `last_digest_at`, `digest_count` |
 
 **Deduplication key:** `UNIQUE (jurisdiction_code, source_id)`. On conflict, compare
 `content_hash`; identical → touch `last_seen_at` only; different → update in place and
@@ -162,8 +164,36 @@ a deliberate minimum and adding to it is a decision, not a convenience:
   carries no tracking pixel and no rewritten links, so there is nothing of that kind to hold.
 - **`status` is the double opt-in.** A row is `pending` until its confirmation link is used,
   and **only a `confirmed` row is ever sent a digest**. `unsubscribed` is kept rather than
-  deleted so a withdrawal is a fact on the record and a re-subscription is a state change on
-  one row; `unsubscribed_at` is what a later retention purge would work from.
+  deleted so a withdrawal is a fact on the record; `unsubscribed_at` is what the retention
+  purge works from.
+- **Unsubscribing replaces the address with a keyed digest** (core document §2.12). `email`
+  becomes null and `email_digest` holds `HMAC-SHA256(pepper, normalised_address)` under
+  `PLT_SUBSCRIPTION_ADDRESS_PEPPER`, which is held outside the database, so a dump of this
+  table on its own yields no addresses — which a *bare* hash of an email would, since the
+  address space is enumerable and a candidate list matches it in one pass. Two check
+  constraints hold the shape: a row carries the address or the digest and never both, and an
+  unsubscribed row holds no address while a row with no address is unsubscribed.
+  - **This is pseudonymisation, not anonymisation, and must be described as such** in code,
+    documentation and API. The digest is deterministic because a returning address has to be
+    recognisable, and determinism is what makes it reversible to anyone holding the pepper.
+    A subject access request still reaches these rows and storage limitation still applies.
+    Suppression and full anonymisation are mutually exclusive; this project chose suppression.
+  - **The pepper is long-lived.** Rotating it makes every already-pseudonymised row
+    unrecognisable, and there is no re-keying path. Production refuses to start without an
+    explicit one rather than falling back to `PLT_SECRET_KEY`, whose rotation is routine.
+  - **Normalisation happens once**, in `plt.notifications.pseudonyms.normalise_address`, which
+    is also what `plt.api.schemas` stores: strip, then lower-case the whole address. Two rules
+    would break recognition silently, since an unrecognised returning address is
+    indistinguishable from a new one. No provider-specific folding (dots, `+tags`): an
+    over-broad digest suppresses somebody who never unsubscribed.
+- **`digest_count` is why the statistics survive the address.** Subscription date,
+  confirmation date, unsubscribe date, tenure and digests sent are all on the row, so nothing
+  in the reporting path needs the address. It counts what was handed to the mail backend, not
+  what was delivered, opened or clicked — none of which is recorded anywhere.
+- **Retention is configuration with no default** (§8, issue #75). `PLT_SUBSCRIBER_RETENTION_DAYS`
+  drops the digest from an unsubscribed row, leaving dates and the counter;
+  `PLT_SUBSCRIBER_UNCONFIRMED_EXPIRY_DAYS` deletes a row that never confirmed. Unset means
+  **not enforced**, never a guessed number: both periods are the Law group's to decide.
 - **`token_seed` is a selector, not a token.** A link carries `<seed>.<verifier>`, where the
   verifier is `HMAC-SHA256(key, "plt.subscription.v1:<purpose>:<seed>")` under
   `PLT_SUBSCRIPTION_TOKEN_SECRET` (defaulting to `PLT_SECRET_KEY`), base64url and never
@@ -226,12 +256,14 @@ the caller's job.
 
 The notification layer adds `cases_first_seen` / `count_cases_first_seen` (the digest window,
 over `first_seen_at` and published cases only), `reviews_flagged_since` /
-`count_reviews_flagged_since` (the administrator's notice), and three subscriber helpers:
-`get_subscriber_by_email`, `get_subscriber_by_token_seed` and `confirmed_subscribers_after`.
-**There is deliberately no `search_subscribers` and no `count_subscribers`.** The first two
-answer a caller that already knows the address or holds a verified token; the third is
-keyset pagination for the digest send and filters to `confirmed`. Nothing in the API layer
-may list this table, and adding a helper that could is a contract change, not a refactor.
+`count_reviews_flagged_since` (the administrator's notice), and four subscriber helpers:
+`get_subscriber_by_email`, `get_subscriber_by_email_digest`, `get_subscriber_by_token_seed`
+and `confirmed_subscribers_after`. **There is deliberately no `search_subscribers` and no
+`count_subscribers`.** The first three answer a caller that already knows the address, or
+holds a verified token — a digest is not something a caller can supply, only something
+derived from an address under a key it does not have — and the fourth is keyset pagination for
+the digest send, filtered to `confirmed`. Nothing in the API layer may list this table, and
+adding a helper that could is a contract change, not a refactor.
 
 ---
 
@@ -384,6 +416,10 @@ because a recall problem is invisible in a report that lists only successes — 
 ```
 plt ingest --jurisdiction NL [--since ...] [--until ...] [--dry-run] [--report PATH]
 plt ingest --all
+plt digest [--since ...] [--until ...] [--dry-run]
+plt purge-subscribers
+plt jurisdictions [--json]
+plt seed-vocabularies --jurisdiction NL
 ```
 
 Timestamps are parsed as UTC. Exit codes: `0` completed, `1` failed, `130` interrupted.
@@ -555,10 +591,20 @@ endpoint that reads one out.
 
 | Route | Status | `status` | What it means |
 | --- | --- | --- | --- |
-| `POST /api/subscriptions` | `202` | `accepted` | The request was taken. **Nothing more**: this is the same body whether the address was unknown, pending, confirmed, previously unsubscribed, or throttled |
+| `POST /api/subscriptions` | `202` | `accepted` | The request was taken. **Nothing more**: this is the same body whether the address was unknown, pending, confirmed, throttled, or previously unsubscribed and therefore suppressed |
 | `POST /api/subscriptions/unsubscribe-link` | `202` | `accepted` | The same body, and the same silence about what was found |
 | `POST /api/subscriptions/confirm` | `200` | `confirmed` | The address is on the list. Idempotent: a second use of the link answers identically |
-| `POST /api/subscriptions/unsubscribe` | `200` | `unsubscribed` | The address is off the list. Idempotent, and a verified token whose row has gone also reports success |
+| `POST /api/subscriptions/unsubscribe` | `200` | `unsubscribed` | The address is off the list, **and the address itself is gone** — replaced by its keyed digest (§3, core document §2.12). Idempotent, and a verified token whose row has gone also reports success |
+
+**A pseudonymised row is not a new oracle.** Suppressing a withdrawn address adds a branch
+that sends no mail, and the response it produces is byte-identical to every other class. The
+silence is not a signal either: the per-address notice interval is keyed on the address rather
+than on the caller, so any address at all can be one that a given request sends nothing for,
+however fresh the client. What suppression does change is that a *first* submission from an
+unthrottled client can now send no message, where before every class produced one — a timing
+difference, not a response difference, observable only against a live SMTP server. That
+channel already exists and is already accepted for `unsubscribe-link`, which sends nothing for
+an address that is not on the list, and the same per-client limit bounds it.
 
 `message` is written for a reader and is what the page shows, so it may be reworded; `status`
 is the contract. A malformed address is `400 validation_error`, a token that does not verify
@@ -702,6 +748,9 @@ defaults to a dry run, does not trigger it. Runs cannot overlap, and the workflo
 `--until` to the top of the hour so that repeating a failed send covers the same window and
 therefore reaches only the recipients it missed.
 
+`plt purge-subscribers` (§8) belongs on the same weekly schedule. It is safe to run before any
+retention period has been decided: with neither configured it does nothing and says so.
+
 ---
 
 ## 8. Notifications
@@ -717,12 +766,33 @@ list; the endpoints are in §5; the sending is `plt.notifications`. Five rules:
 2. **Unsubscribe needs no account.** A purpose-bound HMAC token in the link is the whole
    authorisation, it appears in the body *and* in `List-Unsubscribe` of every message the
    list sends, and it is honoured immediately.
-3. **The minimum is stored, and no behaviour is recorded.** Plain-text messages only, so no
+3. **Unsubscribe is durable, and the address does not survive it.** The status change and the
+   substitution of the address by its keyed digest happen in one transaction (§3, core
+   document §2.12). Because the returning address stays recognisable, **a submission of an
+   address that has unsubscribed sends nothing at all** — it is answered exactly as every
+   other submission is. This is the one path by which a person who had withdrawn consent
+   could previously receive mail because a *third party* typed their address into the form,
+   and closing it is what makes "leave me alone" mean more than "until somebody types this
+   again". The request cannot show whether the person themselves is back or a stranger is
+   acting, and the mechanism that would settle it — mailing the address — is the harm; a
+   returning subscriber's route back is the contact address, or the expiry of the suppression
+   with `PLT_SUBSCRIBER_RETENTION_DAYS`.
+4. **The minimum is stored, and no behaviour is recorded.** Plain-text messages only, so no
    tracking pixel; no link is rewritten through a redirector; one recipient per message, so a
    digest cannot disclose the list.
-4. **Nothing may enumerate the list**, in the API (§5) or in the repository layer (§3).
-5. **The abuse surface is bounded twice**: per client by the rate limit, per address by the
+5. **Nothing may enumerate the list**, in the API (§5) or in the repository layer (§3).
+6. **The abuse surface is bounded twice**: per client by the rate limit, per address by the
    notice interval (§5.2).
+
+**Retention (`plt purge-subscribers`).** Storage limitation does not stop at pseudonymisation,
+so a second job beside the digest applies whatever horizons a deployment has configured: it
+drops the digest from an unsubscribed row after `PLT_SUBSCRIBER_RETENTION_DAYS`, leaving dates
+and `digest_count`, and deletes an address that never confirmed after
+`PLT_SUBSCRIBER_UNCONFIRMED_EXPIRY_DAYS` — that row records no consent, so nothing about it is
+kept. **Both are unset by default and unset means not enforced**, because the periods are the
+Law group's to decide (issue #75) and a default would be a policy nobody chose. The job says
+"not configured" rather than reporting a count of zero, since the two look identical in a log
+and mean opposite things.
 
 **The administrator** is told when the review queue gains items, at `PLT_ADMIN_EMAIL`. One
 message per scan, not one per case; the flags themselves stay off every public endpoint, so
