@@ -14,25 +14,40 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import Home from '@/pages/Home'
 import type { CaseSummary } from '@/types/api'
 
-/** A case as the API returns it, with everything present. */
-const NL_CASE: CaseSummary = {
+/**
+ * A case as the API returns it, with everything present.
+ *
+ * `satisfies` rather than an annotation: `CaseSummary.title` is nullable (section 5.1), and
+ * a test that queries by `NL_CASE.title` needs the fixture's own title to stay a string.
+ */
+const NL_CASE = {
   jurisdiction_code: 'NL',
   jurisdiction_name: 'Netherlands',
   source_id: 'ECLI:NL:HR:2024:1',
   title: 'Stichting Bijenlint v. State of the Netherlands',
   court_name: 'Hoge Raad',
   decision_date: '2024-03-12',
-}
+} satisfies CaseSummary
 
 /** A case with the fields a source may leave out. */
-const EU_CASE: CaseSummary = {
+const EU_CASE = {
   jurisdiction_code: 'EU',
   jurisdiction_name: null,
   source_id: '62021CJ0616',
   title: 'Commission v. Ireland',
   court_name: null,
   decision_date: null,
-}
+} satisfies CaseSummary
+
+/** A case the source published no title for: section 5.1 puts it on the wire as `null`. */
+const UNTITLED_CASE = {
+  jurisdiction_code: 'NL',
+  jurisdiction_name: 'Netherlands',
+  source_id: 'ECLI:NL:RBDHA:2024:9',
+  title: null,
+  court_name: 'Rechtbank Den Haag',
+  decision_date: '2024-04-02',
+} satisfies CaseSummary
 
 /**
  * Report the current location, so a navigation can be asserted on directly.
@@ -224,6 +239,34 @@ describe('latest-cases sidebar', () => {
     expect(titles).toEqual([NL_CASE.title, EU_CASE.title])
   })
 
+  it('lists a case with no title under its identifier', async () => {
+    stubJson({ items: [UNTITLED_CASE], limit: 20 })
+    renderHome()
+
+    const link = await within(sidebar()).findByRole('link', { name: UNTITLED_CASE.source_id })
+    expect(link).toHaveAttribute('href', '/cases/NL/ECLI%3ANL%3ARBDHA%3A2024%3A9')
+    expect(link.closest('li')).toHaveTextContent('Rechtbank Den Haag')
+  })
+
+  it('renders twenty cases when the API returned twenty, whatever is null in them', async () => {
+    // The defect this guards: a case whose title is null used to be dropped by the client's
+    // narrowing, so the sidebar showed fewer rows than the API sent and said nothing about it.
+    const items = Array.from({ length: 20 }, (_unused, index) => ({
+      ...NL_CASE,
+      source_id: `ECLI:NL:HR:2024:${index + 1}`,
+      title: index % 2 === 0 ? null : `Case ${index + 1}`,
+      jurisdiction_name: null,
+      court_name: null,
+      decision_date: null,
+    }))
+    stubJson({ items, limit: 20 })
+    renderHome()
+
+    await within(sidebar()).findByRole('link', { name: 'ECLI:NL:HR:2024:1' })
+    expect(within(sidebar()).getAllByRole('listitem')).toHaveLength(20)
+    expect(within(sidebar()).getByRole('link', { name: 'ECLI:NL:HR:2024:19' })).toBeInTheDocument()
+  })
+
   it('accepts a bare array as well as a paginated envelope', async () => {
     stubJson([NL_CASE])
     renderHome()
@@ -327,11 +370,11 @@ describe('latest-cases sidebar failure', () => {
 
 describe('untrusted court text', () => {
   it('renders a title containing markup as text', async () => {
-    const hostile: CaseSummary = {
+    const hostile = {
       ...NL_CASE,
       source_id: 'ECLI:NL:HR:2024:2',
       title: '<img src=x onerror="alert(1)"> Anderson v. Registrar',
-    }
+    } satisfies CaseSummary
     stubJson({ items: [hostile], page: 1, page_size: 20, total: 1 })
     const { container } = render(
       <MemoryRouter initialEntries={['/']}>

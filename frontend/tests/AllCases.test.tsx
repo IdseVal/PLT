@@ -86,6 +86,15 @@ describe('AllCases', () => {
     expect(result).toHaveAttribute('href', '/cases/NL/ECLI%3ANL%3AHR%3A2024%3A1')
   })
 
+  it('lists a case with no title under its identifier', async () => {
+    // Section 5.1 allows `title` to be null, and a card without a name would be a dead link.
+    stubApi(casePage([caseSummary({ title: null })], { total: 1 }))
+    renderPage()
+
+    const result = await screen.findByRole('link', { name: 'ECLI:NL:HR:2024:1' })
+    expect(result).toHaveAttribute('href', '/cases/NL/ECLI%3ANL%3AHR%3A2024%3A1')
+  })
+
   it('links every case to its original publication page', async () => {
     stubApi()
     renderPage()

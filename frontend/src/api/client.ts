@@ -268,6 +268,15 @@ export const LATEST_CASES_DEFAULT_LIMIT = 20
  * where it is a blank page. Absent optional fields become `null` so a component never has to
  * distinguish "missing" from "empty".
  *
+ * **What is rejected, and what is not.** Only `jurisdiction_code` and `source_id` are
+ * required, because `caseDetailPath` builds the route out of exactly those two and a row
+ * without them is unrenderable. Every other field of `CaseSummary` may be `null` under
+ * `docs/architecture.md` section 5.1 — `title` included, since `case.title` is nullable in
+ * the section 3 schema and a metadata-only ECLI or an untitled CELLAR notice will carry
+ * none. Dropping such a record would silently shorten the feed: the caller asks for twenty
+ * and gets nineteen, with no error to show for it. A missing title is a rendering question,
+ * answered by `caseLabel`, not grounds for discarding a case from a research database.
+ *
  * @param value - Candidate element from the response body.
  * @returns The normalised case, or `null` when the element is not one.
  */
@@ -277,17 +286,15 @@ function toCaseSummary(value: unknown): CaseSummary | null {
   const record = value as Record<string, unknown>
   const jurisdictionCode = record.jurisdiction_code
   const sourceId = record.source_id
-  const title = record.title
 
   if (typeof jurisdictionCode !== 'string' || jurisdictionCode === '') return null
   if (typeof sourceId !== 'string' || sourceId === '') return null
-  if (typeof title !== 'string') return null
 
   return {
     jurisdiction_code: jurisdictionCode,
     jurisdiction_name: typeof record.jurisdiction_name === 'string' ? record.jurisdiction_name : null,
     source_id: sourceId,
-    title,
+    title: typeof record.title === 'string' ? record.title : null,
     court_name: typeof record.court_name === 'string' ? record.court_name : null,
     decision_date: typeof record.decision_date === 'string' ? record.decision_date : null,
   }
