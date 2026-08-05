@@ -30,6 +30,12 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The migration guard below needs the merge commit's first parent — the base branch
+          # as it stood when GitHub built the merge — and a shallow clone reports a commit as
+          # having no parents at all. The repository is a few megabytes; full history costs a
+          # second and nothing else here depends on the clone being shallow.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -46,6 +52,65 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -c constraints.txt -e ".[dev]"
+
+      # Runs before the slower checks: a second head means no database can be created at all,
+      # so there is nothing to learn from the rest of the job until it is fixed.
+      - name: Migrations (one head, and a chain that runs both ways)
+        # Two branches that each add a revision are each a valid chain on their own, and the
+        # collision exists only in the merged tree — so this has to be judged on the merge,
+        # never on the branch (issue #79). Two things make that true rather than assumed:
+        #
+        #  1. On `pull_request`, actions/checkout resolves refs/pull/N/merge, so HEAD is
+        #     already this branch merged into the base. The step asserts that rather than
+        #     trusting it, and fails loudly if GitHub ever stops doing it.
+        #  2. GitHub does *not* rebuild that merge commit every time the base branch moves.
+        #     A run that was green against an older base says nothing about the merge that is
+        #     actually about to happen, and that is precisely how two `0004` revisions reached
+        #     `dev`: #77's only run predated #74's merge by six minutes. So any revision that
+        #     landed on the base afterwards is folded into the check as well.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_WORKSPACE"
+          landed="$RUNNER_TEMP/migrations-that-landed-on-the-base-branch-since"
+
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            checked_out="$(git -C "$repo" rev-parse HEAD)"
+            echo "checked out  $checked_out"
+            echo "branch tip   $PR_HEAD_SHA"
+            if [ "$checked_out" = "$PR_HEAD_SHA" ]; then
+              echo "::error::CI is running on the branch tip, not on a merge commit. A" \
+                   "migration collision is invisible on the branch; see this step's comment."
+              exit 1
+            fi
+            if [ "$(git -C "$repo" rev-list --parents -n 1 HEAD | wc -w)" -ne 3 ]; then
+              echo "::error::HEAD is not a two-parent merge of this branch into $BASE_REF."
+              exit 1
+            fi
+
+            base_merged="$(git -C "$repo" rev-parse HEAD^1)"
+            git -C "$repo" fetch --quiet --no-tags origin "$BASE_REF"
+            base_now="$(git -C "$repo" rev-parse FETCH_HEAD)"
+            echo "base merged  $base_merged"
+            echo "base now     $base_now"
+
+            mkdir -p "$landed"
+            added="$(git -C "$repo" diff --name-only --no-renames --diff-filter=A \
+                     "$base_merged" "$base_now" -- backend/migrations/versions)"
+            while IFS= read -r path; do
+              [ -n "$path" ] || continue
+              if [ -e "$repo/$path" ]; then
+                continue                      # already in the merge result, so not new to it
+              fi
+              git -C "$repo" show "$base_now:$path" > "$landed/$(basename "$path")"
+              echo "folding in   $path (landed on $BASE_REF after this merge was built)"
+            done <<< "$added"
+          fi
+
+          MIGRATION_GRAPH_EXTRA_DIRS="$landed" \
+            pytest tests/unit/test_migration_graph.py tests/unit/test_migrations.py -q
 
       - name: Ruff (lint)
         run: ruff check --output-format=github .
