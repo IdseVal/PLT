@@ -283,6 +283,23 @@ and records the fact durably.**
   because a human or agent will see that it happened.
 - A quarantined document is **retried on later runs** rather than abandoned; quarantine
   releases the window, it does not close the case.
+- **A quarantined document's continued failure does not count toward run status.** Once the
+  pipeline has advanced past it, the run has done everything available to it, and a run that
+  processed its whole window successfully is a **success** even while a quarantined document
+  keeps failing in the background. Otherwise every run after the first quarantine reports
+  `partial` for ever, `/api/health` freezes permanently for that jurisdiction, and the alarm
+  that §2.11 exists to raise becomes the one nobody reads.
+
+  The two questions are separate and get separate signals:
+
+  | Question | Signal |
+  | --- | --- |
+  | Did this run work? | run status, and the scheduled job's exit code |
+  | What are we persistently unable to fetch? | the quarantine record, surfaced for review |
+
+  Conflating them is what makes an unattended weekly job untrustworthy: an alarm that is
+  always on carries no information, and an alarm that never fires carries none either. Run
+  status must be able to return to green while quarantine keeps its own count.
 
 ---
 
