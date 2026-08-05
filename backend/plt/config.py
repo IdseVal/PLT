@@ -318,6 +318,32 @@ class Settings(BaseSettings):
             "rotate it only deliberately."
         ),
     )
+    subscription_address_pepper: SecretStr | None = Field(
+        default=None,
+        description=(
+            "Key an unsubscribed address is replaced by a digest under (core document 2.12). "
+            "Held outside the database so a dump alone yields no addresses. Long-lived: "
+            "rotating it discards every existing suppression. Required in production; "
+            "outside it, falls back to secret_key."
+        ),
+    )
+    subscriber_retention_days: int | None = Field(
+        default=None,
+        ge=1,
+        description=(
+            "Days after which the digest is dropped from an unsubscribed row, leaving the "
+            "dates and the counter. Unset means not enforced: the horizon is the Law group's "
+            "to decide (#75) and a default here would be a policy nobody chose."
+        ),
+    )
+    subscriber_unconfirmed_expiry_days: int | None = Field(
+        default=None,
+        ge=1,
+        description=(
+            "Days after which an address that never confirmed is deleted outright. Unset "
+            "means not enforced; the period is the Law group's to decide (#75)."
+        ),
+    )
     subscription_confirm_ttl_hours: Annotated[int, Field(ge=1, le=8760)] = Field(
         default=72,
         description=(
@@ -553,6 +579,31 @@ class Settings(BaseSettings):
             seen.setdefault(code.upper(), None)
         return list(seen)
 
+    @field_validator(
+        "subscription_address_pepper",
+        "subscriber_retention_days",
+        "subscriber_unconfirmed_expiry_days",
+        mode="before",
+    )
+    @classmethod
+    def _blank_means_unset(cls, value: object) -> object:
+        """Read an empty assignment as *unset* rather than as a value.
+
+        ``PLT_SUBSCRIBER_RETENTION_DAYS=`` in a ``.env`` is how an operator writes "I have not
+        decided this", which is the state issue #75 leaves the project in; without this it is
+        either a parse error or, for the pepper, an empty secret that would key every digest
+        with nothing at all. All three settings mean "not configured" when they are blank.
+
+        Args:
+            value: The value as configured.
+
+        Returns:
+            ``None`` for a blank string, otherwise the value untouched.
+        """
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _normalise_log_level(cls, value: object) -> object:
@@ -650,6 +701,15 @@ class Settings(BaseSettings):
         if self.debug:
             message = "PLT_DEBUG must be false when PLT_APP_ENV=production"
             raise ValueError(message)
+        if self.subscription_address_pepper is None:
+            message = (
+                "PLT_SUBSCRIPTION_ADDRESS_PEPPER must be set when PLT_APP_ENV=production: it "
+                "is the key an unsubscribed address is replaced by a digest under (core "
+                "document 2.12), and falling back to PLT_SECRET_KEY would tie every existing "
+                "suppression to a credential that is rotated routinely — rotating it makes "
+                "withdrawn addresses unrecognisable and cannot be undone"
+            )
+            raise ValueError(message)
         return self
 
     @property
@@ -676,6 +736,29 @@ class Settings(BaseSettings):
         """
         secret = self.subscription_token_secret or self.secret_key
         return secret.get_secret_value().encode("utf-8")
+
+    @property
+    def address_pepper(self) -> bytes:
+        """Return the key an unsubscribed address is replaced by a digest under.
+
+        Kept apart from :attr:`token_secret` because the two have opposite rotation
+        properties. Rotating the token secret invalidates outstanding links, which is
+        recoverable: a reader asks for a new one. Rotating this one is **not** recoverable —
+        every row already pseudonymised stops being recognised, so an unsubscribe that was
+        meant to be durable silently stops being honoured, and there is no re-keying path
+        because re-keying would need the addresses the rows exist to no longer hold. Sharing
+        one value with ``secret_key`` would tie that to a routine credential rotation.
+
+        The fallback to :attr:`secret_key` is a development convenience only:
+        :meth:`_check_production_safety` refuses to start a production process without an
+        explicit pepper, so no deployment can acquire the fallback's rotation hazard by
+        accident.
+
+        Returns:
+            The pepper as bytes, ready for :func:`hmac.new`.
+        """
+        pepper = self.subscription_address_pepper or self.secret_key
+        return pepper.get_secret_value().encode("utf-8")
 
     def site_url(self, path: str = "/") -> str:
         """Build an absolute URL into the public site.

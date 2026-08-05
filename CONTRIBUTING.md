@@ -322,6 +322,19 @@ Two things to know before touching this code:
   logged at any level. If a change would make a known address distinguishable from an unknown
   one — in a status code, a body, an error, or a log line — it is a contract change and needs
   `docs/architecture.md` §3 and §5 updated with it.
+- **An unsubscribe destroys the address and is not undone by a stranger.** Cancelling replaces
+  `subscriber.email` with `HMAC-SHA256(pepper, address)` under `PLT_SUBSCRIPTION_ADDRESS_PEPPER`
+  (core document §2.12), so submitting that address again is recognised and sends *nothing*.
+  Two consequences for anyone working here: the pepper never goes in a column, a fixture or a
+  migration, and normalisation lives in exactly one function
+  (`plt.notifications.pseudonyms.normalise_address`) — a second `.lower()` anywhere would break
+  recognition without failing a test that was not looking for it. Call it pseudonymisation, not
+  anonymisation; the digest is reversible to whoever holds the pepper, which is what recognising
+  a returning address means.
+- **Retention is unset on purpose.** `PLT_SUBSCRIBER_RETENTION_DAYS` and
+  `PLT_SUBSCRIBER_UNCONFIRMED_EXPIRY_DAYS` have no defaults, because the periods are the Law
+  group's to decide (issue #75). `plt purge-subscribers` applies whichever is configured and
+  reports "not configured" for whichever is not. Do not fill one in to make the output tidier.
 
 The scheduled send is [`.github/workflows/weekly-digest.yml`](.github/workflows/weekly-digest.yml),
 triggered by the *completion of the scheduled ingest* so it announces the cases that scan

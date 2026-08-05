@@ -167,8 +167,20 @@ def _send_batch(
         stop: The shutdown flag.
     """
     for subscriber in batch:
+        address = subscriber.email
+        if address is None:
+            # Unreachable through the schema — a row without an address is unsubscribed, and
+            # the query selects confirmed rows — but the address became optional when
+            # unsubscribing started replacing it with a digest (core document 2.12), and a
+            # send loop is the wrong place to learn that the invariant slipped. Skipped and
+            # reported rather than crashed: one impossible row must not stop a whole digest.
+            log.warning(
+                "a confirmed subscriber holds no address and was skipped",
+                extra={"context": {"subscriber_id": subscriber.id}},
+            )
+            continue
         message = digest_message(
-            subscriber.email,
+            address,
             subscriber.token_seed,
             report.cases,
             settings,
@@ -192,6 +204,9 @@ def _send_batch(
                 continue
             report.sent += 1
             subscriber.last_digest_at = report.until
+            # Counted here rather than derived later, because the address this row will one
+            # day be reduced to a digest of cannot be counted from (core document 2.12).
+            subscriber.digest_count += 1
         if stop.requested:
             return
 
