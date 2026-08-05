@@ -6,6 +6,11 @@ Two equivalent routes into the same commands, per ``docs/architecture.md`` secti
 * ``python -m plt.cli <command>`` / ``plt <command>`` - the same group standalone, so a
   server cron can call the identical code path as the scheduled workflow.
 
+Three commands live here. ``plt ingest`` scans a jurisdiction, ``plt digest`` sends the
+weekly mailing-list digest, and ``plt seed-vocabularies`` refreshes the court tables. All
+three are what the scheduled workflows call, so anything reproducible in a terminal is what
+runs unattended.
+
 ``plt ingest`` is that path. It is a thin shell around
 :func:`plt.pipeline.runner.run_jurisdiction`: parse the window, pick the jurisdictions, print
 the counts, and translate the outcome into an exit code the scheduler can act on — ``0`` for
@@ -38,6 +43,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from plt.config import Settings, get_settings
 from plt.db.models import IngestStatus
 from plt.db.session import get_session_factory, session_scope
+from plt.notifications.digest import run_digest
+from plt.notifications.mailer import MailError, build_mailer
+from plt.notifications.reviews import notify_new_reviews
 from plt.pipeline.base import PipelineError
 from plt.pipeline.persistence import resolve_court
 from plt.pipeline.registry import available_jurisdictions, connector_classes, connector_for
@@ -152,6 +160,11 @@ def plt_cli() -> None:
     help="Exit 3 when a run completed but documents failed, so an unattended job goes red "
     "instead of reporting success over a window that stopped advancing.",
 )
+@click.option(
+    "--no-notify",
+    is_flag=True,
+    help="Do not email PLT_ADMIN_EMAIL about the review items this scan flagged.",
+)
 def ingest(
     jurisdictions: tuple[str, ...],
     every_jurisdiction: bool,
@@ -161,11 +174,18 @@ def ingest(
     report_path: Path | None,
     batch_size: int | None,
     fail_on_partial: bool,
+    no_notify: bool,
 ) -> None:
     """Fetch, filter and store one or more jurisdictions' case law.
 
     Run without ``--since`` — as the weekly job does — the stored checkpoint supplies the
     window, so each run picks up where the last one left off.
+
+    When the scan flags cases for review and ``PLT_ADMIN_EMAIL`` is set, one message goes out
+    afterwards listing them (core document 2.7): the queue is not public, so without this
+    nothing would tell anybody it had gained items. It is sent here rather than inside the
+    runner so that the scheduled workflow, a server cron and this terminal all get it from the
+    one command, and a library caller of ``run_jurisdiction`` gets none.
 
     Raises:
         click.UsageError: If no jurisdiction was named, or ``--report`` was combined with
@@ -197,7 +217,92 @@ def ingest(
             # Do not start the next jurisdiction after Ctrl+C.
             break
 
+    if not dry_run and not no_notify:
+        _notify_reviews(reports, settings)
+
     _exit_for(reports, strict=fail_on_partial)
+
+
+def _notify_reviews(reports: list[IngestReport], settings: Settings) -> None:
+    """Tell the administrator about the review items these runs flagged.
+
+    A failure to send is reported and swallowed: the scan itself succeeded, the flags are in
+    the database, and turning a mail-server outage into a red weekly ingestion job would put
+    the alarm on the wrong thing entirely.
+
+    Args:
+        reports: The runs that just finished.
+        settings: Validated settings supplying the administrator's address.
+    """
+    if not reports:
+        return
+    since = min(report.started_at for report in reports)
+    mailer = build_mailer(settings)
+    try:
+        with session_scope(get_session_factory()) as session:
+            flagged = notify_new_reviews(session, settings, mailer, since=since)
+    except MailError as error:
+        click.echo(f"the review queue notice could not be sent: {error}", err=True)
+        log.warning(
+            "review queue notice could not be sent", extra={"context": {"error": str(error)}}
+        )
+        return
+    finally:
+        mailer.close()
+    if flagged:
+        click.echo(f"  review queue: {flagged} new item(s); notice sent to the configured admin")
+
+
+@plt_cli.command(name="digest")
+@click.option(
+    "--since",
+    metavar="TIMESTAMP",
+    callback=_parse_timestamp,
+    default=None,
+    help="Start of the window, ISO 8601 UTC. Defaults to PLT_DIGEST_PERIOD_DAYS before the end.",
+)
+@click.option(
+    "--until",
+    metavar="TIMESTAMP",
+    callback=_parse_timestamp,
+    default=None,
+    help="End of the window, ISO 8601 UTC. Defaults to now. The window identifies the send: "
+    "repeating a run with the same --until reaches only the recipients it did not reach "
+    "before, so pass it when resuming an interrupted digest.",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Render every message and send none, leaving the database untouched.",
+)
+def digest(since: datetime | None, until: datetime | None, dry_run: bool) -> None:
+    """Send the weekly digest of newly found cases to the confirmed subscribers.
+
+    The window is over ``case.first_seen_at`` — what is new *to the tracker* — so a judgment
+    from 2019 that the pipeline reached this week is news and one delivered yesterday that has
+    been stored for a month is not.
+
+    Only confirmed addresses are written to, the send is batched and resumable, and a quiet
+    week sends nothing at all rather than an empty message. What actually leaves the process
+    is decided by ``PLT_MAIL_BACKEND``, which is the console backend unless the deployment
+    said otherwise: this command cannot mail a real person by accident.
+
+    Raises:
+        click.ClickException: If the window is empty or inverted.
+        click.exceptions.Exit: With 130 when a signal ended the send, so a scheduler can tell
+            a cancellation from a failure.
+    """
+    settings = get_settings()
+    try:
+        report = run_digest(since=since, until=until, dry_run=dry_run, settings=settings)
+    except ValueError as error:
+        raise click.ClickException(str(error)) from error
+    except MailError as error:
+        raise click.ClickException(f"the digest could not be sent: {error}") from error
+
+    click.echo(report.summary())
+    if report.interrupted:
+        raise click.exceptions.Exit(_EXIT_INTERRUPTED)
 
 
 @plt_cli.command(name="jurisdictions")
