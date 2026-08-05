@@ -173,9 +173,16 @@ fails to contain, and a researcher cannot audit an absence.
 Two consequences bind the filter chain:
 
 1. **Thresholds are not raised to buy precision.** The first EU dry run (1,548 CJEU decisions
-   across 2024) showed that raising `min_score` from 3 to 6 would remove 21 cases, of which
-   roughly two were genuinely in scope. That trade was declined. Any future proposal to
-   tighten selection must be assessed the same way: what does it *lose*.
+   across 2024) selected 54 cases, distributed as `≥12: 18 | 6–12: 8 | 4–6: 7 | 3.0–3.9: 21`.
+   Raising `min_score` from 3 to 6 would remove everything below 6 — **28 of the 54**. Raising
+   it only to 4 would remove 21, of which roughly two were genuinely in scope; the seven in the
+   4–6 band were never separately assessed, so the cost of the 3→6 move is *at least* two
+   genuine cases and possibly more. That trade was declined.
+
+   Any future proposal to tighten selection must be assessed the same way: **what does it
+   lose**, counted from the distribution rather than estimated. This paragraph originally said
+   the 3→6 move cost 21 cases; that was the cost of moving to 4, recomputed by hand from the
+   band table and wrong in the direction that made the trade look cheaper than it was.
 2. **Precision is handled downstream, by review.** Cases that pass but score near the
    threshold are ingested and published as normal, and additionally flagged for a content
    manager to confirm or reject. Selection admits; review curates.
