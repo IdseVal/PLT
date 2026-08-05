@@ -161,6 +161,11 @@ async function serveStatic(distDir, pathname, response) {
  * @returns The origin to point a browser at, and a function that shuts the server down.
  */
 export async function startStubServer({ distDir, state }) {
+  // Normalised once, here, rather than trusted as given: a path written with the wrong
+  // separator for the platform never matches its own prefix check, and every request would
+  // then be refused as an escape attempt.
+  const root = resolve(distDir)
+
   const server = createServer((request, response) => {
     void handle(request, response)
   })
@@ -179,7 +184,7 @@ export async function startStubServer({ distDir, state }) {
       // A body on a static request is nothing the harness sends, but leaving one unread
       // holds the socket open, so it is drained either way.
       if (request.method !== 'GET' && request.method !== 'HEAD') await readBody(request)
-      await serveStatic(distDir, pathname, response)
+      await serveStatic(root, pathname, response)
       return
     }
 

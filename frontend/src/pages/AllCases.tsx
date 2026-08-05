@@ -141,8 +141,15 @@ export default function AllCases(): JSX.Element {
         </p>
       </header>
 
+      {/*
+        `min-w-0` on both columns, because a grid item's automatic minimum size is its
+        min-content width: without it the column cannot shrink below the longest word in a
+        case title, and one long court term makes the whole page scroll sideways at 320 px
+        (WCAG 2.1 SC 1.4.10). Stating a minimum turns that floor off; `overflow-wrap` in
+        `styles/index.css` then wraps the word rather than letting it overflow.
+      */}
       <div className="grid gap-8 lg:grid-cols-4">
-        <div className="lg:col-span-1">
+        <div className="min-w-0 lg:col-span-1">
           <CaseFilters
             filters={filters}
             facets={facets.data}
@@ -154,7 +161,7 @@ export default function AllCases(): JSX.Element {
           />
         </div>
 
-        <div className="lg:col-span-3">
+        <div className="min-w-0 lg:col-span-3">
           <div className="border-plt-border flex flex-wrap items-end justify-between gap-4 border-b pb-4">
             <p
               ref={summaryRef}
