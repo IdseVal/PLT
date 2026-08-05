@@ -5,10 +5,10 @@
 | **Jurisdiction code** | `NL` |
 | **Courts covered** | Every court publishing through the Raad voor de rechtspraak, at all instances |
 | **Source** | Rechtspraak open data portal, `data.rechtspraak.nl` |
-| **Keyword list** | `data/keywords/nl.json`, version 1.4.0 |
+| **Keyword list** | `data/keywords/nl.json`, which records its own version |
 | **Status** | Connector built and tested against the live service; no cases stored yet |
 | **Source last checked** | 4 August 2026 |
-| **Last reviewed** | 5 August 2026 |
+| **Last reviewed** | 6 August 2026 |
 
 ---
 
@@ -99,10 +99,14 @@ scoring just above it is additionally marked for a content manager to confirm or
 threshold is not raised to improve precision, because a missed judgment is the expensive
 error (`docs/core-document.md` §2.7).
 
-**The list.** `data/keywords/nl.json` holds 60 Dutch terms: 39 that qualify a decision on
-their own, 7 strong terms and 14 contextual terms that only count in combination. A decision
-is selected at a score of 3 or more, and one scoring below 5.5 is marked for review. Terms
-matching in the title or the summary count for half as much again as terms in the body.
+**The list.** `data/keywords/nl.json` holds the terms, all of them Dutch; read the file for
+the count, which changes with every curation pass. Most of it is the active substances of
+the Ctgb authorisation register, taken from the register rather than chosen and including
+the ones no longer authorised. The rest is the statutes, the authorisation vocabulary, the
+crops and the spraying practices described below. Nearly every term qualifies a decision on
+its own; a handful are contextual. A decision is selected at a score of 3 or more, and one
+scoring below 5.5 is marked for review. Terms matching in the title or the summary count for
+half as much again as terms in the body.
 
 **Why these terms.** Three things make a Dutch list a Dutch list.
 

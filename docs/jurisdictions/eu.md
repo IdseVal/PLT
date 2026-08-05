@@ -5,10 +5,10 @@
 | **Jurisdiction code** | `EU` |
 | **Courts covered** | Court of Justice of the European Union: the Court of Justice, the General Court and the Civil Service Tribunal |
 | **Source** | CELLAR, the Publications Office repository behind EUR-Lex |
-| **Keyword list** | `data/keywords/eu.json`, version 1.1.0 |
+| **Keyword list** | `data/keywords/eu.json`, which records its own version |
 | **Status** | Connector built and tested against the live service; no cases stored yet |
 | **Source last checked** | 4 August 2026 |
-| **Last reviewed** | 5 August 2026 |
+| **Last reviewed** | 6 August 2026 |
 
 ---
 
@@ -100,11 +100,16 @@ scoring just above it is additionally marked for a content manager to confirm or
 threshold is not raised to improve precision, because a missed judgment is the expensive
 error (`docs/core-document.md` §2.7).
 
-**The list.** `data/keywords/eu.json` holds 65 terms in four languages — 41 English, 9
-French, 9 German, 6 Dutch — of which 45 qualify a decision on their own, 12 are strong and 8
-are contextual. A decision is selected at a score of 3 or more, and one scoring below 6 is
-marked for review. Terms in the title, the summary or CELLAR's subject labels count for more
-than terms in the body, because those fields are curated topical vocabulary here.
+**The list.** `data/keywords/eu.json` holds the terms; read the file for the count, which
+changes with every curation pass. Most of it is the active substances approved under
+Regulation (EC) No 1107/2009, taken from the Annex that lists them and therefore in English
+only. Beside them sit the instrument numbers, the procedural vocabulary and the wider
+chemicals regime, and a small French, German and Dutch section covering the product classes
+and the authorisation words but not the substances — the gap in §5.1. Nearly every term
+qualifies a decision on its own; a handful are contextual. A decision is selected at a score
+of 3 or more, and one scoring below 6 is marked for review. Terms in the title, the summary
+or CELLAR's subject labels count for more than terms in the body, because those fields are
+curated topical vocabulary here.
 
 **Why these terms.** Three things make an EU list an EU list.
 
