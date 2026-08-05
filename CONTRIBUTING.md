@@ -446,3 +446,9 @@ Keyword lists in [`data/keywords/`](data/keywords/) are **curated data owned by 
 manager**, not code. Validate against `schema.json`, bump `list_version`, and record the
 reasoning in `notes`. A jurisdiction cannot be onboarded to the pipeline before its list
 exists — see [`data/keywords/README.md`](data/keywords/README.md).
+
+`case_sensitive` and `match` are declared on a term and applied to **every alias it carries**,
+which the schema cannot express and cannot check. The loader therefore rejects a
+`case_sensitive` literal that is not acronym-shaped and a `substring` literal shorter than six
+characters, naming the term and the literal; three defects have shipped through that gap, so
+the failure is deliberate and is not to be worked around by widening the term.

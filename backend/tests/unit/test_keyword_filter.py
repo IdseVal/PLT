@@ -206,6 +206,184 @@ def test_a_term_may_not_gate_itself(tmp_path: Path) -> None:
         load_keyword_list(write_list(tmp_path, document))
 
 
+# ----------------------------------------------------------------------------------------
+# What a term-level attribute does to an alias
+#
+# ``case_sensitive`` and ``match`` are declared once and applied to every literal the term
+# carries. Three defects have shipped that way, all three found by measuring against a
+# corpus and none by review, so each is reintroduced here and the loader is required to
+# refuse it by name. A guard nobody has seen fail is not a guard.
+# ----------------------------------------------------------------------------------------
+
+
+def test_the_ddt_defect_stays_fixed_a_prose_alias_may_not_inherit_case_sensitive(
+    tmp_path: Path,
+) -> None:
+    # Defect 1: nl-ddt carried lindaan, paraquat and atrazine, which lost every
+    # sentence-initial occurrence - "Lindaan is in de bodem aangetroffen" scored zero.
+    document = make_list(
+        [
+            term(
+                "nl-ddt",
+                "DDT",
+                3,
+                case_sensitive=True,
+                aliases=["lindaan", "paraquat", "atrazine"],
+            )
+        ]
+    )
+
+    with pytest.raises(KeywordListValidationError) as error:
+        load_keyword_list(write_list(tmp_path, document))
+
+    assert "nl-ddt" in str(error.value)
+    assert "'lindaan'" in str(error.value)
+
+
+def test_the_authority_defect_stays_fixed_a_spelled_out_name_may_not_inherit_it_either(
+    tmp_path: Path,
+) -> None:
+    # Defect 2: the same failure, one release later, on the four authority terms.
+    document = make_list(
+        [
+            term(
+                "nl-nvwa-gewas",
+                "NVWA",
+                1,
+                case_sensitive=True,
+                aliases=["Nederlandse Voedsel- en Warenautoriteit"],
+            )
+        ]
+    )
+
+    with pytest.raises(KeywordListValidationError) as error:
+        load_keyword_list(write_list(tmp_path, document))
+
+    assert "nl-nvwa-gewas" in str(error.value)
+    assert "'Nederlandse Voedsel- en Warenautoriteit'" in str(error.value)
+
+
+@pytest.mark.parametrize(
+    ("term_id", "name", "abbreviation"),
+    [
+        ("nl-ddac", "didecyldimethylammoniumchloride", "DDAC"),
+        ("nl-bbit", "n-butyl-1,2-benzisothiazolin-3-on", "BBIT"),
+        ("nl-tmad", "tetrahydro-tetrakis-hydroxymethyl-imidazool-dion", "TMAD"),
+        ("nl-cipc", "chloorprofam", "CIPC"),
+        ("nl-dbnpa", "2,2-dibroom-2-cyaanacetamide", "DBNPA"),
+    ],
+)
+def test_the_abbreviation_defect_stays_fixed_a_short_alias_may_not_inherit_substring(
+    tmp_path: Path, term_id: str, name: str, abbreviation: str
+) -> None:
+    # Defect 3: five register abbreviations inherited substring from the long chemical name
+    # they abbreviate. Nothing gated them, so a fragment scored 3 and selected the document:
+    # DDAC inside the surname Faddach, BBIT inside rabbits, TMAD inside Oostmadeweg.
+    document = make_list([term(term_id, name, 3, match="substring", aliases=[abbreviation])])
+
+    with pytest.raises(KeywordListValidationError) as error:
+        load_keyword_list(write_list(tmp_path, document))
+
+    assert term_id in str(error.value)
+    assert repr(abbreviation) in str(error.value)
+
+
+def test_a_case_sensitive_term_of_acronyms_only_is_what_the_rule_allows(tmp_path: Path) -> None:
+    document = make_list(
+        [term("nl-ddt", "DDT", 3, case_sensitive=True, aliases=["DDE", "1907/2006"])]
+    )
+
+    keyword_list = load_keyword_list(write_list(tmp_path, document))
+
+    assert keyword_list.pattern_count == 3, "a literal with no lowercase letter loses nothing"
+
+
+def test_upper_casing_a_spelled_out_name_is_not_a_way_past_the_rule(tmp_path: Path) -> None:
+    document = make_list(
+        [term("nl-efsa", "EFSA", 1, case_sensitive=True, aliases=["EUROPESE AUTORITEIT"])]
+    )
+
+    with pytest.raises(KeywordListValidationError, match="EUROPESE AUTORITEIT"):
+        load_keyword_list(write_list(tmp_path, document))
+
+
+def test_a_regex_term_is_read_as_an_expression_and_not_as_a_literal(tmp_path: Path) -> None:
+    # nl-ctgb is case_sensitive and match=regex; the lowercase characters of its pattern are
+    # syntax, not prose, so the acronym rule does not apply to it.
+    document = make_list(
+        [term("nl-ctgb", r"(?<!\w)Ctgb(?!\w)", 2, match="regex", case_sensitive=True)]
+    )
+
+    assert load_keyword_list(write_list(tmp_path, document)).term_count == 1
+
+
+def test_a_declared_exception_admits_the_alias_the_rule_would_refuse(tmp_path: Path) -> None:
+    document = make_list(
+        [
+            term(
+                "nl-efsa",
+                "EFSA",
+                1,
+                case_sensitive=True,
+                case_sensitive_exception=True,
+                aliases=["Europese Autoriteit voor voedselveiligheid"],
+            )
+        ]
+    )
+
+    assert load_keyword_list(write_list(tmp_path, document)).term_count == 1
+
+
+def test_an_exception_on_a_term_that_is_not_case_sensitive_is_rejected(tmp_path: Path) -> None:
+    document = make_list([term("nl-efsa", "EFSA", 1, case_sensitive_exception=True)])
+
+    with pytest.raises(KeywordListValidationError, match=r"nl-efsa.*not case_sensitive"):
+        load_keyword_list(write_list(tmp_path, document))
+
+
+def test_an_exception_nothing_needs_is_rejected_so_the_set_cannot_rot(tmp_path: Path) -> None:
+    document = make_list(
+        [term("nl-efsa", "EFSA", 1, case_sensitive=True, case_sensitive_exception=True)]
+    )
+
+    with pytest.raises(KeywordListValidationError, match=r"nl-efsa.*every literal"):
+        load_keyword_list(write_list(tmp_path, document))
+
+
+def test_an_exception_on_a_regex_term_is_rejected_as_well(tmp_path: Path) -> None:
+    document = make_list(
+        [
+            term(
+                "nl-ctgb",
+                r"(?<!\w)Ctgb(?!\w)",
+                2,
+                match="regex",
+                case_sensitive=True,
+                case_sensitive_exception=True,
+            )
+        ]
+    )
+
+    with pytest.raises(KeywordListValidationError, match=r"nl-ctgb.*regular expression"):
+        load_keyword_list(write_list(tmp_path, document))
+
+
+def test_a_substring_literal_at_the_floor_is_accepted(tmp_path: Path) -> None:
+    document = make_list([term("nl-residu", "residu", 2, match="substring")])
+
+    keyword_list = load_keyword_list(write_list(tmp_path, document))
+
+    assert keyword_list.term_count == 1
+
+
+def test_a_short_literal_is_only_refused_where_substring_would_reach_inside_a_word(
+    tmp_path: Path,
+) -> None:
+    document = make_list([term("nl-ddac", "DDAC", 3, match="word")])
+
+    assert load_keyword_list(write_list(tmp_path, document)).term_count == 1
+
+
 def test_an_uncompilable_regex_term_is_named(tmp_path: Path) -> None:
     document = make_list([term("nl-bad-regex", "gewas(", 3, match="regex")])
 
