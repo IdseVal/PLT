@@ -30,6 +30,80 @@ legal-system- and agronomy-specific and do not transfer between countries.
 5. Run the pipeline in dry-run mode over a sample period and review the match report before
    enabling ingestion.
 
+## Active substances: where the list comes from
+
+**Every jurisdiction's list carries the active substances authorised in that jurisdiction,
+enumerated from a register rather than written from memory.** A named active substance is
+the least ambiguous signal this filter has, and the set is large enough — hundreds of names
+per jurisdiction — that hand-picking the famous ones is how a list quietly acquires a recall
+floor.
+
+| Level | Source | Notes |
+| --- | --- | --- |
+| EU | The Annex to **Commission Implementing Regulation (EU) No 540/2011** (CELEX `32011R0540`), consolidated text on EUR-Lex at `https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02011R0540-<date>`. | Parts A–E: approved, basic, low-risk, candidates for substitution. |
+| National | The **national authorisation register**. For the Netherlands that is the Ctgb register at `https://toelatingen.ctgb.nl`; for France it is the ANSES *E-Phy* register, for Germany the BVL *Pflanzenschutzmittel-Verzeichnis*. | Take the register's own substance list, not a product list. |
+
+Four rules that are easy to get wrong:
+
+- **Include substances that are no longer approved or authorised.** Historic exposure and
+  liability litigation is largely *about* withdrawn substances, and a register shows you
+  today. The consolidated Annex to 540/2011 deletes a substance when its approval is not
+  renewed, so read **every** consolidated version, not only the current one, and take the
+  union; a national register that keeps expired authorisations gives you this for free.
+- **Take the national spelling as well as the international one.** Dutch judgments write
+  both `chloorpyrifos` and `chlorpyrifos`, both `glyfosaat` and `glyphosate`. Carry the
+  national name as the term and the other spelling as an **alias**, so one occurrence scores
+  once. Never give the same literal to two terms — the score would count it twice.
+- **Weight 3, category `active_substance`.** A named substance qualifies a document alone,
+  which is the point.
+- **Check the short and word-like names before you commit them.** See below.
+
+### Substance names that are also ordinary words
+
+A register contains `beer`, `vinegar`, `sucrose`, `urea`, `talc`, `water`, `koper` — which in
+Dutch is also a *buyer* — and `jood`, which is also a *Jew*. At weight 3 each of those would
+admit and publish any judgment that happens to contain the word.
+
+Two mechanisms, used together:
+
+1. **`match`.** Multi-word names are `phrase`. A single-token name is `word` — a word
+   boundary still lets `diquat` match inside `diquat-dibromide`, because a hyphen is not a
+   word character — unless the name is at least ten characters long, where `substring` is
+   safe and also catches the compounds Dutch and German form. Never `substring` on a short
+   name: that is how `kwekerij` came to match `hennepkwekerij`.
+2. **`requires`.** Match mode cannot save `beer`. A name that is an ordinary word in the
+   jurisdiction's language keeps its weight and its place in the list but is gated on a
+   plant-protection term — `en-pesticide` in `eu.json`, `nl-gewasbeschermingsmiddel` in
+   `nl.json`. It still reports its match, so the content manager can see it; it just cannot
+   qualify a document on its own. This is the same instrument as `nl-drift` and
+   `nl-toelatingsbesluit`.
+
+The gate is deliberately generous: gating a name that did not need it costs nothing — any
+document genuinely about plant protection has already reached `min_score` on the term that
+opened the gate — while missing one costs precision across the whole corpus.
+
+**Micro-organisms are carried as genus and species**, and viruses by their name: a judgment
+prints `Bacillus thuringiensis`, never `Bacillus thuringiensis subsp. kurstaki strain
+ABTS-351`. One term per species, not one per strain.
+
+### What it costs
+
+The matcher compiles every literal into a handful of tries, so the scan stays proportional
+to the length of the text rather than to the number of terms — but "proportional" is not
+"free", and a wider trie is a slower one. Measure it: `pytest -s` prints the megabyte
+timing, and the budget is **500 ms**. Going from 60 to 860 terms in `nl.json` and 65 to 551
+in `eu.json` moved that reading from roughly 290 ms to roughly 360 ms. Report the number in
+the pull request that adds the terms.
+
+### Known gap
+
+The EU list carries the Annex's ISO common names in **English only**. Most are
+language-invariant, but not all — a German judgment writes `Glyphosat`, not `glyphosate`.
+The national spellings live in the national lists, which is where a national judgment is
+read; a CJEU judgment in German that names only the German spelling of a substance and no
+other term is the residual exposure. Adding the FR/DE/NL columns of the same Annex would
+close it.
+
 ## Weighting
 
 | Weight | Meaning |
