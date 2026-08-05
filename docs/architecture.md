@@ -49,6 +49,7 @@ backend/
       runner.py             Orchestrator: run_jurisdiction(code, since=None)
       base.py               SourceConnector ABC + RawDocument/NormalisedCase dataclasses
       checkpoint.py         Per-connector checkpoint read/write
+      mirror.py             The corpus mirror: source payloads on disk, verbatim (§9)
       dedup.py              Source-identifier and content-hash deduplication
       filters/
         base.py             Filter ABC (the chain is pluggable)
@@ -416,13 +417,15 @@ because a recall problem is invisible in a report that lists only successes — 
 ```
 plt ingest --jurisdiction NL [--since ...] [--until ...] [--dry-run] [--report PATH]
 plt ingest --all
+plt mirror --jurisdiction EU [--since ...] [--until ...] [--store DIR] [--limit N]
 plt digest [--since ...] [--until ...] [--dry-run]
 plt purge-subscribers
 plt jurisdictions [--json]
 plt seed-vocabularies --jurisdiction NL
 ```
 
-Timestamps are parsed as UTC. Exit codes: `0` completed, `1` failed, `130` interrupted.
+Timestamps are parsed as UTC. Exit codes: `0` completed, `1` failed, `130` interrupted, and
+`3` for a run that completed with failures under `--fail-on-partial`.
 
 ---
 
@@ -807,3 +810,47 @@ mail a real address**, production refuses the `console` backend, and there is no
 email service: a handful of plain-text messages a week from a university mail server is what
 SMTP is for, and a vendor would add a data processor to a system holding personal data for no
 capability in return.
+
+---
+
+## 9. The corpus mirror
+
+`plt mirror` copies a jurisdiction's source payloads to disk, unfiltered and unclassified,
+and is **not** an ingestion: it writes no database row and reads no keyword list. It exists
+because core document §2.8 requires selection to be repeatable, and a live endpoint cannot
+give that — two keyword lists scored against CELLAR a week apart differ by the repository as
+well as by the list. Scored against a mirror they differ only by the list.
+
+**Layout.** One directory per jurisdiction under `PLT_CORPUS_STORE_DIR`, one folder per case
+inside it. The Dutch store already had this shape, so it is the shape:
+
+```
+<corpus_store_dir>/
+  EU/
+    62017CJ0616/
+      metadata.json        index + provenance; written LAST, so it marks the case complete
+      raw_content.xml      RawDocument.payload, verbatim
+      fulltext.fr.xhtml    one per further language version, verbatim
+    manifest.json          capture window, connector configuration, totals
+    _checkpoint.json       where the next run resumes
+    _failures.jsonl        the cases that did not come down, and why
+```
+
+**Rules.**
+
+1. **Jurisdiction-agnostic.** The mirror drives a `SourceConnector` through the registry, so
+   a jurisdiction is mirrored by the connector it was onboarded with and nothing here
+   changes (§4).
+2. **Verbatim** (rule 2.6). `RawDocument.payload` becomes `raw_content.<format>`; every
+   further payload the normalised case carries becomes `fulltext.<language>.<format>`. A
+   payload that *is* the source record is stored once, not twice.
+3. **`metadata.json` is an index, not a second copy.** Identifiers, dates, court, language,
+   the file list, and provenance — when the case was fetched and from what URL. The citation
+   graph, the parties and the text of the decision are in the payloads beside it.
+4. **Its checkpoint is a file, not the `ingest_checkpoint` row.** A mirror pass that advanced
+   the ingestion position would make the pipeline skip cases it never ingested.
+5. **A failed case holds the checkpoint back**, exactly as in the runner (§7). Re-enumerating
+   costs discovery queries and no fetches, because everything already on disk is skipped.
+6. **The store is configuration.** `PLT_CORPUS_STORE_DIR`, documented in `.env.example`. The
+   built-in default is `./corpus` inside the checkout, git-ignored; a corpus outgrows a
+   checkout, so a real deployment names the volume it lives on.
