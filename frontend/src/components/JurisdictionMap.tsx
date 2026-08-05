@@ -47,6 +47,7 @@ import {
 import type { CountBand } from '@/components/map/shading'
 import { BAND_FILL, BAND_LEGEND, BAND_SWATCH, bandOf, countPhrase } from '@/components/map/shading'
 import { useJurisdictionStats } from '@/hooks/useJurisdictionStats'
+import { cleanInlineText } from '@/utils/caseText'
 import { jurisdictionCasesPath } from '@/utils/links'
 
 /** `map_feature_id` of the Union (`docs/architecture.md` section 3). */
@@ -228,7 +229,12 @@ export default function JurisdictionMap({ className = '' }: JurisdictionMapProps
       const count = known ? (stat?.case_count ?? 0) : null
       return {
         code,
-        name: stat?.name ?? fallbackName,
+        // The API's name is server-supplied text and goes through `cleanInlineText` like
+        // every other such string (`src/utils/caseText.ts`), which is what keeps a control
+        // character or a bidirectional override out of the tooltip and the accessible name.
+        // `fallbackName` is repo-authored, from the generated geometry, and needs no
+        // cleaning; a name that cleans away to nothing falls back to it.
+        name: cleanInlineText(stat?.name) || fallbackName,
         count,
         band: bandOf(count),
         path,

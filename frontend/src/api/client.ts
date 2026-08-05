@@ -360,6 +360,17 @@ export async function getLatestCases(
  * Absent values are `null` in that contract and never omitted, which is why
  * `latest_decision_date` is read as "a string or null" and nothing else.
  *
+ * **`map_feature_id` is required of the server but not demanded of the response.** The
+ * column is `NOT NULL` since revision `0006`, so a null is now a contract violation rather
+ * than a legitimate shape — but the answer to a violation is not to discard a jurisdiction
+ * that named and counted itself perfectly well. Section 3 makes the fallback exact rather
+ * than approximate: the identifier *is* the alpha-2 code for a state and the sentinel `EU`
+ * for the Union, which is `code` in both cases. Falling back is therefore never worse than
+ * dropping — at worst the id joins no shape, which is what dropping already produced — and
+ * it is strictly better in the one case where the two behaviours diverge, an entire payload
+ * without the field, where dropping trips the contract-mismatch guard below and throws the
+ * whole map instead of degrading to "no cases yet".
+ *
  * @param value - Candidate element from the response body.
  * @returns The jurisdiction, or `null` when the element is not one.
  */
@@ -375,14 +386,13 @@ function toJurisdictionStat(value: unknown): JurisdictionStat | null {
 
   if (typeof code !== 'string' || code === '') return null
   if (typeof name !== 'string' || name === '') return null
-  if (typeof mapFeatureId !== 'string' || mapFeatureId === '') return null
   if (typeof caseCount !== 'number' || !Number.isFinite(caseCount) || caseCount < 0) return null
 
   return {
     code,
     name,
     type: type === 'supranational' ? 'supranational' : 'state',
-    map_feature_id: mapFeatureId,
+    map_feature_id: typeof mapFeatureId === 'string' && mapFeatureId !== '' ? mapFeatureId : code,
     is_active: record.is_active !== false,
     case_count: Math.trunc(caseCount),
     latest_decision_date:
