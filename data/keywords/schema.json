@@ -148,7 +148,12 @@
         "case_sensitive": {
           "type": "boolean",
           "default": false,
-          "description": "Set true only for short acronyms whose lowercase form is a common word."
+          "description": "Set true only for short acronyms whose lowercase form is a common word. Inherited by every alias, so a case_sensitive term carries acronyms only: an ordinary word that inherits it matches solely the casing curated here."
+        },
+        "case_sensitive_exception": {
+          "type": "boolean",
+          "default": false,
+          "description": "Opts this term out of the acronym-only rule enforced on case_sensitive terms. Set it only where splitting the ordinary word into its own term would change scoring rather than only structure, accepting that every casing but the curated one scores zero. The loader rejects it on a term that is not case_sensitive, and on one that does not need it. See data/keywords/README.md, 'Known exceptions'."
         },
         "aliases": {
           "type": "array",

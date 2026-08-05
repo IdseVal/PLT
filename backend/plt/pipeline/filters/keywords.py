@@ -21,8 +21,9 @@ all its terms, which is what keeps the cost of a scan proportional to the length
 rather than to the number of terms: adding a hundred more terms deepens the trie but does
 not add a hundred more comparisons per character, as a flat alternation of a hundred
 alternatives would. Terms declared ``match: regex`` stay outside the tries and are scanned
-individually, since an arbitrary curator-supplied expression cannot be merged into one; the
-shipped lists use none.
+individually, since an arbitrary curator-supplied expression cannot be merged into one, and
+their pattern is an expression rather than a literal - which is why the consistency checks
+below leave them alone.
 
 Text is compared diacritic-folded, and case-folded unless a term is ``case_sensitive``, so
 ``neonicotinoide`` finds ``neonicotinoïde`` while ``DDT`` and ``Ctgb`` keep their casing.
@@ -113,6 +114,19 @@ _ERROR_LIMIT: Final[int] = 10
 MatchMode = Literal["word", "phrase", "substring", "regex"]
 
 _MATCH_MODES: Final[frozenset[str]] = frozenset({"word", "phrase", "substring", "regex"})
+
+#: Shortest literal a ``substring`` term may carry, term or alias. ``substring`` requires no
+#: word boundary on either side, which is what finds a term inside a compound - and equally
+#: what finds a fragment inside a word that has nothing to do with it. Six is where the
+#: measurement puts the line: over 150,000 sampled Rechtspraak judgments and their 947,625
+#: distinct word forms, every four- and five-character literal the lists have carried is
+#: reached inside an ordinary word (``ddac`` in *Faddach*, ``bbit`` in *rabbits*, ``tmad`` in
+#: *Oostmadeweg*, ``metam`` in *metamfetamine*, 217 documents against three for the
+#: substance), while from six characters the containing word is almost always the term's own
+#: compound or inflection. Almost: ``aldrin`` still lands in the surname *Maaldrink*, so this
+#: is a floor and not a guarantee, and a short name still wants measuring before it is given
+#: ``substring`` at all (``data/keywords/README.md``).
+_MIN_SUBSTRING_LENGTH: Final[int] = 6
 
 #: Upper bound of the code point range scanned when building the folding tables. Nothing
 #: above it decomposes to a single Latin-style base character.
@@ -227,6 +241,9 @@ class KeywordTerm:
         match: How the term is matched: ``word``, ``phrase``, ``substring`` or ``regex``.
         case_sensitive: Whether casing must match, for acronyms whose lowercase form is a
             common word.
+        case_sensitive_exception: Whether the curator has knowingly opted this term out of
+            the acronym-only rule that :func:`_check_consistency` enforces under
+            ``case_sensitive``.
         aliases: Spelling variants and inflections that score identically and report
             :attr:`term_id`.
         requires: Term ids that must also match before this term contributes any weight.
@@ -240,6 +257,7 @@ class KeywordTerm:
     weight: float
     match: MatchMode
     case_sensitive: bool
+    case_sensitive_exception: bool
     aliases: tuple[str, ...]
     requires: tuple[str, ...]
     note: str | None
@@ -683,6 +701,7 @@ def _term_from_raw(raw: Mapping[str, Any]) -> KeywordTerm:
         weight=float(raw["weight"]),
         match=cast(MatchMode, match_mode),
         case_sensitive=bool(raw.get("case_sensitive", False)),
+        case_sensitive_exception=bool(raw.get("case_sensitive_exception", False)),
         aliases=tuple(str(alias) for alias in raw.get("aliases", ())),
         requires=tuple(str(required) for required in raw.get("requires", ())),
         note=str(note) if note is not None else None,
@@ -758,15 +777,137 @@ def _validate(document: object, schema_path: Path) -> None:
     raise KeywordListValidationError(message)
 
 
+def _is_acronym_shaped(literal: str) -> bool:
+    """Return whether case sensitivity can be applied to a literal without losing renderings.
+
+    The test is on character class, not on length, because that is what the failure is about.
+    A literal carrying a lowercase letter has renderings the curated string will not match -
+    sentence-initially, in a heading, in the capitalisation a court happens to choose - and
+    ``case_sensitive`` silently drops every one of them. A literal written in capitals or in
+    digits alone reads the same wherever it appears and loses nothing.
+
+    Whitespace disqualifies a literal for the same reason: a spelled-out name is prose
+    whichever case it is typed in, so upper-casing one is not a way to satisfy the rule.
+
+    Args:
+        literal: The term or alias as the curator wrote it.
+
+    Returns:
+        True if no rendering of the literal is lost to case sensitivity.
+    """
+    stripped = literal.strip()
+    if not stripped or _WHITESPACE_RUN.search(stripped):
+        return False
+    return not any(character.islower() for character in stripped)
+
+
+def _check_case_sensitivity(term: KeywordTerm) -> None:
+    """Enforce the acronym-only rule that ``case_sensitive`` has always carried.
+
+    ``case_sensitive`` is declared on a term and inherited by every one of its aliases, which
+    the schema cannot express and therefore cannot check. An ordinary word that inherits it
+    matches only the exact string as curated and scores zero on every other casing, which is
+    how ``lindaan`` and ``Nederlandse Voedsel- en Warenautoriteit`` came to be carried by
+    acronym terms and silently matched far less than the list claimed
+    (``data/keywords/README.md``, "Case sensitivity").
+
+    ``regex`` terms are exempt: their pattern is an expression rather than a literal, and its
+    lowercase characters are syntax - a negative lookbehind for a word character - not prose.
+
+    Args:
+        term: The term to check.
+
+    Raises:
+        KeywordListValidationError: If a ``case_sensitive`` literal is not acronym-shaped and
+            the term does not declare ``case_sensitive_exception``, or if the term declares
+            that exception without needing it.
+    """
+    if not term.case_sensitive:
+        if term.case_sensitive_exception:
+            message = (
+                f"term {term.term_id!r}: declares case_sensitive_exception but is not "
+                "case_sensitive, so it opts out of a rule that does not apply to it"
+            )
+            raise KeywordListValidationError(message)
+        return
+    if term.match == "regex":
+        return
+    offenders = [literal for literal in term.patterns if not _is_acronym_shaped(literal)]
+    if not offenders:
+        if term.case_sensitive_exception:
+            message = (
+                f"term {term.term_id!r}: declares case_sensitive_exception but every literal "
+                "it carries is an acronym; remove the exception rather than leave one "
+                "standing that nothing needs"
+            )
+            raise KeywordListValidationError(message)
+        return
+    if term.case_sensitive_exception:
+        return
+    offender = offenders[0]
+    role = "term" if offender == term.term else "alias"
+    message = (
+        f"term {term.term_id!r}: case_sensitive {role} {offender!r} is not an acronym. "
+        "case_sensitive is inherited by a term and every one of its aliases, so an ordinary "
+        "word carried by an acronym term matches only the casing curated here and scores "
+        "zero on every other - including the sentence-initial one. Carry it as its own "
+        'case-insensitive term (data/keywords/README.md, "Case sensitivity")'
+    )
+    raise KeywordListValidationError(message)
+
+
+def _check_substring_length(term: KeywordTerm) -> None:
+    """Reject a ``substring`` literal short enough to be reached inside an unrelated word.
+
+    ``match`` is inherited by every alias exactly as ``case_sensitive`` is, and ``substring``
+    deliberately requires no word boundary on either side, which is what lets a compounding
+    language find ``gewasbeschermingsmiddel`` inside ``gewasbeschermingsmiddelenrichtlijn``.
+    Below :data:`_MIN_SUBSTRING_LENGTH` characters that same absence of a boundary reaches
+    into words that have nothing to do with the term, and at weight 3 the fragment alone
+    selects the document.
+
+    Args:
+        term: The term to check.
+
+    Raises:
+        KeywordListValidationError: If a literal of a ``substring`` term is too short.
+    """
+    if term.match != "substring":
+        return
+    for literal in term.patterns:
+        stripped = literal.strip()
+        if len(stripped) >= _MIN_SUBSTRING_LENGTH:
+            continue
+        role = "term" if literal == term.term else "alias"
+        message = (
+            f"term {term.term_id!r}: substring {role} {stripped!r} is {len(stripped)} "
+            f"characters, below the {_MIN_SUBSTRING_LENGTH} a substring literal needs. "
+            "match is inherited by a term and every one of its aliases, and substring "
+            "requires no word boundary, so a literal this short selects documents on a "
+            'fragment of an unrelated word - DDAC inside "Faddach", BBIT inside '
+            '"rabbits". Match it as a word, in a term of its own if the parent needs '
+            'substring (data/keywords/README.md, "Substance names that are also ordinary '
+            'words")'
+        )
+        raise KeywordListValidationError(message)
+
+
 def _check_consistency(terms: Sequence[KeywordTerm]) -> None:
-    """Check what the schema cannot: duplicate ids and gates that can never open.
+    """Check what the schema cannot: duplicate ids, dead gates and inherited attributes.
+
+    ``case_sensitive`` and ``match`` are declared once and inherited by every alias of the
+    term. The schema sees one value and cannot ask whether it fits each literal it reaches,
+    so the two rules that make inheritance safe are enforced here: a ``case_sensitive`` term
+    carries acronyms only, and a ``substring`` term carries no literal short enough to be
+    found inside an unrelated word.
 
     Args:
         terms: The terms of one list, in file order.
 
     Raises:
-        KeywordListValidationError: If an id repeats, or a ``requires`` entry names a term
-            that is not in the list or names the term itself.
+        KeywordListValidationError: If an id repeats, if a ``requires`` entry names a term
+            that is not in the list or names the term itself, if a ``case_sensitive`` literal
+            is an ordinary word, or if a ``substring`` literal is too short.
     """
     seen: set[str] = set()
     for term in terms:
@@ -785,6 +926,9 @@ def _check_consistency(terms: Sequence[KeywordTerm]) -> None:
                     "a gate that can never open would silence the term"
                 )
                 raise KeywordListValidationError(message)
+    for term in terms:
+        _check_case_sensitivity(term)
+        _check_substring_length(term)
 
 
 def _read_list(path: Path) -> object:

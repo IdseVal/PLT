@@ -71,6 +71,23 @@ Two mechanisms, used together:
    word character — unless the name is at least ten characters long, where `substring` is
    safe and also catches the compounds Dutch and German form. Never `substring` on a short
    name: that is how `kwekerij` came to match `hennepkwekerij`.
+
+   **The loader enforces a floor of six characters on every `substring` literal, term and
+   alias alike, and ten remains the convention for a name imported from a register.** The
+   floor is where measurement puts it. Over 150,000 sampled Rechtspraak judgments —
+   947,625 distinct word forms — every literal of four or five characters the lists have
+   carried is reached inside a word that has nothing to do with it: `DDAC` inside *Faddach*,
+   `BBIT` inside *rabbits*, `TMAD` inside *Oostmadeweg*, `metam` inside *metamfetamine*, in
+   217 documents of which three were the substance. From six characters the picture changes
+   in kind rather than in degree: nearly every containing word is the term's own compound or
+   inflection — *biocidenverordening*, *bestrijdingsmiddelenresiduen*, *glyfosaathoudend* —
+   which is what `substring` exists for.
+
+   > The floor is a floor, not a guarantee. Two six-character literals in the shipped lists
+   > are still reached inside unrelated words — `aldrin` inside the surname *Maaldrink*, 12
+   > documents in the same sample, and `captan` inside *mercaptanen*. A length rule cannot
+   > see that; only measuring a candidate literal against the corpus can. Do that for any
+   > short name before giving it `substring`.
 2. **`requires`.** Match mode cannot save `beer`. A name that is an ordinary word in the
    jurisdiction's language keeps its weight and its place in the list but is gated on a
    plant-protection term — `en-pesticide` in `eu.json`, `nl-gewasbeschermingsmiddel` in
@@ -161,6 +178,19 @@ express it per alias, so the rule for every list is:
 > A `case_sensitive: true` term carries **acronyms only**. Never mix an acronym and an
 > ordinary word in the same term.
 
+**The loader enforces this**, on the term and on every alias: under `case_sensitive` a
+literal may carry no lowercase letter and no space, so `DDT`, `NVWA` and `1907/2006` pass and
+`lindaan`, `Ctgb` written as a literal and `European Food Safety Authority` do not. The test
+is on character class, not on length, because that is what the failure is about: an
+all-capitals rendering of a spelled-out name is still prose, and upper-casing one is not a
+way to satisfy the rule. A `match: regex` term is exempt, because its pattern is an
+expression — the lowercase characters in `(?<!\w)Ctgb(?!\w)` are syntax.
+
+The rule above was written after the first of these defects and violated twice more before
+it was enforced, which is the whole argument for enforcing it: a curator adding an alias
+sees one line of JSON, and the attribute that will be applied to it is on another line,
+written for a different literal, with no visible effect until someone measures.
+
 An ordinary word inheriting the flag silently loses every sentence-initial occurrence — a
 judgment opening "Lindaan is in de bodem aangetroffen" would not have matched, while the
 same word mid-sentence would. The split terms `nl-ddt` / `nl-organochloor` and
@@ -173,6 +203,13 @@ Only set `case_sensitive` where the lowercase form is a common word or would ove
 
 Four authority terms keep a spelled-out name as an alias and are therefore **not** compliant
 with the rule above: `nl-nvwa-gewas`, `nl-efsa`, `en-efsa`, `en-echa`.
+
+Each carries **`case_sensitive_exception: true`**, which is how the loader is told, per term
+and in the data, that the breach is deliberate. The field is deliberately awkward: it is
+refused on a term that is not `case_sensitive`, and refused on a term that does not need it,
+so the exception set cannot grow by accident and cannot rot once a term is split. Setting it
+is a curation decision with a measured cost — the table below — not a way past a failing
+load. Four is the whole set; a fifth needs the same argument these four have.
 
 They are exceptions on purpose, because splitting them would change scoring rather than just
 structure. `count_term_once` counts per **term**, so splitting a weight-1 term in two either
