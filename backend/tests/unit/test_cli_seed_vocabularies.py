@@ -83,7 +83,11 @@ def seeding_env(
     Base.metadata.create_all(engine)
     factory = create_session_factory(engine)
     with factory() as session:
-        session.add(Jurisdiction(code="NL", name="Netherlands", type=JurisdictionType.STATE))
+        session.add(
+            Jurisdiction(
+                code="NL", name="Netherlands", type=JurisdictionType.STATE, map_feature_id="NL"
+            )
+        )
         session.commit()
 
     monkeypatch.setattr("plt.cli.get_settings", lambda: settings)

@@ -237,7 +237,7 @@ class JurisdictionStat:
     code: str
     name: str
     type: JurisdictionType
-    map_feature_id: str | None
+    map_feature_id: str
     is_active: bool
     case_count: int
     latest_decision_date: date | None

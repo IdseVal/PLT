@@ -401,7 +401,11 @@ def harness(tmp_path: Path) -> Iterator[Harness]:
     Base.metadata.create_all(engine)
     factory = create_session_factory(engine)
     with factory() as session:
-        session.add(Jurisdiction(code="NL", name="Netherlands", type=JurisdictionType.STATE))
+        session.add(
+            Jurisdiction(
+                code="NL", name="Netherlands", type=JurisdictionType.STATE, map_feature_id="NL"
+            )
+        )
         session.commit()
     chain = FilterChain.of(build_filter(tmp_path / "keywords", make_list()))
     try:

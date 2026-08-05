@@ -21,6 +21,7 @@ from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from sqlalchemy import Enum, create_engine, inspect, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from plt.config import get_settings
@@ -268,3 +269,71 @@ def test_the_seed_is_repeatable_on_a_populated_database(alembic_config: Config) 
 
     assert list(codes) == ["EU", "NL"]
     assert cases == 1
+
+
+def test_0006_backfills_every_missing_map_feature_id_and_then_forbids_a_null(
+    alembic_config: Config,
+) -> None:
+    """The failure revision 0006 exists to end, constructed rather than asserted.
+
+    A jurisdiction added before 0006 could carry no ``map_feature_id``, and the map indexes
+    its payload on that field, so such a row is a jurisdiction that can never be joined to a
+    shape. The revision has to fix the rows already there — both branches of the backfill: a
+    state, whose identifier comes from ``iso_alpha2``, and a supranational order, which has
+    none and falls back to its code — and then make the column refuse a new one.
+    """
+    command.upgrade(alembic_config, "0005")
+    url = database_url(alembic_config)
+
+    insert = text(
+        "INSERT INTO jurisdiction"
+        " (code, name, type, iso_alpha2, map_feature_id, is_active, source_metadata,"
+        "  created_at, updated_at)"
+        " VALUES (:code, :name, :type, :iso, :feature, 1, '{}',"
+        "         '2026-08-05 00:00:00+00:00', '2026-08-05 00:00:00+00:00')"
+    )
+    engine = create_engine(url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                insert,
+                [
+                    {"code": "SE", "name": "Sweden", "type": "state", "iso": "SE", "feature": None},
+                    {
+                        "code": "CE",
+                        "name": "Council of Europe",
+                        "type": "supranational",
+                        "iso": None,
+                        "feature": None,
+                    },
+                ],
+            )
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_config, "head")
+
+    engine = create_engine(url)
+    try:
+        with engine.connect() as connection:
+            backfilled = connection.execute(
+                text(
+                    "SELECT code, map_feature_id FROM jurisdiction"
+                    " WHERE code IN ('SE', 'CE') ORDER BY code"
+                )
+            ).all()
+        with engine.begin() as connection, pytest.raises(IntegrityError):
+            connection.execute(
+                insert,
+                {
+                    "code": "PT",
+                    "name": "Portugal",
+                    "type": "state",
+                    "iso": "PT",
+                    "feature": None,
+                },
+            )
+    finally:
+        engine.dispose()
+
+    assert [tuple(row) for row in backfilled] == [("CE", "CE"), ("SE", "SE")]

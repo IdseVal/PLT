@@ -92,8 +92,15 @@ def harness(tmp_path: Path) -> Iterator[Harness]:
     with factory() as session:
         session.add_all(
             [
-                Jurisdiction(code="NL", name="Netherlands", type=JurisdictionType.STATE),
-                Jurisdiction(code="EU", name="European Union", type=JurisdictionType.SUPRANATIONAL),
+                Jurisdiction(
+                    code="NL", name="Netherlands", type=JurisdictionType.STATE, map_feature_id="NL"
+                ),
+                Jurisdiction(
+                    code="EU",
+                    name="European Union",
+                    type=JurisdictionType.SUPRANATIONAL,
+                    map_feature_id="EU",
+                ),
             ]
         )
         session.commit()

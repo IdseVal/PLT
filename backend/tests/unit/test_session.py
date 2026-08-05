@@ -28,7 +28,9 @@ from tests.conftest import build_settings
 
 def netherlands() -> Jurisdiction:
     """Return an unsaved NL jurisdiction row."""
-    return Jurisdiction(code="NL", name="Netherlands", type=JurisdictionType.STATE)
+    return Jurisdiction(
+        code="NL", name="Netherlands", type=JurisdictionType.STATE, map_feature_id="NL"
+    )
 
 
 def count_jurisdictions(engine: Engine) -> int:

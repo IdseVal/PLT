@@ -213,7 +213,10 @@ class Jurisdiction(Base):
     #: ISO 3166-1 alpha-2 code; ``None`` for supranational orders, which have none.
     iso_alpha2: Mapped[str | None] = mapped_column(String(2))
     #: Identifier of the shape (or, for the EU, the North Sea logo) on the frontend map.
-    map_feature_id: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
+    #: Required: the map indexes its payload on this, so a jurisdiction without one is drawn
+    #: as "no cases yet" whatever it holds. Alpha-2 for a state, the sentinel ``EU`` for the
+    #: Union (``docs/architecture.md`` section 3).
+    map_feature_id: Mapped[str] = mapped_column(String(_SHORT_LEN), nullable=False)
     #: Default working language, used when a source omits one.
     default_language: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
     #: Inactive jurisdictions stay visible on the map but are not ingested.
