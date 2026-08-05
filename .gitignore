@@ -35,6 +35,8 @@ htmlcov/
 /backend/instance/
 /backend/*.log
 reports/
+# Messages written by the `file` mail backend. They carry subscriber addresses.
+outbox/
 
 # --- Node / frontend --------------------------------------------------------------------
 node_modules/
