@@ -862,16 +862,22 @@ class Subscriber(Base):
 
     __tablename__ = "subscriber"
     __table_args__ = (
-        # The two states a row may be in, and nothing between them. Holding the address *and*
-        # its digest would mean the pseudonymisation had achieved nothing, and a row with no
-        # address that is not unsubscribed would be one the digest send could never reach.
+        # Holding the address *and* its digest would mean the substitution had achieved
+        # nothing, so the two are exclusive. A row with neither is legitimate and reachable
+        # twice over: an address withdrawn before this project pseudonymised at all, and one
+        # whose digest a retention horizon has since dropped.
         CheckConstraint(
             "email IS NULL OR email_digest IS NULL",
             name="address_or_digest_not_both",
         ),
+        # Core document 2.12 as a database fact rather than a promise the application makes:
+        # an unsubscribed row holds no address, and a row that holds no address is
+        # unsubscribed. The first half is what the decision *is*; the second stops a live
+        # subscription existing that the digest send could never address.
         CheckConstraint(
-            "email IS NOT NULL OR status = 'unsubscribed'",
-            name="address_present_unless_unsubscribed",
+            "(email IS NOT NULL AND status <> 'unsubscribed')"
+            " OR (email IS NULL AND status = 'unsubscribed')",
+            name="address_held_only_while_subscribed",
         ),
     )
 

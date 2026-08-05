@@ -15,12 +15,12 @@ Two check constraints hold the shape:
 
 * ``address_or_digest_not_both`` — a row holds the address or its digest, never both, so the
   substitution cannot be half-done and quietly keep the personal data it was meant to drop.
-* ``address_present_unless_unsubscribed`` — only an unsubscribed row may lack an address, so
-  a row the digest send is supposed to reach can never be one it cannot address.
-
-Both permit a row with *neither*, which is a real state twice over: the backfill below, and
-an unsubscribed row whose digest has been dropped once ``PLT_SUBSCRIBER_RETENTION_DAYS`` has
-passed, leaving dates and a counter.
+  A row with *neither* is legitimate: the backfill below leaves some, and so does a retention
+  horizon that has dropped a digest.
+* ``address_held_only_while_subscribed`` — an unsubscribed row holds no address, and a row
+  with no address is unsubscribed. The first half is the decision itself, in the database
+  rather than in application code that could forget it; the second stops a live subscription
+  existing that the digest send could never address.
 
 ``digest_count`` counts digests **sent** to the row. It is the one statistic that could not
 be recovered from the timestamps once the address is gone, which is why it becomes a column
@@ -61,6 +61,17 @@ def upgrade() -> None:
             sa.Column("digest_count", sa.Integer(), server_default="0", nullable=False)
         )
         batch_op.alter_column("email", existing_type=sa.VARCHAR(length=254), nullable=True)
+
+    # The backfill, and it has to happen here rather than at the end: a batch operation on
+    # SQLite copies the rows into a rebuilt table, which enforces the CHECK constraints as it
+    # goes, so an unsubscribed row that still held an address would fail the constraint that
+    # is about to be added. Dropped rather than digested — see the module docstring: no pepper
+    # reaches a migration.
+    op.execute(
+        sa.text("UPDATE subscriber SET email = NULL WHERE status = 'unsubscribed'")  # noqa: S608
+    )
+
+    with op.batch_alter_table("subscriber", schema=None) as batch_op:
         batch_op.create_unique_constraint(
             batch_op.f("uq_subscriber_email_digest"), ["email_digest"]
         )
@@ -69,15 +80,10 @@ def upgrade() -> None:
             "email IS NULL OR email_digest IS NULL",
         )
         batch_op.create_check_constraint(
-            batch_op.f("ck_subscriber_address_present_unless_unsubscribed"),
-            "email IS NOT NULL OR status = 'unsubscribed'",
+            batch_op.f("ck_subscriber_address_held_only_while_subscribed"),
+            "(email IS NOT NULL AND status <> 'unsubscribed')"
+            " OR (email IS NULL AND status = 'unsubscribed')",
         )
-
-    # The backfill. See the module docstring: no pepper reaches a migration, so an address
-    # that had already been withdrawn is dropped rather than replaced by a digest.
-    op.execute(
-        sa.text("UPDATE subscriber SET email = NULL WHERE status = 'unsubscribed'")  # noqa: S608
-    )
 
 
 def downgrade() -> None:
@@ -93,7 +99,7 @@ def downgrade() -> None:
 
     with op.batch_alter_table("subscriber", schema=None) as batch_op:
         batch_op.drop_constraint(
-            batch_op.f("ck_subscriber_address_present_unless_unsubscribed"), type_="check"
+            batch_op.f("ck_subscriber_address_held_only_while_subscribed"), type_="check"
         )
         batch_op.drop_constraint(
             batch_op.f("ck_subscriber_address_or_digest_not_both"), type_="check"

@@ -28,6 +28,7 @@ from plt.db.models import Subscriber, SubscriberStatus
 from plt.db.session import make_engine
 from plt.extensions import dispose_database, limiter
 from plt.notifications.messages import confirm_url, unsubscribe_url
+from plt.notifications.pseudonyms import address_digest
 from plt.notifications.tokens import TokenPurpose, issue_token
 from tests.conftest import RecordingMailer, build_settings
 
@@ -141,6 +142,59 @@ class TestNoEnumeration:
         # An address nobody knows is not written to: mailing it would be exactly the
         # unsolicited message this design exists to prevent.
         assert outbox.recipients == ["known@example.org"]
+
+    def test_every_class_of_address_gets_one_identical_answer(
+        self,
+        client: FlaskClient,
+        settings: Settings,
+        known: Subscriber,
+        outbox: RecordingMailer,
+        db_session: Session,
+    ) -> None:
+        """The pseudonymised row must not become a new oracle.
+
+        Suppressing a withdrawn address adds a branch that sends no mail, so this asserts the
+        thing that matters: what the *caller* is told is the same for all five classes, the
+        withdrawn one included. Silence is not a tell either — the throttle is keyed on the
+        address rather than on the client, so a fresh client's first probe of any address at
+        all can be a request that sends nothing.
+        """
+        client.post(
+            UNSUBSCRIBE, json={"token": token_for(known, TokenPurpose.UNSUBSCRIBE, settings)}
+        )
+        db_session.add(
+            Subscriber(
+                email="pending@example.org",
+                status=SubscriberStatus.PENDING,
+                token_seed="a-pending-seed-value-1",
+            )
+        )
+        db_session.add(
+            Subscriber(
+                email="live@example.org",
+                status=SubscriberStatus.CONFIRMED,
+                token_seed="a-live-seed-value-0001",
+            )
+        )
+        db_session.commit()
+        del outbox
+
+        answers = {
+            address: client.post(SUBSCRIBE, json={"email": address})
+            for address in (
+                "known@example.org",  # withdrawn, and recognised by its digest
+                "pending@example.org",  # submitted, never confirmed
+                "live@example.org",  # confirmed
+                "stranger@example.org",  # unknown
+            )
+        }
+        # The fifth class: a repeat, which the per-address throttle silences.
+        answers["throttled"] = client.post(SUBSCRIBE, json={"email": "stranger@example.org"})
+
+        bodies = {response.get_data(as_text=True) for response in answers.values()}
+        statuses = {response.status_code for response in answers.values()}
+        assert statuses == {HTTPStatus.ACCEPTED}
+        assert len(bodies) == 1, "an address class is distinguishable from the response body"
 
     def test_the_routes_are_post_only_so_no_address_reaches_a_url(self, app: Flask) -> None:
         rules = {
@@ -256,7 +310,7 @@ class TestUnsubscribe:
 
         assert "aaaaaaaaaaaa" not in response.get_data(as_text=True)
 
-    def test_resubscribing_retires_the_previous_links(
+    def test_unsubscribing_replaces_the_address_with_a_digest(
         self,
         client: FlaskClient,
         settings: Settings,
@@ -264,24 +318,116 @@ class TestUnsubscribe:
         db_session: Session,
         outbox: RecordingMailer,
     ) -> None:
+        """The decision itself: the row survives, the address does not."""
         del outbox
-        old_seed = known.token_seed
-        old_token = token_for(known, TokenPurpose.UNSUBSCRIBE, settings)
-        client.post(UNSUBSCRIBE, json={"token": old_token})
-
-        client.post(SUBSCRIBE, json={"email": "known@example.org"})
+        client.post(
+            UNSUBSCRIBE, json={"token": token_for(known, TokenPurpose.UNSUBSCRIBE, settings)}
+        )
 
         row = subscribers(db_session)[0]
-        assert row.status is SubscriberStatus.PENDING
-        assert row.token_seed != old_seed
+        assert row.status is SubscriberStatus.UNSUBSCRIBED
+        assert row.email is None
+        assert row.email_digest == address_digest("known@example.org", settings.address_pepper)
 
-        # The old link is inert: it addressed the subscription that ended, and cannot reach
-        # the new one. It still reports success, because the address it was issued for is in
-        # fact not on the list — telling the reader otherwise would send them looking for a
-        # way out that does not exist.
+        # What the project keeps: the dates and the counter, which is everything the
+        # statistics in core document 2.12 are computed from.
+        assert row.created_at is not None
+        assert row.confirmed_at == datetime(2026, 7, 1, tzinfo=UTC)
+        assert row.unsubscribed_at is not None
+
+    def test_no_row_anywhere_still_holds_the_address(
+        self,
+        client: FlaskClient,
+        settings: Settings,
+        known: Subscriber,
+        db_session: Session,
+        outbox: RecordingMailer,
+    ) -> None:
+        """A database dump must not yield the address, in any column of any table.
+
+        Asserting on ``email`` alone would pass a change that left the address in a second
+        column somewhere, which is exactly the failure that would make the whole exercise
+        pointless. This reads every text column of every table instead.
+        """
+        del outbox
+        client.post(
+            UNSUBSCRIBE, json={"token": token_for(known, TokenPurpose.UNSUBSCRIBE, settings)}
+        )
+        db_session.rollback()
+
+        for table in Base.metadata.tables.values():
+            for row in db_session.execute(select(table)).mappings():
+                for value in row.values():
+                    assert "known@example.org" not in str(value)
+
+    def test_a_withdrawn_address_is_not_resubscribed_by_a_stranger(
+        self,
+        client: FlaskClient,
+        settings: Settings,
+        known: Subscriber,
+        db_session: Session,
+        outbox: RecordingMailer,
+    ) -> None:
+        """The consequence the digest exists for: an unsubscribe survives being retyped.
+
+        Before this, a third party submitting a previously-unsubscribed address moved the row
+        back to ``pending`` and caused one confirmation email — the one path by which somebody
+        who had withdrawn consent received mail because of a stranger's action.
+        """
+        client.post(
+            UNSUBSCRIBE, json={"token": token_for(known, TokenPurpose.UNSUBSCRIBE, settings)}
+        )
+        outbox.sent.clear()
+
+        response = client.post(SUBSCRIBE, json={"email": "known@example.org"})
+
+        assert response.status_code == HTTPStatus.ACCEPTED
+        assert outbox.sent == []
+        row = subscribers(db_session)[0]
+        assert row.status is SubscriberStatus.UNSUBSCRIBED
+        assert row.email is None
+
+    def test_the_address_is_recognised_whatever_case_it_comes_back_in(
+        self,
+        client: FlaskClient,
+        settings: Settings,
+        known: Subscriber,
+        outbox: RecordingMailer,
+    ) -> None:
+        """Normalisation is what makes recognition work; without it this sends a message."""
+        client.post(
+            UNSUBSCRIBE, json={"token": token_for(known, TokenPurpose.UNSUBSCRIBE, settings)}
+        )
+        outbox.sent.clear()
+
+        client.post(SUBSCRIBE, json={"email": "  KNOWN@Example.ORG  "})
+
+        assert outbox.sent == []
+
+    def test_a_link_issued_before_the_unsubscribe_stays_inert(
+        self,
+        client: FlaskClient,
+        settings: Settings,
+        known: Subscriber,
+        db_session: Session,
+        outbox: RecordingMailer,
+    ) -> None:
+        """A second use of an old link reports success and changes nothing.
+
+        Telling the reader otherwise would send them looking for a way out that does not
+        exist: the address really is not on the list.
+        """
+        del outbox
+        old_token = token_for(known, TokenPurpose.UNSUBSCRIBE, settings)
+        client.post(UNSUBSCRIBE, json={"token": old_token})
+        unsubscribed_at = subscribers(db_session)[0].unsubscribed_at
+
         stale = client.post(UNSUBSCRIBE, json={"token": old_token})
+
         assert stale.status_code == HTTPStatus.OK
-        assert subscribers(db_session)[0].status is SubscriberStatus.PENDING
+        row = subscribers(db_session)[0]
+        assert row.status is SubscriberStatus.UNSUBSCRIBED
+        assert row.unsubscribed_at == unsubscribed_at
 
 
 class TestValidation:

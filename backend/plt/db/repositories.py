@@ -71,6 +71,7 @@ __all__ = [
     "get_case_fingerprint",
     "get_review_by_id",
     "get_subscriber_by_email",
+    "get_subscriber_by_email_digest",
     "get_subscriber_by_token_seed",
     "jurisdiction_stats",
     "latest_cases",
@@ -1050,6 +1051,31 @@ def get_subscriber_by_email(session: Session, email: str) -> Subscriber | None:
         The row, or ``None``.
     """
     return session.scalars(select(Subscriber).where(Subscriber.email == email)).one_or_none()
+
+
+def get_subscriber_by_email_digest(session: Session, digest: str) -> Subscriber | None:
+    """Look up the row an address was reduced to when it unsubscribed.
+
+    The counterpart of :func:`get_subscriber_by_email` for a subscription that has ended: the
+    address is gone, so the only way back to the row is the keyed digest of it (core document
+    section 2.12). Like that function it answers a caller that already holds the address it is
+    asking about, and it cannot be used to walk the table — a digest is not something a caller
+    can supply, only something derived from an address under a key it does not have.
+
+    The caller confirms the hit with :func:`plt.notifications.pseudonyms.matches_digest`
+    rather than trusting SQL equality, because a case-insensitive column collation would match
+    two digests that differ and suppress an address that never unsubscribed.
+
+    Args:
+        session: Open database session.
+        digest: The digest computed from the address in hand.
+
+    Returns:
+        The row, or ``None``.
+    """
+    return session.scalars(
+        select(Subscriber).where(Subscriber.email_digest == digest)
+    ).one_or_none()
 
 
 def get_subscriber_by_token_seed(session: Session, seed: str) -> Subscriber | None:
