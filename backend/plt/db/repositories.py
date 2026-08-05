@@ -25,9 +25,12 @@ from sqlalchemy import Select, SQLColumnExpression, and_, func, or_, select
 from sqlalchemy import case as sql_case
 from sqlalchemy.orm import selectinload
 
+from plt.db.base import utcnow
 from plt.db.models import (
     Case,
     CaseDocument,
+    CaseReview,
+    CaseReviewDecision,
     CaseTopic,
     Court,
     IngestRun,
@@ -35,6 +38,8 @@ from plt.db.models import (
     Jurisdiction,
     JurisdictionType,
     LawDomain,
+    ReviewDecision,
+    ReviewStatus,
     Topic,
 )
 
@@ -50,16 +55,23 @@ __all__ = [
     "FacetValues",
     "IngestRunSummary",
     "JurisdictionStat",
+    "ReviewPage",
+    "ReviewSearchCriteria",
+    "ReviewSort",
     "count_cases",
+    "count_reviews",
     "get_case_by_id",
     "get_case_by_source_id",
     "get_case_fingerprint",
+    "get_review_by_id",
     "jurisdiction_stats",
     "latest_cases",
     "latest_successful_runs",
     "like_pattern",
     "list_facets",
+    "record_review_decision",
     "search_cases",
+    "search_reviews",
     "stream_cases",
 ]
 
@@ -73,6 +85,20 @@ class CaseSort(enum.StrEnum):
     DATE_DESC = "date_desc"
     DATE_ASC = "date_asc"
     RELEVANCE = "relevance"
+
+
+class ReviewSort(enum.StrEnum):
+    """Ordering accepted by the review queue endpoint.
+
+    ``flagged_asc`` is the default because a queue is worked oldest first; the score
+    orderings exist because the band's lower edge is where the false positives concentrate,
+    so a reviewer with limited time starts there.
+    """
+
+    FLAGGED_ASC = "flagged_asc"
+    FLAGGED_DESC = "flagged_desc"
+    SCORE_ASC = "score_asc"
+    SCORE_DESC = "score_desc"
 
 
 def like_pattern(term: str) -> str:
@@ -118,11 +144,16 @@ class CaseSearchCriteria:
     include_unpublished: bool = False
 
 
-@dataclass(frozen=True, slots=True)
-class CasePage:
-    """One page of search results, with the totals a paginator needs."""
+class _Paginated:
+    """The arithmetic every paginated result shares.
 
-    items: tuple[Case, ...]
+    Split out so the case list and the review queue cannot drift into two different answers
+    for "how many pages is that", which the API contract fixes: an empty result set is one
+    empty page, never zero pages (``docs/architecture.md`` section 5.1).
+    """
+
+    __slots__ = ()
+
     total: int
     page: int
     page_size: int
@@ -136,6 +167,44 @@ class CasePage:
     def has_next(self) -> bool:
         """Return whether a further page exists after this one."""
         return self.page < self.page_count
+
+
+@dataclass(frozen=True, slots=True)
+class CasePage(_Paginated):
+    """One page of search results, with the totals a paginator needs."""
+
+    items: tuple[Case, ...]
+    total: int
+    page: int
+    page_size: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewPage(_Paginated):
+    """One page of the review queue, with the totals a paginator needs."""
+
+    items: tuple[CaseReview, ...]
+    total: int
+    page: int
+    page_size: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewSearchCriteria:
+    """Filters accepted by :func:`search_reviews` and :func:`count_reviews`.
+
+    The default instance selects the queue itself: everything still awaiting a decision,
+    oldest flag first.
+    """
+
+    statuses: tuple[ReviewStatus, ...] = (ReviewStatus.PENDING,)
+    jurisdictions: tuple[str, ...] = ()
+    #: Version of the keyword list that produced the flag, so a curator can review the
+    #: effect of one revision of a list rather than the whole backlog.
+    list_version: str | None = None
+    #: Identifier of the person or agent that took the standing decision.
+    decided_by: str | None = None
+    sort: ReviewSort = ReviewSort.FLAGGED_ASC
 
 
 @dataclass(frozen=True, slots=True)
@@ -189,6 +258,16 @@ class IngestRunSummary:
     inserted_count: int
     updated_count: int
 
+
+#: Relationships loaded eagerly for a review listing. The matched terms are among them on
+#: purpose: a reviewer decides on the evidence, and the contract requires it to travel with
+#: the item rather than costing a second request per row (architecture section 5.1).
+_REVIEW_OPTIONS = (
+    selectinload(CaseReview.case).selectinload(Case.keyword_matches),
+    selectinload(CaseReview.case).joinedload(Case.jurisdiction),
+    selectinload(CaseReview.case).joinedload(Case.court),
+    selectinload(CaseReview.decisions),
+)
 
 #: Relationships loaded eagerly when a caller asks for a case with its details.
 _DETAIL_OPTIONS = (
@@ -485,6 +564,184 @@ def get_case_fingerprint(
         revision=row.revision,
         last_seen_at=row.last_seen_at,
     )
+
+
+def _review_conditions(criteria: ReviewSearchCriteria) -> list[ColumnElement[bool]]:
+    """Translate review-queue criteria into a list of SQL predicates.
+
+    Args:
+        criteria: The filters to apply.
+
+    Returns:
+        Predicates to be ``AND``-ed onto a ``case_review`` selection. The jurisdiction filter
+        compiles to an ``EXISTS`` against ``case`` so the caller adds no join.
+    """
+    clauses: list[ColumnElement[bool]] = []
+    if criteria.statuses:
+        clauses.append(CaseReview.status.in_(criteria.statuses))
+    if criteria.jurisdictions:
+        clauses.append(CaseReview.case.has(Case.jurisdiction_code.in_(criteria.jurisdictions)))
+    if criteria.list_version:
+        clauses.append(CaseReview.list_version == criteria.list_version)
+    if criteria.decided_by:
+        clauses.append(CaseReview.decided_by == criteria.decided_by)
+    return clauses
+
+
+def _review_ordering(criteria: ReviewSearchCriteria) -> tuple[SQLColumnExpression[Any], ...]:
+    """Return the ``ORDER BY`` expressions for a review-queue selection.
+
+    Args:
+        criteria: The criteria, including the requested sort.
+
+    Returns:
+        Expressions to pass to ``order_by``, with ``id`` appended as a tie-breaker so paging
+        over equal timestamps or equal scores is stable.
+    """
+    if criteria.sort is ReviewSort.FLAGGED_DESC:
+        return (CaseReview.flagged_at.desc(), CaseReview.id.desc())
+    if criteria.sort is ReviewSort.SCORE_ASC:
+        return (CaseReview.score.asc().nullsfirst(), CaseReview.id.asc())
+    if criteria.sort is ReviewSort.SCORE_DESC:
+        return (CaseReview.score.desc().nullslast(), CaseReview.id.desc())
+    return (CaseReview.flagged_at.asc(), CaseReview.id.asc())
+
+
+def count_reviews(session: Session, criteria: ReviewSearchCriteria | None = None) -> int:
+    """Count the review items matching the criteria.
+
+    Args:
+        session: Open database session.
+        criteria: Filters to apply. Defaults to the pending queue.
+
+    Returns:
+        The number of matching items.
+    """
+    criteria = criteria or ReviewSearchCriteria()
+    stmt = select(func.count(CaseReview.id)).where(*_review_conditions(criteria))
+    return session.execute(stmt).scalar_one()
+
+
+def search_reviews(
+    session: Session,
+    criteria: ReviewSearchCriteria | None = None,
+    *,
+    page: int = 1,
+    page_size: int = 20,
+) -> ReviewPage:
+    """Return one page of the review queue, plus the total.
+
+    Each item arrives with its case, that case's keyword matches and the decisions taken on
+    it, so a reviewer — human or agent — has the evidence in hand without a second request.
+
+    Args:
+        session: Open database session.
+        criteria: Filters and ordering. Defaults to the pending queue, oldest flag first.
+        page: 1-based page number.
+        page_size: Rows per page. The caller clamps this from configuration.
+
+    Returns:
+        A :class:`ReviewPage`.
+
+    Raises:
+        ValueError: If ``page`` or ``page_size`` is below 1.
+    """
+    if page < 1:
+        message = f"page must be 1 or greater, got {page}"
+        raise ValueError(message)
+    if page_size < 1:
+        message = f"page_size must be 1 or greater, got {page_size}"
+        raise ValueError(message)
+
+    criteria = criteria or ReviewSearchCriteria()
+    stmt = (
+        select(CaseReview)
+        .where(*_review_conditions(criteria))
+        .order_by(*_review_ordering(criteria))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .options(*_REVIEW_OPTIONS)
+    )
+    items: Sequence[CaseReview] = session.scalars(stmt).unique().all()
+    return ReviewPage(
+        items=tuple(items),
+        total=count_reviews(session, criteria),
+        page=page,
+        page_size=page_size,
+    )
+
+
+def get_review_by_id(session: Session, review_id: int) -> CaseReview | None:
+    """Look one review item up by primary key, with its case and its evidence.
+
+    Args:
+        session: Open database session.
+        review_id: Primary key of the review item.
+
+    Returns:
+        The item, or ``None`` if there is no such row.
+    """
+    stmt = select(CaseReview).where(CaseReview.id == review_id).options(*_REVIEW_OPTIONS)
+    return session.scalars(stmt).unique().one_or_none()
+
+
+def record_review_decision(
+    session: Session,
+    review: CaseReview,
+    *,
+    decision: ReviewDecision,
+    decided_by: str,
+    note: str | None = None,
+    now: datetime | None = None,
+) -> CaseReviewDecision:
+    """Record a content manager's verdict on a flagged case.
+
+    Two rows are written, and the difference between them is the point. The decision is
+    appended to ``case_review_decision``, which is never rewritten, so a verdict later
+    superseded by an upstream revision is still on the record. The same verdict is copied
+    onto the ``case_review`` row as the *standing* decision, which is what the queue lists
+    and what governs publication.
+
+    The case's ``needs_review`` flag is deliberately **not** cleared. It states what the
+    filter concluded about the text, and re-running the same window over the same corpus has
+    to produce the same flags whether or not anyone has decided in the meantime
+    (``docs/core-document.md`` section 2.8). The workflow lives in ``case_review.status``.
+
+    Args:
+        session: Open database session.
+        review: The item being decided, with its case loaded.
+        decision: Confirm or reject.
+        decided_by: Identifier of the person or agent deciding. Recorded verbatim.
+        note: Optional rationale.
+        now: Timestamp to write. Defaults to the current UTC instant.
+
+    Returns:
+        The appended history row.
+    """
+    moment = now if now is not None else utcnow()
+    case = review.case
+
+    review.decision = decision
+    review.decided_by = decided_by
+    review.decided_at = moment
+    review.decided_revision = case.revision
+    review.decision_note = note
+    review.status = (
+        ReviewStatus.CONFIRMED if decision is ReviewDecision.CONFIRMED else ReviewStatus.REJECTED
+    )
+    review.apply_publication(case)
+
+    entry = CaseReviewDecision(
+        decision=decision,
+        decided_by=decided_by,
+        decided_at=moment,
+        note=note,
+        case_revision=case.revision,
+        content_hash=case.content_hash,
+    )
+    review.decisions.append(entry)
+    session.flush()
+    return entry
 
 
 def jurisdiction_stats(session: Session) -> tuple[JurisdictionStat, ...]:

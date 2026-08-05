@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Protocol, runtime_checkable
 
 __all__ = [
@@ -136,12 +136,28 @@ class TermMatch:
 class FilterResult:
     """The verdict of one filter stage on one document.
 
+    A stage answers two questions, not one. *Passed* decides whether the document enters the
+    database at all, and the PLT deliberately answers it generously: selection optimises for
+    recall, because a false negative is a case the tracker implicitly claims does not exist
+    (``docs/core-document.md`` section 2.7). *Needs review* qualifies that answer, marking a
+    document the stage admitted but only just - the population the same section shows the
+    false positives concentrate in. Precision is then handled downstream, by a content
+    manager confirming or rejecting: selection admits, review curates.
+
     Attributes:
         passed: Whether the document survives this stage.
         score: Total weight accumulated, comparable against the list's ``min_score``.
         reason: Human-readable explanation for the pipeline report and the run log.
         stage: Name of the stage that produced the result.
         matches: Every term match found, contributing or not - see :class:`TermMatch`.
+        needs_review: Whether the document passed *within the review band* and is therefore
+            flagged for confirmation. Never ``True`` on a rejection: a document that did not
+            pass is not in the database and there is nothing to curate.
+        threshold: The score the stage compared against to decide :attr:`passed`, if it has
+            one. Carried with the score rather than left in the stage, so a stored verdict
+            still says what it was measured against once the list has moved on.
+        review_ceiling: The score at or above which the stage stops flagging. Together with
+            :attr:`threshold` it states the review band in full: ``[threshold, ceiling)``.
     """
 
     passed: bool
@@ -149,6 +165,19 @@ class FilterResult:
     reason: str
     stage: str
     matches: tuple[TermMatch, ...] = ()
+    needs_review: bool = False
+    threshold: float | None = None
+    review_ceiling: float | None = None
+
+    @property
+    def passed_confidently(self) -> bool:
+        """Return whether the document passed clear of the review band.
+
+        Returns:
+            ``True`` for a document this stage admitted without flagging it, which is the
+            distinction the review queue is built on.
+        """
+        return self.passed and not self.needs_review
 
 
 class Filter(ABC):
@@ -203,6 +232,11 @@ class FilterChain:
     def evaluate(self, case: FilterableDocument) -> FilterResult:
         """Run the chain over a document, stopping at the first rejection.
 
+        A review flag raised by *any* stage survives to the returned result, even though the
+        result itself is the last stage's. A flag is a statement about the document, not
+        about the stage that noticed, and a chain that dropped it as soon as a further stage
+        were appended would quietly empty the review queue.
+
         Args:
             case: The normalised document to judge.
 
@@ -217,10 +251,14 @@ class FilterChain:
             reason="no filter stages configured",
             stage="chain",
         )
+        needs_review = False
         for stage in self.stages:
             result = stage.evaluate(case)
             if not result.passed:
                 return result
+            needs_review = needs_review or result.needs_review
+        if needs_review and not result.needs_review:
+            return replace(result, needs_review=True)
         return result
 
     def evaluate_all(self, cases: Iterable[FilterableDocument]) -> Iterator[FilterResult]:

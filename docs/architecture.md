@@ -31,6 +31,7 @@ backend/
     api/
       __init__.py           Blueprint registration
       cases.py              /api/cases*
+      reviews.py            /api/reviews* — the content manager's queue (§2.7), authenticated
       stats.py              /api/stats*
       schemas.py            Request/response (de)serialisation + validation
       errors.py             Uniform error envelope
@@ -100,11 +101,13 @@ add source-specific fields to `source_metadata`.
 | --- | --- | --- |
 | `jurisdiction` | One row per jurisdiction, EU included as its own row | `code` (PK, `NL`/`EU`), `name`, `type` (`state`\|`supranational`), `iso_alpha2`, `map_feature_id`, `is_active` |
 | `court` | Courts/instances, seeded from source vocabularies | `id`, `jurisdiction_code` (FK), `source_identifier` (unique per jurisdiction), `name`, `level`, `domain` |
-| `case` | The central entity, one row per decision | `id`, `jurisdiction_code` (FK), `source_id` (**unique with jurisdiction**: ECLI or CELEX), `source_system`, `court_id` (FK), `title`, `abstract`, `decision_date`, `filing_date`, `publication_date`, `case_numbers` (JSON), `language`, `law_domain`, `law_subfield`, `procedure_type`, `outcome`, `source_url`, `content_hash`, `first_seen_at`, `last_seen_at`, `updated_at`, `source_metadata` (JSON), `is_published` |
+| `case` | The central entity, one row per decision | `id`, `jurisdiction_code` (FK), `source_id` (**unique with jurisdiction**: ECLI or CELEX), `source_system`, `court_id` (FK), `title`, `abstract`, `decision_date`, `filing_date`, `publication_date`, `case_numbers` (JSON), `language`, `law_domain`, `law_subfield`, `procedure_type`, `outcome`, `source_url`, `content_hash`, `first_seen_at`, `last_seen_at`, `updated_at`, `source_metadata` (JSON), `is_published`, `filter_score`, `needs_review` |
 | `case_document` | Full texts and attachments per case, per language | `id`, `case_id` (FK), `language`, `doc_type` (`judgment`\|`opinion`\|`summary`), `format`, `full_text`, `raw_payload`, `retrieved_at` |
 | `party` | Litigating parties | `id`, `case_id` (FK), `name`, `role` (`applicant`\|`defendant`\|`intervener`\|`other`), `party_type` |
 | `topic` + `case_topic` | Topic classification (§2.2 label 6), extensible | `id`, `slug`, `label`, `parent_id` |
 | `keyword_match` | Which term ids matched a case, and where | `id`, `case_id` (FK), `term_id`, `list_version`, `field`, `weight_applied`, `snippet` |
+| `case_review` | One row per case flagged for review, and the standing decision on it | `id`, `case_id` (**unique**, FK), `status` (`pending`\|`confirmed`\|`rejected`\|`withdrawn`), `score`, `min_score`, `band_ceiling`, `list_version`, `reason`, `flagged_at`, `flagged_revision`, `flagged_content_hash`, `decision` (`confirmed`\|`rejected`), `decided_by`, `decided_at`, `decided_revision`, `decision_note`, `suppressed_publication` |
+| `case_review_decision` | Append-only history of decisions taken on a review item | `id`, `review_id` (FK), `decision`, `decided_by`, `decided_at`, `note`, `case_revision`, `content_hash` |
 | `citation` | Instruments and cases cited (CELEX/ECLI) | `id`, `case_id` (FK), `target_identifier`, `citation_type` |
 | `ingest_run` | One row per pipeline execution | `id`, `jurisdiction_code`, `connector`, `started_at`, `finished_at`, `status`, `fetched_count`, `matched_count`, `inserted_count`, `updated_count`, `skipped_duplicate_count`, `error_count`, `checkpoint_before`, `checkpoint_after` |
 | `ingest_checkpoint` | Resumable position per connector | `connector` (PK), `jurisdiction_code`, `last_modified_seen`, `last_cursor`, `updated_at` |
@@ -116,6 +119,28 @@ source identifier.
 
 **`keyword_match` matters:** it is how the content manager evaluates and tunes the keyword
 lists. Do not treat it as optional.
+
+**The review queue (core document §2.7).** A case that passes its list's `min_score` but
+scores below `min_score + review_band` is stored, published and *additionally* queued. The
+rules the schema enforces:
+
+- `case.needs_review` and `case.filter_score` are the filter's own output and are rewritten
+  by every evaluation. They are never changed by a decision: re-running a window must produce
+  the same flags whether or not anyone has reviewed in the meantime (§2.8). The workflow
+  lives in `case_review.status`.
+- **A decision survives re-ingestion.** `case_review` is not among the child rows a run
+  replaces. A re-run whose `content_hash` equals `flagged_content_hash` leaves the row
+  untouched, timestamps included.
+- **A genuine upstream revision re-opens the review.** A different `content_hash` returns
+  `status` to `pending` and refreshes the `flagged_*` columns, while `decision`,
+  `decided_by`, `decided_at` and `decided_revision` stay as they were — the previous verdict
+  is visible, and visibly not about the current text.
+- **A rejection withholds publication and deletes nothing.** `case.is_published` goes false;
+  the case, its documents and its `keyword_match` rows remain. `suppressed_publication`
+  records that the review is what withheld it, so a later confirmation restores exactly that
+  and does not publish a case an editor unpublished for another reason.
+- A case that leaves the band on a later evaluation retires an *undecided* item as
+  `withdrawn`; a decision that has been taken stands regardless.
 
 **Portability rules, fixed by the implementation of the schema:**
 
@@ -140,8 +165,10 @@ lists. Do not treat it as optional.
 `search_cases` / `count_cases` / `stream_cases` (all taking a `CaseSearchCriteria`),
 `latest_cases`, `get_case_by_source_id`, `get_case_by_id`, `get_case_fingerprint` (the
 pipeline's dedup pre-check), `jurisdiction_stats` (the one-query map payload, EU included and
-zero-case jurisdictions retained), `list_facets` and `latest_successful_runs`. Clamping
-`page`, `page_size` and `limit` against `Settings` stays the caller's job.
+zero-case jurisdictions retained), `list_facets`, `latest_successful_runs`, and for the queue
+`search_reviews` / `count_reviews` (taking a `ReviewSearchCriteria`), `get_review_by_id` and
+`record_review_decision`. Clamping `page`, `page_size` and `limit` against `Settings` stays
+the caller's job.
 
 ---
 
@@ -235,12 +262,23 @@ class Filter(ABC):
     @abstractmethod
     def evaluate(self, case: FilterableDocument) -> FilterResult:
         """FilterResult carries passed: bool, score: float, matches: list[TermMatch],
-        and a human-readable reason for the pipeline report."""
+        needs_review: bool, threshold and review_ceiling, and a human-readable reason
+        for the pipeline report."""
 ```
 
 `FilterableDocument` is a structural protocol over `jurisdiction_code`, `title`, `abstract`,
 `subject` and `full_text`, so no import couples a stage to the connector work stream. Stage 1
 is the keyword matcher; a later stage appends to the `FilterChain` and touches no connector.
+
+**Passed, and passed confidently, are two different answers.** `passed` decides whether the
+document enters the database and is answered generously, because the PLT optimises for recall
+(core document §2.7). `needs_review` qualifies it: the document scored inside its list's
+`scoring.review_band`, the interval immediately above `min_score`, and is published like any
+other while also entering the review queue. `FilterResult.passed_confidently` is the negation
+pair, and `threshold`/`review_ceiling` state the band the verdict was measured against so a
+stored verdict stays readable after the list is re-curated. A rejection never carries the
+flag. The chain propagates a flag raised by **any** stage onto the result it returns, so
+appending a stage cannot silently empty the queue.
 
 ### 4.4 The runner
 
@@ -303,6 +341,17 @@ Base path `/api`. JSON only. All list endpoints paginate. Errors use one envelop
 | `GET` | `/api/stats/jurisdictions` | Map payload — **one query, all jurisdictions, EU included** |
 | `GET` | `/api/filters` | Facet values for the All-cases filter UI |
 | `GET` | `/api/health` | Liveness + last successful ingest per jurisdiction |
+| `GET` | `/api/reviews` | **Authenticated.** The review queue. Query params: `status` (repeatable, `pending` default, `any` for every status), `jurisdiction` (repeatable), `list_version`, `decided_by`, `sort` (`flagged_asc` default, `flagged_desc`, `score_asc`, `score_desc`), `page`, `page_size` |
+| `POST` | `/api/reviews/<id>/decision` | **Authenticated.** Record a confirmation or a rejection |
+
+**The two review routes are not public.** They list cases a rejection has unpublished — which
+`/api/cases` reports as absent — and can unpublish more, so they require a bearer token
+(`PLT_REVIEW_API_TOKEN`, compared in constant time) and answer `503 review_queue_disabled`
+when none is configured: an unset secret closes the queue, it never opens it. The token
+travels in the `Authorization` header, so the state-changing route is not reachable by a
+cross-site form post and needs no CSRF token of its own. The reviewer identity `decided_by`
+is an opaque string: the content manager may be a person or an agent (core document §2.7),
+and neither is assumed.
 
 ### 5.1 Response shapes
 
@@ -369,6 +418,46 @@ card can link to the rest of that court's cases without resolving the name first
 for reclassification, and can be megabytes of markup. Nor is `case.is_published` — an
 unpublished case is reported as a 404, not as a flag a client could read.
 
+**`/api/reviews`** — the same paginated envelope as `/api/cases`, whose `items` are
+`ReviewItem`s. `/api/reviews/<id>/decision` answers `200` with the single `ReviewItem` as it
+stands after the decision.
+
+**`ReviewItem`** — one queue entry, carrying everything a reviewer needs to decide **without
+a second request**: the case, the numbers the flag was derived from, and the matched terms
+that produced them. Nothing is recomputed; it is what the run recorded.
+
+```json
+{ "id": 12, "status": "pending",
+  "score": 3.5, "min_score": 3.0, "band_ceiling": 6.0, "list_version": "1.1.0",
+  "reason": "score 3.5 reaches min_score 3, inside the review band [3, 6) (NL list v1.1.0); matched: nl-drift",
+  "flagged_at": "2026-08-05T06:00:00+00:00", "flagged_revision": 1,
+  "flagged_content_hash": "9f2c…",
+  "decision": null, "decided_by": null, "decided_at": null, "decided_revision": null,
+  "decision_note": null, "decision_is_current": false,
+  "case_revision": 1, "published": true,
+  "case": CaseSummary,
+  "keyword_matches": [ … as in CaseDetail … ],
+  "decisions": [{ "decision": "confirmed", "decided_by": "…", "decided_at": "…",
+                  "note": null, "case_revision": 1, "content_hash": "9f2c…" }] }
+```
+
+- `status` is the workflow: `pending` is the queue, `confirmed` / `rejected` mirror the
+  standing decision, `withdrawn` marks an item that left the band before anyone decided.
+- `decision` and its companions are the **standing** decision and survive a re-flag, so a
+  reviewer sees what was last concluded. `decision_is_current` says whether it was taken on
+  the revision now in front of them — the server states it rather than leaving a client to
+  compare `decided_revision` against `case_revision` and get it wrong.
+- `decisions` is the full history, oldest first, including verdicts a later revision
+  superseded.
+- `published` is the one place the editorial `is_published` switch is exposed, because a
+  reviewer must be able to see that a rejection took effect. It stays off `CaseSummary`, and
+  the public endpoints still report an unpublished case as a 404.
+
+**`POST /api/reviews/<id>/decision`** takes
+`{"decision": "confirmed" | "rejected", "decided_by": "…", "note": "…"}`. `decision` and
+`decided_by` are required; `note` is optional. `decided_by` is bounded at 255 characters and
+`note` at 4000, and neither may contain control characters.
+
 **`/api/stats/jurisdictions`** — a bare array, one entry per jurisdiction, ordered by code,
 **including jurisdictions whose `case_count` is `0`** so the map renders intended coverage
 in its muted state rather than dropping the shape:
@@ -409,9 +498,12 @@ offending parameter for a validation error, e.g.
 parameterised queries only; validate and bound every query parameter server-side;
 `page_size` and `limit` bounded by configuration, and a value outside the bound **rejected
 with a 400 rather than silently coerced**; rate limiting on all endpoints (per endpoint,
-per client) and a stricter limit on `/api/cases/export`; CORS restricted to configured
-origins; no stack traces, SQL or file paths in responses — an unexpected exception logs
-server-side and answers with a generic `internal_error` envelope.
+per client) and a stricter limit on `/api/cases/export` and on `/api/reviews`; CORS
+restricted to configured origins; no stack traces, SQL or file paths in responses — an
+unexpected exception logs server-side and answers with a generic `internal_error` envelope.
+The review routes add `401 unauthorized` for a missing or wrong bearer token and
+`503 review_queue_disabled` when none is configured; a rejected token is logged without its
+value.
 
 ---
 

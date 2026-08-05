@@ -43,6 +43,42 @@ A document passes when its total weight (after per-field multipliers) reaches
 another term also matched — `nl-drift` is the worked example, since *drift* also means
 *fit of anger* in Dutch criminal judgments.
 
+## The review band
+
+`scoring.review_band` is the width, in score points **above `min_score`**, of the band in
+which a passing document is additionally flagged for a content manager. A document scoring
+`min_score ≤ score < min_score + review_band` is ingested and published exactly like any
+other and appears in the review queue (`GET /api/reviews`). A band of `0` disables flagging;
+a list that omits the key inherits **3**.
+
+This exists because the PLT optimises for recall
+([core document §2.7](../../docs/core-document.md)). `min_score` is deliberately not raised
+to buy precision — a false negative is a case the tracker implicitly claims does not exist —
+so precision is bought downstream instead: **selection admits, review curates.** Flagging
+never rejects, and never withholds a case from the site.
+
+**Set the band from your own jurisdiction's dry run, not from another list's.** The shipped
+values were each derived from their own corpus, and they differ:
+
+| List | `min_score` | `review_band` | Flagged range | Evidence |
+| --- | ---: | ---: | --- | --- |
+| `eu.json` | 3 | 3 | `[3, 6)` | First EU dry run: 1,548 CJEU decisions across 2024, 54 passed. False positives concentrated at 3.0–3.9; the ≥12 band almost entirely genuine. Raising `min_score` to 6 would have removed 21 cases, ~2 of them in scope — declined, so that population is reviewed instead. |
+| `nl.json` | 3 | 2.5 | `[3, 5.5)` | First Rechtspraak dry run: 10,011 documents, 38 passed. Every clear false positive scored at or below 5.0 and none above, so the band covers them with a margin. |
+
+Practical notes for a curator:
+
+- **The interval is half-open.** A score exactly on `min_score` is flagged; one exactly on
+  the ceiling is not. Widen the band rather than nudging a score if a case on the boundary
+  should be reviewed.
+- **Widening is cheap, narrowing is not.** A band that is too wide costs a reviewer some
+  minutes; one that is too narrow lets the borderline false positives through unexamined,
+  which is the failure mode this mechanism exists to catch.
+- **Bump `list_version` when you change the band.** The flag is stored with the version that
+  produced it, and re-running a window against the same version must reproduce it exactly
+  ([core document §2.8](../../docs/core-document.md)).
+- **A dry run shows the effect without writing a row.** Every line of the match report
+  carries `needs_review`, `threshold` and `review_ceiling`.
+
 ## Case sensitivity
 
 **`case_sensitive` applies to a term *and every one of its aliases*.** The schema cannot

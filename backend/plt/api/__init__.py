@@ -22,6 +22,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from plt import __version__
 from plt.api.cases import cases_bp
+from plt.api.reviews import reviews_bp
 from plt.api.schemas import health_ingest_payload
 from plt.api.stats import filters_bp, stats_bp
 from plt.config import Settings
@@ -76,4 +77,5 @@ def register_blueprints(app: Flask, settings: Settings) -> None:
     app.register_blueprint(health_bp, url_prefix=prefix)
     app.register_blueprint(filters_bp, url_prefix=prefix)
     app.register_blueprint(cases_bp, url_prefix=f"{prefix}/cases")
+    app.register_blueprint(reviews_bp, url_prefix=f"{prefix}/reviews")
     app.register_blueprint(stats_bp, url_prefix=f"{prefix}/stats")

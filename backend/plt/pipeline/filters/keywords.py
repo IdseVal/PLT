@@ -30,6 +30,18 @@ Both transformations are length-preserving translations, so every offset and sni
 points into the document's own text, and matching runs without ``re.IGNORECASE`` - which
 alone costs roughly a factor of fifty on a megabyte of text.
 
+Selection and review
+--------------------
+A document passes when its score reaches the list's ``min_score``, and that threshold is
+deliberately low: the PLT optimises for recall, and a threshold raised to buy precision buys
+it with cases that then silently do not exist (``docs/core-document.md`` section 2.7).
+Precision is bought downstream instead. A document that passes but scores inside the list's
+``review_band`` - the interval immediately above ``min_score``, where both live dry runs
+found the false positives concentrated - is admitted exactly like any other and additionally
+marked ``needs_review``, for a content manager to confirm or reject. The band is per list,
+because the EU evidence does not transfer to the Dutch corpus, and it is data in the same
+curated file as the terms it qualifies.
+
 Every match is reported as a :class:`~plt.pipeline.filters.base.TermMatch` carrying the term
 id, the list version, the field and the weight actually applied. Those rows populate
 ``keyword_match`` (``docs/architecture.md`` section 3), which is how the content manager
@@ -55,6 +67,7 @@ from plt.config import Settings, get_settings
 from plt.pipeline.filters.base import Filter, FilterableDocument, FilterResult, TermMatch
 
 __all__ = [
+    "DEFAULT_REVIEW_BAND",
     "DEFAULT_SNIPPET_RADIUS",
     "SCHEMA_FILENAME",
     "Exclusion",
@@ -76,6 +89,15 @@ SCHEMA_FILENAME: Final[str] = "schema.json"
 
 #: Characters of context kept either side of a match in a reported snippet.
 DEFAULT_SNIPPET_RADIUS: Final[int] = 90
+
+#: Width of the review band used by a list that declares none, in score points above
+#: ``min_score``. Three points is one weight-3 term at the full-text multiplier: a document
+#: below it was admitted on a single unambiguous mention or on an accumulation of contextual
+#: ones, which is exactly the population the dry runs found the false positives in
+#: (``docs/core-document.md`` section 2.7). A new jurisdiction inherits it until its own dry
+#: run gives it a number, and inheriting a *wide* band is the recall-safe direction: it
+#: over-reviews rather than under-reviews.
+DEFAULT_REVIEW_BAND: Final[float] = 3.0
 
 #: Tolerance on the ``score >= min_score`` comparison, so a total assembled from float
 #: multipliers is never rejected by a representation error of the order of 1e-16.
@@ -395,6 +417,9 @@ class KeywordList:
         updated: ISO 8601 date the list was last curated.
         languages: ISO 639-1 codes the list covers.
         min_score: Total weight a document must reach to pass.
+        review_band: Width of the band immediately above :attr:`min_score` within which a
+            passing document is additionally flagged for review. Per list, because the
+            evidence that sets it is per corpus; ``0`` disables flagging.
         count_term_once: Whether repeated occurrences of a term count only once.
         field_multipliers: Per-field weight multipliers, in curation order. A field absent
             from this mapping is not scanned at all: the curator decides which fields count.
@@ -412,6 +437,7 @@ class KeywordList:
     updated: str
     languages: tuple[str, ...]
     min_score: float
+    review_band: float
     count_term_once: bool
     field_multipliers: Mapping[str, float]
     terms: Mapping[str, KeywordTerm]
@@ -434,6 +460,39 @@ class KeywordList:
     def scan_count(self) -> int:
         """Return how many passes over a document one evaluation costs."""
         return len(self.patterns.buckets) + len(self.patterns.regexes)
+
+    @property
+    def review_ceiling(self) -> float:
+        """Return the score at or above which a passing document is *not* flagged.
+
+        Returns:
+            ``min_score + review_band``. The band is the half-open interval
+            ``[min_score, review_ceiling)``, so a document exactly on the ceiling passes
+            confidently and one exactly on ``min_score`` is flagged.
+        """
+        return self.min_score + self.review_band
+
+    def in_review_band(self, score: float) -> bool:
+        """Return whether a score falls in the review band.
+
+        Deterministic given the list version and the score, which is what makes a flag
+        reproducible from the recorded run (``docs/core-document.md`` section 2.8). The
+        epsilon is the one used for ``min_score`` and errs towards review: a total whose
+        float representation lands a fraction under the ceiling is flagged rather than
+        waved through.
+
+        Args:
+            score: Total weight the document accumulated.
+
+        Returns:
+            ``True`` when ``min_score <= score < review_ceiling``.
+        """
+        if self.review_band <= 0:
+            return False
+        return (
+            score + _SCORE_EPSILON >= self.min_score
+            and score + _SCORE_EPSILON < self.review_ceiling
+        )
 
     def find_exclusion(self, cased: str, folded: str) -> tuple[Exclusion, int, int] | None:
         """Return the first exclusion vetoing the text, if any.
@@ -819,6 +878,7 @@ def load_keyword_list(path: Path, *, schema_path: Path | None = None) -> Keyword
         updated=str(raw["updated"]),
         languages=tuple(str(code) for code in raw["languages"]),
         min_score=float(scoring["min_score"]),
+        review_band=float(scoring.get("review_band", DEFAULT_REVIEW_BAND)),
         count_term_once=bool(scoring.get("count_term_once", True)),
         field_multipliers={str(name): float(value) for name, value in scoring["fields"].items()},
         terms={term.term_id: term for term in terms},
@@ -828,13 +888,17 @@ def load_keyword_list(path: Path, *, schema_path: Path | None = None) -> Keyword
         exclusion_patterns=_build_pattern_set(exclusion_specs, described_as="exclusion"),
     )
     logger.info(
-        "Loaded keyword list %s v%s from %s: %d terms, %d literals, %d scans per document",
+        "Loaded keyword list %s v%s from %s: %d terms, %d literals, %d scans per document; "
+        "min_score %g, review band [%g, %g)",
         keyword_list.jurisdiction,
         keyword_list.list_version,
         path.name,
         keyword_list.term_count,
         keyword_list.pattern_count,
         keyword_list.scan_count,
+        keyword_list.min_score,
+        keyword_list.min_score,
+        keyword_list.review_ceiling,
     )
     return keyword_list
 
@@ -1095,12 +1159,16 @@ class KeywordFilter(Filter):
                 contributors.append(term_id)
 
         passed = score + _SCORE_EPSILON >= self._list.min_score
+        needs_review = passed and self._list.in_review_band(score)
         return FilterResult(
             passed=passed,
             score=score,
-            reason=self._reason(score, contributors, passed=passed),
+            reason=self._reason(score, contributors, passed=passed, needs_review=needs_review),
             stage=self.name,
             matches=tuple(matches),
+            needs_review=needs_review,
+            threshold=self._list.min_score,
+            review_ceiling=self._list.review_ceiling,
         )
 
     def _weights(
@@ -1138,16 +1206,26 @@ class KeywordFilter(Filter):
             for name, hit in per_field.items()
         }
 
-    def _reason(self, score: float, contributors: Sequence[str], *, passed: bool) -> str:
+    def _reason(
+        self,
+        score: float,
+        contributors: Sequence[str],
+        *,
+        passed: bool,
+        needs_review: bool,
+    ) -> str:
         """Phrase the verdict for the pipeline report.
 
         Args:
             score: Total weight accumulated.
             contributors: Ids of the terms that contributed weight.
             passed: Whether the document reached ``min_score``.
+            needs_review: Whether the score fell in the review band.
 
         Returns:
-            A one-line explanation naming the list, the score and the driving terms.
+            A one-line explanation naming the list, the score, the driving terms and, for a
+            flagged document, the band it fell in. The band is stated rather than implied so
+            the sentence stands on its own in a match report and on a methodology page.
         """
         provenance = f"{self._list.jurisdiction} list v{self._list.list_version}"
         if not contributors:
@@ -1156,7 +1234,12 @@ class KeywordFilter(Filter):
         if len(contributors) > _REASON_TERM_LIMIT:
             listing = f"{listing} and {len(contributors) - _REASON_TERM_LIMIT} more"
         comparison = "reaches" if passed else "is below"
+        band = (
+            f", inside the review band [{self._list.min_score:g}, {self._list.review_ceiling:g})"
+            if needs_review
+            else ""
+        )
         return (
-            f"score {score:g} {comparison} min_score {self._list.min_score:g} "
+            f"score {score:g} {comparison} min_score {self._list.min_score:g}{band} "
             f"({provenance}); matched: {listing}"
         )

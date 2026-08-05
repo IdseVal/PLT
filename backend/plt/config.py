@@ -163,6 +163,24 @@ class Settings(BaseSettings):
         default="memory://",
         description="Rate limiter storage backend. Use redis://... for multi-process deploys.",
     )
+    rate_limit_review: str = Field(
+        default="30 per minute",
+        description="Rate limit for the authenticated /api/reviews endpoints.",
+    )
+
+    # -- Review queue ---------------------------------------------------------------
+    review_api_token: SecretStr | None = Field(
+        default=None,
+        description=(
+            "Bearer token authenticating the review queue endpoints. Unset - the default - "
+            "leaves /api/reviews disabled, because the queue exposes cases a rejection has "
+            "unpublished and lets a caller unpublish more."
+        ),
+    )
+    review_page_size_default: Annotated[int, Field(ge=1, le=1000)] = Field(
+        default=20,
+        description="Default page size for the review queue listing.",
+    )
 
     # -- Outbound HTTP (source connectors) ------------------------------------------
     http_contact_email: str = Field(
