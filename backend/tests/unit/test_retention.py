@@ -104,6 +104,19 @@ class TestAnUnsetPeriodIsNotAPolicy:
         db_session.expire_all()
         assert db_session.scalar(select(func.count()).select_from(Subscriber)) == 2
 
+    def test_a_blank_assignment_reads_as_unset(self) -> None:
+        """``PLT_SUBSCRIBER_RETENTION_DAYS=`` is how an operator writes "not decided"."""
+        settings = build_settings(
+            subscriber_retention_days="",
+            subscriber_unconfirmed_expiry_days="  ",
+            subscription_address_pepper="",
+        )
+
+        assert settings.subscriber_retention_days is None
+        assert settings.subscriber_unconfirmed_expiry_days is None
+        # An empty pepper would otherwise key every digest with nothing at all.
+        assert settings.subscription_address_pepper is None
+
     def test_the_report_tells_no_rule_apart_from_nothing_matched(
         self, db_session: Session, settings: Settings, factory: sessionmaker[Session]
     ) -> None:

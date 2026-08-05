@@ -579,6 +579,31 @@ class Settings(BaseSettings):
             seen.setdefault(code.upper(), None)
         return list(seen)
 
+    @field_validator(
+        "subscription_address_pepper",
+        "subscriber_retention_days",
+        "subscriber_unconfirmed_expiry_days",
+        mode="before",
+    )
+    @classmethod
+    def _blank_means_unset(cls, value: object) -> object:
+        """Read an empty assignment as *unset* rather than as a value.
+
+        ``PLT_SUBSCRIBER_RETENTION_DAYS=`` in a ``.env`` is how an operator writes "I have not
+        decided this", which is the state issue #75 leaves the project in; without this it is
+        either a parse error or, for the pepper, an empty secret that would key every digest
+        with nothing at all. All three settings mean "not configured" when they are blank.
+
+        Args:
+            value: The value as configured.
+
+        Returns:
+            ``None`` for a blank string, otherwise the value untouched.
+        """
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _normalise_log_level(cls, value: object) -> object:
