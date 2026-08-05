@@ -155,7 +155,11 @@ def test_memory_stays_flat_across_five_thousand_documents(tmp_path: Path) -> Non
     Base.metadata.create_all(engine)
     factory = create_session_factory(engine)
     with factory() as session:
-        session.add(Jurisdiction(code="NL", name="Netherlands", type=JurisdictionType.STATE))
+        session.add(
+            Jurisdiction(
+                code="NL", name="Netherlands", type=JurisdictionType.STATE, map_feature_id="NL"
+            )
+        )
         session.commit()
 
     connector = SamplingConnector(DOCUMENT_COUNT)

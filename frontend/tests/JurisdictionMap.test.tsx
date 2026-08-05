@@ -19,6 +19,14 @@ import type { JurisdictionStat } from '@/types/api'
 const STATS_URL = '/api/stats/jurisdictions'
 
 /**
+ * What `cleanInlineText` exists to remove and React does not: control characters and
+ * bidirectional overrides. Written here rather than imported, so the assertion states the
+ * property independently of the implementation it is checking.
+ */
+// eslint-disable-next-line no-control-regex
+const UNSAFE_CHARACTERS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/
+
+/**
  * One entry of the map payload, with everything section 5.1 requires.
  *
  * @param code - Jurisdiction code, which is also its `map_feature_id`.
@@ -178,6 +186,58 @@ describe('the zero state, which at launch is the normal one', () => {
       link.querySelector('path')?.getAttribute('class') ?? ''
     expect(fillOf(netherlands)).not.toBe(fillOf(portugal))
     expect(fillOf(portugal)).toContain('fill-plt-accent-soft')
+  })
+})
+
+describe('a payload that breaks its own contract', () => {
+  it('keeps a jurisdiction whose map_feature_id is missing, resolving it by code', async () => {
+    // `map_feature_id` is NOT NULL from migration 0006, so this is a violation — but the
+    // entry named and counted itself, and section 3 makes `code` the same value for a state.
+    stubJson([{ ...stat('NL', 'Netherlands', 3), map_feature_id: null }])
+    renderMap()
+
+    expect(await jurisdiction(/^Netherlands: 3 cases$/)).toBeInTheDocument()
+  })
+
+  it('degrades to the zero state when no entry carries one, rather than throwing the map', async () => {
+    // The one case where dropping and keeping diverge: every entry unusable meant the
+    // contract-mismatch guard fired and the reader lost the whole map.
+    stubJson([
+      { ...stat('NL', 'Netherlands', 3), map_feature_id: null },
+      { ...stat('EU', 'European Union', 12), map_feature_id: null },
+    ])
+    renderMap()
+
+    expect(await jurisdiction(/^Netherlands: 3 cases$/)).toBeInTheDocument()
+    expect(await jurisdiction(/^European Union: 12 cases$/)).toBeInTheDocument()
+    expect(within(map()).queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('strips control characters and bidirectional overrides from a jurisdiction name', async () => {
+    // A jurisdiction name is server-supplied text: seeded by us today, but a future
+    // jurisdiction taken from a source vocabulary would arrive exactly as a court name does.
+    // U+202E reverses what follows it on screen and U+0007 is invisible; React strips
+    // neither, because neither is markup.
+    stubJson([stat('NL', 'Nether\u0007lands\u202Egnidaelsim\u202C', 3)])
+    const user = renderMap()
+
+    // The accessible name holds the letters the API sent and none of what it hid.
+    const netherlands = await jurisdiction(/^Netherlandsgnidaelsim: 3 cases$/)
+    expect(netherlands.getAttribute('aria-label')).toBe('Netherlandsgnidaelsim: 3 cases')
+
+    await user.hover(netherlands)
+    const shown = within(map()).getAllByText(/gnidaelsim/)
+    expect(shown.length).toBeGreaterThan(0)
+    for (const node of shown) {
+      expect(node.textContent ?? '').not.toMatch(UNSAFE_CHARACTERS)
+    }
+  })
+
+  it('falls back to the repo-authored name when the API sends one that cleans away', async () => {
+    stubJson([stat('NL', '\u202E\u202C', 3)])
+    renderMap()
+
+    expect(await jurisdiction(/^Netherlands: 3 cases$/)).toBeInTheDocument()
   })
 })
 

@@ -53,7 +53,11 @@ def cli_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[session
     Base.metadata.create_all(engine)
     factory = create_session_factory(engine)
     with factory() as session:
-        session.add(Jurisdiction(code="NL", name="Netherlands", type=JurisdictionType.STATE))
+        session.add(
+            Jurisdiction(
+                code="NL", name="Netherlands", type=JurisdictionType.STATE, map_feature_id="NL"
+            )
+        )
         session.commit()
 
     monkeypatch.setattr("plt.cli.get_settings", lambda: settings)
@@ -207,7 +211,12 @@ def test_a_failure_outranks_a_partial_run(cli_env: sessionmaker[Session]) -> Non
     """Two jurisdictions, one broken and one flaky: the scheduler is told about the failure."""
     with cli_env() as session:
         session.add(
-            Jurisdiction(code="EU", name="European Union", type=JurisdictionType.SUPRANATIONAL)
+            Jurisdiction(
+                code="EU",
+                name="European Union",
+                type=JurisdictionType.SUPRANATIONAL,
+                map_feature_id="EU",
+            )
         )
         session.commit()
 
