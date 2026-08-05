@@ -170,7 +170,7 @@ class Flaky(FakeConnector):
 
     def __init__(self, settings: Settings | None = None) -> None:
         """Fail on the second document, and serve the rest."""
-        super().__init__(settings, docs=NL_DOCS, fail_fetch={NL_DOCS[1].source_id})
+        super().__init__(settings, docs=NL_DOCS, fail_fetch=frozenset({NL_DOCS[1].source_id}))
 
 
 def test_a_partial_run_exits_0_by_default(cli_env: sessionmaker[Session]) -> None:
