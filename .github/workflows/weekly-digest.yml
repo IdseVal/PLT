@@ -1,0 +1,172 @@
+name: Weekly digest
+
+# The subscriber alert promised in docs/core-document.md section 2.4, scheduled per
+# docs/architecture.md section 7.
+#
+# Like weekly-ingest.yml this workflow is a *trigger*, not a second implementation: it shells
+# out to `plt digest`, the same command a server cron calls. Nothing here knows what a digest
+# contains, who is on the list or how a message is built.
+#
+# Four properties are requirements rather than incidental:
+#
+#   * It runs **after** the ingestion it announces. `workflow_run` fires when Weekly ingest
+#     finishes, so the digest reports the cases that scan just landed rather than last week's.
+#     Only the scheduled ingest triggers it: a manual dispatch of the scan, which defaults to
+#     a dry run, must not mail anybody.
+#   * Runs cannot overlap. The concurrency group does not cancel what is in flight — a send in
+#     progress is writing to real mailboxes and finishes; the later run waits.
+#   * `--until` pins the window. Repeating a run with the same window reaches only the
+#     recipients the previous attempt did not, so a re-run after a failure sends nobody a
+#     second copy.
+#   * Sending real mail is deliberate. Without the SMTP secrets the job runs with the console
+#     backend, which writes each message to the log and opens no socket; a live run that has
+#     been asked for and cannot be configured fails loudly rather than silently sending
+#     nothing.
+
+on:
+  workflow_run:
+    workflows: ['Weekly ingest']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Render every message and send none'
+        type: boolean
+        default: true
+      since:
+        description: 'Window start, ISO 8601 UTC. Empty means PLT_DIGEST_PERIOD_DAYS back'
+        type: string
+        default: ''
+      until:
+        description: 'Window end, ISO 8601 UTC. Empty means the top of the current hour'
+        type: string
+        default: ''
+
+# Nothing here writes to the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-digest
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: '3.11'
+  # A dispatch defaults to a dry run; the scheduled path is the one that sends.
+  DRY_RUN: ${{ inputs.dry_run || false }}
+
+jobs:
+  digest:
+    name: Send the digest
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Only after the *scheduled* scan. A dispatched ingest is a dry run by default and tells
+    # a reader nothing new; mailing the list off the back of one would be a surprise.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.event == 'schedule'
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            backend/pyproject.toml
+            backend/constraints.txt
+
+      - name: Install
+        # -c constraints.txt, exactly as CI installs: an unattended job resolving whatever was
+        # released on Sunday is a run whose failure nobody can reproduce.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c constraints.txt -e .
+
+      - name: Choose the database
+        env:
+          DATABASE_URL: ${{ secrets.PLT_DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo '::error title=No database configured::The digest reads the subscriber list and the cases from the PLT_DATABASE_URL repository secret.'
+            exit 1
+          fi
+          case "$DATABASE_URL" in
+            *[![:print:]]*)
+              echo "::error title=Malformed secret::PLT_DATABASE_URL contains a control character."
+              exit 1
+              ;;
+          esac
+          # Written to the environment file, not echoed: the value carries a password.
+          printf 'PLT_DATABASE_URL=%s\n' "$DATABASE_URL" >> "$GITHUB_ENV"
+
+      - name: Choose the mail backend
+        env:
+          SMTP_HOST: ${{ secrets.PLT_SMTP_HOST }}
+          SITE_BASE_URL: ${{ vars.PLT_SITE_BASE_URL }}
+        run: |
+          if [ -n "$SITE_BASE_URL" ]; then
+            printf 'PLT_SITE_BASE_URL=%s\n' "$SITE_BASE_URL" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$SMTP_HOST" ]; then
+            echo 'PLT_MAIL_BACKEND=smtp' >> "$GITHUB_ENV"
+            printf 'PLT_SMTP_HOST=%s\n' "$SMTP_HOST" >> "$GITHUB_ENV"
+            echo 'Backend: smtp.'
+          elif [ "$DRY_RUN" = "true" ]; then
+            echo 'PLT_MAIL_BACKEND=console' >> "$GITHUB_ENV"
+            echo 'Backend: console. No PLT_SMTP_HOST secret is configured, and a dry run sends'
+            echo 'nothing in any case.'
+          else
+            echo '::error title=No mail server configured::A live digest needs the PLT_SMTP_HOST, PLT_SMTP_USERNAME and PLT_SMTP_PASSWORD secrets. Dispatch with dry_run enabled to exercise the workflow without them.'
+            exit 1
+          fi
+
+      - name: Send
+        id: digest
+        env:
+          SINCE: ${{ inputs.since }}
+          UNTIL: ${{ inputs.until }}
+          PLT_LOG_FORMAT: json
+          PLT_MAIL_FROM: ${{ vars.PLT_MAIL_FROM }}
+          PLT_SMTP_PORT: ${{ vars.PLT_SMTP_PORT }}
+          PLT_SMTP_USERNAME: ${{ secrets.PLT_SMTP_USERNAME }}
+          PLT_SMTP_PASSWORD: ${{ secrets.PLT_SMTP_PASSWORD }}
+          PLT_SUBSCRIPTION_TOKEN_SECRET: ${{ secrets.PLT_SUBSCRIPTION_TOKEN_SECRET }}
+          PLT_SECRET_KEY: ${{ secrets.PLT_SECRET_KEY }}
+        run: |
+          # The window is pinned to the top of the hour so that a re-run of a failed send
+          # covers the same window and therefore reaches only the recipients it missed.
+          until_value="${UNTIL:-$(date -u +%Y-%m-%dT%H:00:00+00:00)}"
+          args=(digest --until "$until_value")
+          if [ -n "$SINCE" ]; then args+=(--since "$SINCE"); fi
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          python -m plt.cli "${args[@]}" | tee "$RUNNER_TEMP/digest.log"
+
+      - name: Summarise
+        if: always()
+        env:
+          OUTCOME: ${{ steps.digest.outcome }}
+        run: |
+          log="$RUNNER_TEMP/digest.log"
+          {
+            echo "### Weekly digest — ${OUTCOME}"
+            echo
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| Trigger | \`${GITHUB_EVENT_NAME}\` |"
+            echo "| Mode | $([ "$DRY_RUN" = "true" ] && echo 'dry run — nothing sent' || echo '**live** — messages sent to subscribers') |"
+            echo
+            if [ -s "$log" ]; then
+              echo '```'
+              # The CLI's own summary line. The structured log lines are single-line JSON and
+              # are dropped here; they stay in the job log. Neither carries an address.
+              grep -v '^{' "$log" || echo '(the run printed no summary line)'
+              echo '```'
+            else
+              echo 'The run produced no output at all; see the job log.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
