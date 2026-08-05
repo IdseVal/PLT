@@ -456,6 +456,70 @@ def test_the_court_comes_from_the_vocabulary_not_from_a_name(cbb: RechtspraakCon
     # time, so leaving them None would erase what seeding put there.
     assert case.court.level == "supreme"
     assert case.court.domain == "administrative"
+    # The vocabulary's own type, beside the normalisation of it rather than instead of it.
+    assert case.court.source_type == "TypeCBb"
+    assert case.court.source_metadata == {
+        "type": "TypeCBb",
+        "begin_date": "1913-01-01",
+        "end_date": None,
+    }
+
+
+@pytest.fixture
+def sint_maarten() -> Iterator[RechtspraakConnector]:
+    """Return a connector serving the recorded Sint Maarten judgment and the vocabulary."""
+    endpoint = Endpoint(
+        documents={"ECLI:NL:OGEAM:2025:155": fixture("ECLI_NL_OGEAM_2025_155.xml")},
+        vocabulary=fixture("instanties.xml"),
+    )
+    connector = build(endpoint)
+    try:
+        yield connector
+    finally:
+        connector.close()
+
+
+def test_a_kingdom_court_keeps_its_raw_type_while_its_level_still_flattens(
+    sint_maarten: RechtspraakConnector,
+) -> None:
+    """Issue #72, on the record it was raised about.
+
+    ``Koninkrijksinstantie`` and ``AndereGerechtelijkeInstantie`` both normalise to level
+    ``other``, so the level cannot tell a Caribbean court of the Kingdom — Kingdom territory,
+    but outside the territorial scope of EU pesticide law — from any other residual instance.
+    The raw type is what can, and the source states it only while the vocabulary is being read.
+    """
+    case = normalise(sint_maarten, "ECLI:NL:OGEAM:2025:155")
+
+    assert case.court is not None
+    assert case.court.name == "Gerecht in eerste aanleg van Sint Maarten"
+    assert case.court.source_type == "Koninkrijksinstantie"
+    # Unchanged by the addition: the normalised classification the API filters on.
+    assert case.court.level == "other"
+    assert case.court.domain is None
+
+
+def test_a_kingdom_court_resolves_against_the_vocabulary_despite_the_prefix(
+    sint_maarten: RechtspraakConnector,
+) -> None:
+    """The portal qualifies the identifying attribute for these courts and not for the rest.
+
+    ``psi:resourceIdentifier`` rather than ``resourceIdentifier`` (verified live, 5 August
+    2026). Reading only the unqualified form sent every Kingdom judgment down the
+    unknown-court path, where the key is derived from the court's *name*: it matched nothing
+    in the vocabulary, so the case carried no level, no domain and no type, and pointed at a
+    court row of its own beside the one seeding had already created for the same court.
+    """
+    case = normalise(sint_maarten, "ECLI:NL:OGEAM:2025:155")
+
+    assert case.court is not None
+    assert case.court.source_identifier == "http://psi.rechtspraak.nl/GEASM"
+    assert case.court.abbreviation == "OGEAM"
+    assert case.source_metadata["instantie"] == {
+        "name": "Gerecht in eerste aanleg van Sint Maarten",
+        "uri": "http://psi.rechtspraak.nl/GEASM",
+        "scheme": "psi.rechtspraak",
+    }
 
 
 def test_the_metadata_block_is_kept_whole(cbb: RechtspraakConnector) -> None:
@@ -789,7 +853,7 @@ def test_the_vocabulary_supplies_a_level_for_every_kind_of_court() -> None:
     finally:
         connector.close()
 
-    assert len(courts) == 14
+    assert len(courts) == 15
     assert all(court.source_identifier.startswith("http") for court in courts)
     levels = {court.abbreviation: court.level for court in courts}
     assert levels["RBDHA"] == "first_instance"
@@ -800,6 +864,31 @@ def test_the_vocabulary_supplies_a_level_for_every_kind_of_court() -> None:
     domains = {court.abbreviation: court.domain for court in courts}
     assert domains["RVS"] == "administrative"
     assert domains["CBB"] == "administrative"
+
+
+def test_seeding_carries_the_vocabularys_own_type_for_every_court() -> None:
+    """What the level cannot say, the raw type can — and seeding is where it is stated."""
+    connector = build(Endpoint(vocabulary=fixture("instanties.xml")))
+    try:
+        courts = list(connector.iter_courts())
+    finally:
+        connector.close()
+
+    types = {court.abbreviation: court.source_type for court in courts}
+    assert types["RBDHA"] == "Rechtbank"
+    assert types["CBB"] == "TypeCBb"
+    assert types["TACAKN"] == "TuchtrechtelijkeInstantie"
+    # The two the normalised level flattens together, and the reason for the column.
+    assert types["OCHM"] == "Koninkrijksinstantie"
+    assert types["OGEAM"] == "Koninkrijksinstantie"
+    assert {court.level for court in courts if court.source_type == "Koninkrijksinstantie"} == {
+        "other"
+    }
+    # The dates the vocabulary states have no column, so they go to the row's metadata
+    # rather than being dropped at the one moment the source states them.
+    dates = {court.abbreviation: court.source_metadata for court in courts}
+    assert dates["OGEAM"]["begin_date"] == "1950-01-01"
+    assert dates["RBBRE"]["end_date"] == "2012-12-31"
 
 
 @pytest.mark.parametrize(

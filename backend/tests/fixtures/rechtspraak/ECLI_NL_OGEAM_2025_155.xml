@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<open-rechtspraak>
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:ecli="https://e-justice.europa.eu/ecli" xmlns:tr="http://tuchtrecht.overheid.nl/" xmlns:eu="http://publications.europa.eu/celex/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:bwb="bwb-dl" xmlns:cvdr="http://decentrale.regelgeving.overheid.nl/cvdr/" xmlns:psi="http://psi.rechtspraak.nl/" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <rdf:Description>
+      <dcterms:identifier>ECLI:NL:OGEAM:2025:155</dcterms:identifier>
+      <dcterms:format>text/xml</dcterms:format>
+      <dcterms:accessRights>public</dcterms:accessRights>
+      <dcterms:modified>2026-06-04T19:12:14</dcterms:modified>
+      <dcterms:issued rdfs:label="Publicatiedatum">2026-06-04</dcterms:issued>
+      <dcterms:publisher resourceIdentifier="http://rechtspraak.nl/">Raad voor de Rechtspraak</dcterms:publisher>
+      <dcterms:language>nl</dcterms:language>
+      <dcterms:creator rdfs:label="Instantie" psi:resourceIdentifier="http://psi.rechtspraak.nl/GEASM" scheme="psi.rechtspraak">Gerecht in eerste aanleg van Sint Maarten</dcterms:creator>
+      <dcterms:date rdfs:label="Uitspraakdatum">2025-03-25</dcterms:date>
+      <psi:zaaknummer rdfs:label="Zaaknr">SXM202600261, SXM202600262</psi:zaaknummer>
+      <dcterms:type rdf:language="nl" resourceIdentifier="http://psi.rechtspraak.nl/uitspraak">Uitspraak</dcterms:type>
+      <psi:procedure rdf:language="nl" rdfs:label="Procedure" resourceIdentifier="http://psi.rechtspraak.nl/procedure#eersteAanlegEnkelvoudig">Eerste aanleg - enkelvoudig</psi:procedure>
+      <dcterms:coverage>NL</dcterms:coverage>
+      <dcterms:subject rdfs:label="Rechtsgebied" resourceIdentifier="http://psi.rechtspraak.nl/rechtsgebied#bestuursrecht_vreemdelingenrecht">Bestuursrecht; Vreemdelingenrecht</dcterms:subject>
+      <dcterms:hasVersion rdfs:label="Vindplaatsen" resourceIdentifier="http://psi.rechtspraak.nl/vindplaats">
+        <rdf:list>
+          <rdf:li>Rechtspraak.nl</rdf:li>
+        </rdf:list>
+      </dcterms:hasVersion>
+    </rdf:Description>
+    <rdf:Description rdf:about="http://deeplink.rechtspraak.nl/uitspraak?id=ECLI:NL:OGEAM:2025:155">
+      <dcterms:identifier>http://deeplink.rechtspraak.nl/uitspraak?id=ECLI:NL:OGEAM:2025:155</dcterms:identifier>
+      <dcterms:format>text/html</dcterms:format>
+      <dcterms:accessRights>public</dcterms:accessRights>
+      <dcterms:modified>2026-06-04T14:40:47</dcterms:modified>
+      <dcterms:issued rdfs:label="Publicatiedatum">2026-06-04</dcterms:issued>
+      <dcterms:publisher resourceIdentifier="http://rechtspraak.nl/">Raad voor de Rechtspraak</dcterms:publisher>
+      <dcterms:language>nl</dcterms:language>
+      <dcterms:title rdf:language="nl">ECLI:NL:OGEAM:2025:155 Gerecht in eerste aanleg van Sint Maarten , 25-03-2025 / SXM202600261, SXM202600262</dcterms:title>
+      <dcterms:abstract resourceIdentifier="../../rs:inhoudsindicatie" />
+    </rdf:Description>
+  </rdf:RDF>
+  <inhoudsindicatie id="ECLI:NL:OGEAM:2025:155:INH" lang="nl" xml:space="preserve" xmlns="http://www.rechtspraak.nl/schema/rechtspraak-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <parablock>
+        <para>Beroep tegen beslissingen om betrokkene te verwijderen uit Sint Maarten en ter verzekering van haar vertrek in bewaring te stellen is rechtmatig.</para>
+        <para>Betrokkene is in Sint Maarten aangetroffen zonder geldige verblijfstitel, hetgeen voldoende grond voor aanhouding vormt.</para>
+        <para>Er is direct gecontroleerd of betrokkene wel over een Franse verblijfstitel beschikte en dat bleek niet het geval te zijn. Haar verzoek tot een verblijfsvergunning aldaar is afgewezen. Bovendien blijkt dat in januari 2026 aan betrokkene is aangezegd dat zij het eiland dient te verlaten.</para>
+        <para>Sinds het verstrijken van het toeristenvisum, heeft betrokkene zich nimmer gemeld bij de Immigratiedienst en heeft zij zich niet tot de Minister gewend voor het aanvragen van een verblijfsvergunning.</para>
+        <para>Betrokkene heeft nimmer om internationale bescherming verzocht. Ook hebben de Franse autoriteiten niet kunnen vaststellen dat betrokkene daadwerkelijk een zoon heeft die samen met haar aan de French Side leeft. Beroep ongegrond en verzoek afgewezen.</para>
+      </parablock>
+    </inhoudsindicatie>
+  <uitspraak id="ECLI:NL:OGEAM:2025:155:DOC" lang="nl" xml:space="preserve" xmlns="http://www.rechtspraak.nl/schema/rechtspraak-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <uitspraak.info>
+    <para>Uitspraakdatum: 25 maart 2026</para>
+    <para>Zaaknummer:	SXM202600261</para>
+    <para>SXM202600262							</para>
+    <para />
+    <parablock>
+      <para>
+        <emphasis role="bold">GERECHT IN EERSTE AANLEG VAN SINT MAARTEN </emphasis>
+      </para>
+      <para>
+        <emphasis role="bold">					UITSPRAAK</emphasis>
+      </para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>in het geding van: </para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>
+        <emphasis role="bold">[eiseres],</emphasis>
+      </para>
+      <para>thans verblijvende in vreemdelingendetentie te Sint Maarten,</para>
+      <para>eiseres,</para>
+      <para>gemachtigde: dhr. E.I. Maduro,</para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>tegen<?linebreak?></para>
+      <para>
+        <emphasis role="bold">DE MINISTER VAN JUSTITIE VAN SINT MAARTEN,</emphasis>
+      </para>
+      <para>zetelend te Sint Maarten,</para>
+      <para>verweerder,</para>
+      <para>gemachtigde: mr. C.M. Marica. </para>
+    </parablock>
+    <para />
+    <para />
+  </uitspraak.info>
+  <section>
+    <title>
+      <nr>1</nr>Inleiding</title>
+    <para />
+    <paragroup>
+      <nr>1.1.</nr>
+      <para>In deze zaak beoordeelt het Gerecht het beroep van eiseres tegen de beslissingen van verweerder om eiseres te verwijderen uit Sint Maarten en om eiseres ter verzekering van haar vertrek in bewaring te stellen. Verweerder heeft deze beslissingen genomen bij twee afzonderlijke beschikkingen (de verwijderingsbeschikking en de beschikking met de maatregel van bewaring) van 10 maart 2026. Dit beroep van eiseres is geregistreerd onder nummer SXM202600262. Eiseres verzoekt het Gerecht ook om een voorlopige voorziening te treffen zolang niet op het beroep is beslist. Dit verzoek is geregistreerd onder nummer SXM202600261.</para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>1.2.</nr>
+      <para>Na indiening door eiseres van het beroepschrift met producties op 12 maart 2026 heeft verweerder op 18 maart 2026 een verweerschrift met producties ingediend.</para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>1.3.</nr>
+      <para>Het Gerecht heeft het beroep en het verzoek op 19 maart 2026 op zitting behandeld. Eiseres is in persoon verschenen, bijgestaan door haar gemachtigde. Verweerder heeft zich tijdens de zitting laten vertegenwoordigen door de heer R. Salome, coördinator grensbewaking, bijgestaan door de gemachtigde. <?linebreak?>Tevens was ter zitting aanwezig een tolk Creools-Frans, mevrouw A. De Polo. Zij heeft alles wat op de zitting is besproken, voor eiseres vertaald, omdat zij de Engelse taal niet machtig is.<?linebreak?>Beide gemachtigden hebben gebruik gemaakt van overgelegde pleitaantekeningen.<?linebreak?></para>
+      <para />
+    </paragroup>
+  </section>
+  <section role="overwegingen">
+    <title>
+      <nr>2</nr>Beoordeling door het Gerecht </title>
+    <para />
+    <paragroup>
+      <nr>2.1</nr>
+      <para>Het Gerecht heeft aan het begin van de zitting de mogelijkheid besproken om onmiddellijk in de beroepszaak uitspraak te doen als bedoeld in artikel 95 van de Lar. Partijen hebben desgevraagd het Gerecht hun toestemming gegeven.</para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.2.</nr>
+      <para>Het Gerecht beoordeelt de beslissingen van verweerder aan de hand van de beroepsgronden van eiseres. </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.3.</nr>
+      <para>Het Gerecht komt tot het oordeel dat het beroep ongegrond is, omdat verweerder de beslissingen in redelijkheid heeft mogen en kunnen nemen. Van onrechtmatig handelen of strijd met beginselen van behoorlijk bestuur is geen sprake. Hiermee beslist het Gerecht op het beroep van eiseres en is er dus geen reden om een voorlopige voorziening te treffen. Hierna legt het Gerecht dit oordeel uit. </para>
+      <para />
+      <parablock>
+        <para>
+          <emphasis role="underline italic">Wat is in deze zaak relevant om te weten?</emphasis>
+        </para>
+      </parablock>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.4.</nr>
+      <para>Eiseres is geboren op 9 september [geboortejaar] te Haïti en zij heeft de Haïtiaanse nationaliteit. Eiseres is op 5 december 2023 Sint Maarten binnen gekomen op een toeristenvisum geldig voor 30 dagen. Eiseres is niet vertrokken en verblijft sindsdien onrechtmatig in Sint Maarten/Saint Martin. Een verzoek om een verblijfsvergunning aan de Franse kant, is door de Franse autoriteiten afgewezen.</para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.5.</nr>
+      <para>Op 10 maart 2026 is een multidisciplinaire controleoperatie in samenwerking met de Franse diensten uitgevoerd aan de grensovergang Cole Bay/Bellevue. Eiseres is tijdens deze controle staande gehouden. </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.6.</nr>
+      <para>Nadat eiseres geen verblijfspapieren kon tonen is zij aangehouden en naar de Mobile Control Unit gebracht. Eiseres is om 08:40 uur gehoord door de Immigratiedienst. Na dit verhoor is eiseres in vreemdelingenbewaring geplaatst en heeft verweerder de ministeriele verwijderingsbeschikking genomen. </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.7.</nr>
+      <para>De beschikking vreemdelingenbewaring en de verwijderingsbeschikking zijn op die dag aan haar uitgereikt. </para>
+      <para />
+      <parablock>
+        <para>
+          <emphasis role="italic">Wat heeft de Minister aan de bestreden beschikkingen ten grondslag gelegd?</emphasis>
+        </para>
+      </parablock>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.8.</nr>
+      <para>Verweerder heeft aan de verwijderingsbeschikking ten grondslag gelegd dat eiseres in 2025 op een toeristenvisum Sint Maarten is binnengekomen en niet is vertrokken, dat een vergunningsaanvraag aan de Franse zijde is geweigerd, dat zij nimmer aan de Nederlandse zijde een verblijfsvergunning heeft aangevraagd en dat zij niet gehuwd is, zodat de conclusie is dat zij zich illegaal in Sint Maarten bevindt. Verweerder heeft aan het bevel tot bewaring ten grondslag gelegd dat eiseres geen geldige verblijfstitel heeft, dat zij arbeid verricht zonder tewerkstellingsvergunning en dat zij zich niet heeft gehouden aan de vertrektermijn. Deze omstandigheden maken volgens verweerder dat eiseres een gevaar is voor de openbare orde, de nationale veiligheid en de publieke rust en dat zij zich vermoedelijk zal onttrekken aan haar verwijdering, nu zij geen geldige verblijfstitel heeft. Verder is overwogen dat de voor terugkeer noodzakelijke bescheiden voorhanden zijn, dan wel binnen korte termijn voorhanden zullen zijn. Om die reden heeft verweerder eiseres in bewaring gesteld. </para>
+      <para />
+      <parablock>
+        <para>
+          <emphasis role="underline italic">Wat vindt het Gerecht van de beroepsgronden? </emphasis>
+        </para>
+      </parablock>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.9.</nr>
+      <para>Eiseres heeft het Gerecht verzocht het beroep gegrond te verklaren, de besluiten tot verwijdering en bewaring te vernietigen en eiseres te veroorloven terug te keren naar haar woon- en verblijfplaats aan de French Side. Volgens eiseres is zij op Frans grondgebied aangehouden en had zij door de Franse autoriteiten in bewaring gesteld moeten worden. Verweerder had haar aan de grens de toegang kunnen weigeren of kunnen overdragen aan de Franse autoriteiten. Als eenmaal duidelijk is dat iemand een procedure aan de Franse kant heeft lopen, dan zou de betrokkene daarheen gestuurd moeten worden, zoals dat andersom ook gebeurt. Daarnaast voert eiseres aan dat zij niet illegaal hier is, omdat zij telkens voor korte tijd aan de Franse kant mocht verblijven en zij ook een vergunning aan de Franse kant heeft aangevraagd. De verwijdering en inbewaringstelling zijn dus onrechtmatig. Verder is betrokkene geen gevaar voor de openbare orde en is er geen grond voor het vermoeden dat zij zich aan verwijdering zal onttrekken. Uitzetting zou ook betekenen dat de zestienjarige zoon van eiseres zonder toezicht alleen achter blijft. De zoon heeft de Franse nationaliteit en zit aan de French Side op school. </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.10.</nr>
+      <para>Ingevolge artikel 19, eerste lid, aanhef en onder a en b van Ltu kan de Minister van Justitie uit Sint Maarten verwijderen personen die in strijd met de wettelijke bepalingen nopens toelating en uitzetting het land zijn binnengekomen of personen die tot tijdelijk verblijf werden toegelaten, wanneer zij in het land worden aangetroffen nadat de geldigheidsduur van hun tijdelijke verblijfsvergunning is verstreken of nadat de geldigheid van de vergunning door enige oorzaak is vervallen. </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.11.</nr>
+      <para>Ingevolge artikel 19, tweede lid, van de Ltu kan de betrokkene, indien hij naar het oordeel van de minister gevaar oplevert voor de openbare orde, de publieke rust of veiligheid of de goede zeden, dan wel indien naar zijn oordeel gegronde vrees bestaat dat betrokkene zal trachten zich aan zijn verwijdering te onttrekken, op bevel van de minister ter verzekering van zijn verwijdering in bewaring worden gesteld. </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.12.</nr>
+      <para>In het beleid dat verweerder ter zake heeft uitgewerkt in de Richtlijnen van verweerder met betrekking tot de toepassing van de Ltu en het Toelatingsbesluit van mei 2012 (hierna: de Richtlijnen) is opgenomen dat de maatregel van bewaring wordt toegepast als deze onvermijdbaar is.</para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.13.</nr>
+      <para>Het Gerecht ziet geen grond voor het oordeel dat de aanhouding van betrokkene onrechtmatig was. Uit het rapport van de immigratieambtenaren blijkt dat betrokkene op de grens aan een controle is onderworpen tijdens een multidisciplinaire controle operatie, toen zij van de French Side naar de Dutch Side wilde reizen. Ter zitting is toegelicht dat bij dergelijke controles de Sint Maartense ambtenaren zich aan de Dutch Side van de grens bevinden en de personen controleren die vanaf de French Side in willen reizen, terwijl de Franse ambtenaren zich aan de French Side bevinden en de personen controleren die vanaf de Dutch Side in willen reizen. Eiseres heeft bevestigd dat zij vlakbij de grens is aangehouden terwijl zij op weg was naar haar werk aan de Dutch Side. Er is geen reden te twijfelen aan het relaas van de immigratieambtenaren. Vast staat aldus dat eiseres in Sint Maarten is aangetroffen en dat zij geen geldige verblijfstitel kon tonen, hetgeen voldoende grond voor aanhouding vormt.  </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.14.</nr>
+      <para>Het Gerecht volgt eiseres niet in haar betoog dat haar eenvoudigweg de toegang geweigerd had moeten worden. In de uitspraak van het Lar-Hof van 12 juni 2024 (ECLI:NL:OGHACMB:2024:86) heeft het Hof vastgesteld dat immigratieambtenaren niet bevoegd zijn om personen de toegang te weigeren, bij gebreke van een mandaatregeling. Gesteld noch gebleken is dat die mandaatregeling er inmiddels is. Een toegangsweigering was daarom niet aan de orde. </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.15.</nr>
+      <para>Verder faalt het betoog van eiseres dat zij rechtmatig aan de French Side zou verblijven of aldaar niet uitgezet zou worden. Er is direct gecontroleerd of verzoekster wel over een Franse verblijfstitel beschikte en dat bleek niet het geval te zijn. Dit staat ook vermeld in de verwijderingsbeschikking. Haar verzoek tot een verblijfsvergunning aldaar is afgewezen en de Franse autoriteiten zijn niet bekend met een daartegen ingesteld beroep. Eiseres heeft onvoldoende onderbouwd dat zij dit beroep daadwerkelijk heeft ingesteld en, als dat zo zou zijn, dat daarvan schorsende werking uitgaat en zij dus hangende de procedure aan de French Side zou mogen verblijven. Bovendien blijkt uit de door verweerder overlegde correspondentie met de Franse autoriteiten dat in januari 2026 aan eiseres is aangezegd dat zij het eiland dient te verlaten. De Franse autoriteiten zullen eiseres daarom niet toelaten op Frans grondgebied, zo is te verstaan gegeven. Het betoog wordt verworpen.</para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.16.</nr>
+      <para>Het Gerecht stelt vast dat eiseres illegaal op Sint Maarten verblijft. Daarmee is sprake van een situatie als bedoeld in artikel 19 LTU, op grond waarvan verweerder over kan gaan tot verwijdering. Eiseres heeft nimmer een verblijfsvergunning aangevraagd, zodat er geen zicht is op legalisering. Verweerder heeft de verwijderingsbeschikking in redelijkheid kunnen en mogen nemen. Van strijd met algemene beginselen van behoorlijk bestuur is geen sprake.</para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.17.</nr>
+      <para>Vervolgens ligt de vraag voor of de opgelegde maatregel van bewaring passend en geboden is. Het Gerecht beantwoordt deze vraag bevestigend en overweegt daartoe het volgende. Sinds het verstrijken van het toeristenvisum, heeft eiseres zich nimmer gemeld bij de Immigratiedienst en heeft zij zich niet tot de Minister gewend voor het aanvragen van een verblijfsvergunning, op welke grond dan ook. Eiseres heeft zich wel in strijd met de geldende regelgeving alhier op de arbeidsmarkt begeven, daarmee de zich legaal op Sint Maarten verblijvende personen verdringend. Verder woont verzoekster aan de French Side en wil zij haar verblijf aldaar voortzetten, wat betekent dat zij uit het zicht van de Sint Maartense autoriteiten zal zijn. Het voorgaande tezamen in onderlinge samenhang bezien brengt mee dat verweerder op goede gronden heeft mogen oordelen dat er aanwijzingen zijn te vermoeden dat eiseres zich aan de verwijdering zal onttrekken en ook dat de bewaring wordt gevorderd door het belang van de openbare orde.</para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.18.</nr>
+      <para>Eiseres voert ter zitting aan dat zij vreest bij terugkeer naar Haïti te worden blootgesteld aan een behandeling in strijd met artikel 3 van het EVRM. Sint Maarten is partij bij dit verdrag. Volgens vaste jurisprudentie van het Europese Hof voor de Rechten van de Mens is uitzetting van een vreemdeling naar een ander land strijdig met artikel 3 van het EVRM als er sprake is van gegronde redenen om aan te nemen dat de vreemdeling in het land waarnaar hij wordt uitgezet een reëel risico loopt te worden onderworpen aan een door artikel 3 van de EVRM verboden behandeling of bestraffing. </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.19.</nr>
+      <para>Het Gerecht overweegt het volgende. Eiseres heeft nimmer om internationale bescherming verzocht. Ook bij het verhoor na haar aanhouding heeft eiseres niet kenbaar gemaakt dat zij internationale bescherming in de zin van artikel 3 van de EVRM behoefde en dat zij vreesde voor een behandeling in strijd met dat artikel bij terugkeer naar Haïti vanwege de situatie aldaar. Bij het nemen van de beschikking tot verwijdering kon en behoefde verweerder het feit dat eiseres stelt internationale bescherming nodig te hebben, dus niet te betrekken. Maar ook nu staat deze beroepsgrond niet aan verwijdering in de weg. Niet onderbouwd is dat eiseres, enkel omdat zij door Sint Maarten wordt uitgezet, een persoonlijk een reëel risico loopt op een behandeling in strijd met artikel 3 van het EVRM. Het is ontegenzeggelijk waar dat de omstandigheden in Haïti slecht zijn en dat er grote problemen zijn op het gebied van mensenrechten, maar er is onvoldoende grond om te oordelen dat de algemene situatie op Haïti dermate onveilig is dat een ieder bij terugkeer heeft te vrezen voor een behandeling die in strijd is met artikel 3 van het EVRM. De beroepsgrond faalt. </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.20.</nr>
+      <para>Tot slot voert eiseres aan dat zij de zorg heeft voor een minderjarige zoon en dat hij alleen zal achterblijven als eiseres wordt uitgezet. Het Gerecht vat dit op als een beroep op artikel 8 van het EVRM. Allereerst overweegt het Gerecht dat de Franse autoriteiten niet hebben kunnen vaststellen dat eiseres daadwerkelijk een zoon heeft die samen met haar aan de French Side leeft. Eiseres heeft ook in deze procedure geen verificatoire bescheiden overgelegd, waaruit zijn bestaan en verblijf aan de French Side blijken. Verder zou deze zoon vanuit Frankrijk naar Saint Martin zijn gereisd om zich bij eiseres te voegen, terwijl eiseres zich toen illegaal te Saint Martin bevond. Het beroep op artikel 8 EVRM stuit daarop af. </para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.21.</nr>
+      <para>De conclusie is dat het beroep ongegrond is.</para>
+      <para />
+      <parablock>
+        <para>
+          <emphasis role="italic">Het verzoek tot schorsing</emphasis>
+        </para>
+      </parablock>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.22.</nr>
+      <para>Ingevolge artikel 85 van de Lar kan, op verzoek van de indiener van een beroep- of bezwaarschrift, het Gerecht de beschikking geheel of gedeeltelijk schorsen of ter zake een voorlopige voorziening treffen, als de uitvoering van de beschikking voor de belanghebbende onevenredig nadeel met zich mee zal brengen in verhouding tot het door een onmiddellijke uitvoering van de beschikking te dienen belang. Er is bovendien aanleiding voor het treffen van een voorlopige voorziening, indien het bezwaar of beroep een redelijke kans van slagen heeft.</para>
+      <para />
+    </paragroup>
+    <paragroup>
+      <nr>2.23.</nr>
+      <para>Omdat het beroep ongegrond is en er redelijk uitzicht op verwijdering is, is er geen aanleiding voor het treffen van een voorlopige voorziening. Het verzoek wordt afgewezen.</para>
+      <para />
+      <para />
+    </paragroup>
+  </section>
+  <section role="beslissing">
+    <title>
+      <nr>3</nr>De beslissing</title>
+    <para />
+    <parablock>
+      <para>Het Gerecht:</para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>in de zaak met nummer SXM202600262:</para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>verklaart het beroep tegen de beschikkingen van 10 maart 2026 ongegrond;</para>
+    </parablock>
+    <para />
+    <para />
+    <parablock>
+      <para>in de zaak met nummer SXM202600261: </para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>wijst het verzoek om een voorlopige voorziening af. </para>
+    </parablock>
+    <para />
+    <para />
+    <parablock>
+      <para>Deze uitspraak is gedaan door mr. G. Drenth, rechter in het Gerecht in eerste aanleg te Sint Maarten, en uitgesproken in het openbaar in tegenwoordigheid van de griffier op 25 maart 2026.</para>
+    </parablock>
+    <para />
+    <para />
+    <para />
+    <para />
+    <para />
+    <para />
+    <para />
+    <para />
+    <parablock>
+      <para>
+        <emphasis role="bold">Rechtsmiddel</emphasis> SXM202600262:</para>
+      <para>
+        <emphasis role="bold">Informatie over hoger beroep</emphasis>
+      </para>
+      <para>Tegen deze uitspraak kunnen alle partijen hoger beroep instellen bij het Gemeenschappelijk Hof van Justitie. </para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>Het hoger beroepschrift moet worden ingediend <emphasis role="underline">binnen zes weken</emphasis> na de dag waarop deze uitspraak is verzonden. </para>
+      <para>Het hoger beroep moet worden ingediend bij het Gerecht dat de uitspraak heeft gedaan. </para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>De indiener van het hoger beroep moet in ieder geval: </para>
+      <para>het hoger beroepschrift indienen in tweevoud;</para>
+      <para>een afschrift van deze uitspraak bijvoegen;</para>
+      <para>vermelden waarom hij het niet eens is met de uitspraak (hoger beroepsgronden).</para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>Partijen kunnen gebruik maken van de mogelijkheid om binnen de gegeven hoger beroepstermijn te volstaan met een pro-forma hoger beroepschrift. Dit betekent dat de hoger beroepsgronden op een later moment worden ingediend.</para>
+    </parablock>
+    <para />
+    <parablock>
+      <para>Voor het instellen van het hoger beroep is griffierecht verschuldigd.</para>
+    </parablock>
+    <para />
+    <para />
+    <para />
+    <parablock>
+      <para>
+        <emphasis role="bold">Rechtsmiddel</emphasis> SXM202600261:	</para>
+      <para>Tegen deze beslissing is geen hoger beroep mogelijk.</para>
+    </parablock>
+    <para />
+  </section>
+</uitspraak>
+</open-rechtspraak>

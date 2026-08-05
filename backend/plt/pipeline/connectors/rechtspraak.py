@@ -205,6 +205,13 @@ _LAW_DOMAINS: Final[Mapping[str, LawDomain]] = {
 
 #: ``Instantie`` type from the vocabulary to a court level and subject-matter domain. The
 #: types come from the vocabulary itself, so no court is named in this table.
+#:
+#: **This mapping is lossy, and the loss is why the raw type is stored too.**
+#: ``Koninkrijksinstantie`` — the courts of Aruba, Curaçao, Sint Maarten and the BES islands,
+#: which are Kingdom territory but not EU territory (``docs/jurisdictions/nl.md`` section 1.1)
+#: — flattens onto the same level ``other`` as ``AndereGerechtelijkeInstantie``. The
+#: vocabulary states the type once; :attr:`CourtRecord.court_type` therefore reaches
+#: ``court.source_type`` unflattened, beside the normalised pair rather than instead of it.
 _COURT_TYPES: Final[Mapping[str, tuple[str | None, str | None]]] = {
     "Rechtbank": ("first_instance", None),
     "Kantongerecht": ("first_instance", None),
@@ -464,21 +471,45 @@ def _attributes_of(entry: Mapping[str, Any]) -> Mapping[str, str]:
     return attributes if isinstance(attributes, Mapping) else {}
 
 
+def _attribute(attributes: Mapping[str, str], name: str) -> str | None:
+    """Return an attribute by its local name, whatever prefix the source gave it.
+
+    The prefix is not part of the attribute's meaning here, and Rechtspraak does not use one
+    consistently: a European Dutch judgment writes the court's vocabulary URI as
+    ``resourceIdentifier`` in the ``overheid.RechterlijkeMacht`` scheme, while a judgment of a
+    Caribbean court of the Kingdom writes the same thing as ``psi:resourceIdentifier`` in the
+    ``psi.rechtspraak`` scheme (verified live on 5 August 2026 against ``ECLI:NL:OGEAM:2025:155``
+    and ``ECLI:NL:OGHACMB:2025:1``). Matching the qualified name would silently miss the second
+    form, and missing it costs the court's identity — see :meth:`RechtspraakConnector._court`.
+
+    Args:
+        attributes: One occurrence's attributes, qualified.
+        name: The local attribute name, e.g. ``resourceIdentifier``.
+
+    Returns:
+        The first matching value, or ``None``.
+    """
+    for qualified, value in attributes.items():
+        if qualified.rpartition(":")[2] == name:
+            return str(value)
+    return None
+
+
 def _first_attribute(described: Described, key: str, attribute: str) -> str | None:
     """Return one attribute of the first occurrence of an element that carries it.
 
     Args:
         described: A projected description block.
         key: Qualified element name.
-        attribute: Qualified attribute name.
+        attribute: Local attribute name; see :func:`_attribute` on why the prefix is ignored.
 
     Returns:
         The attribute value, or ``None`` when either the element or the attribute is absent.
     """
     for entry in described.get(key, ()):
-        attributes = _attributes_of(entry)
-        if attribute in attributes:
-            return str(attributes[attribute])
+        value = _attribute(_attributes_of(entry), attribute)
+        if value is not None:
+            return value
     return None
 
 
@@ -499,7 +530,7 @@ def _labelled(described: Described, key: str) -> list[dict[str, str | None]]:
     return [
         {
             "label": str(entry["value"]) if entry.get("value") is not None else None,
-            "uri": _attributes_of(entry).get("resourceIdentifier"),
+            "uri": _attribute(_attributes_of(entry), "resourceIdentifier"),
         }
         for entry in described.get(key, ())
     ]
@@ -678,6 +709,12 @@ class CourtRecord:
     def normalised(self) -> NormalisedCourt:
         """Return this entry as the value the pipeline resolves against the ``court`` table.
 
+        Everything the vocabulary states about the court is carried: the normalised
+        :attr:`level` and :attr:`domain` the API filters on, the raw ``Type`` behind them, and
+        the dates between which the court sat, which have no column and go to the row's
+        ``source_metadata``. The entry is read once per run, so a field dropped here is a
+        field only another request can recover.
+
         Returns:
             The court, identified by its vocabulary URI rather than by its name, so a renamed
             court updates its row instead of becoming a second one.
@@ -687,8 +724,14 @@ class CourtRecord:
             name=self.name,
             level=self.level,
             domain=self.domain,
+            source_type=self.court_type,
             abbreviation=self.abbreviation,
             source_url=self.identifier,
+            source_metadata={
+                "type": self.court_type,
+                "begin_date": self.begin_date,
+                "end_date": self.end_date,
+            },
         )
 
     def __repr__(self) -> str:
@@ -1115,10 +1158,19 @@ class RechtspraakConnector(SourceConnector):
         """Resolve the deciding court against the ``Instanties`` vocabulary.
 
         The vocabulary's URI is the identity — ``court.source_identifier`` — and the level,
-        domain and abbreviation come from the vocabulary too, rather than from a table of
-        court names in this file. Supplying all three on every case matters: persistence
-        writes them onto the court row each time, so a connector that left them ``None`` would
-        erase what ``plt seed-vocabularies`` had put there.
+        domain, raw type and abbreviation come from the vocabulary too, rather than from a
+        table of court names in this file. Supplying them all on every case matters:
+        persistence writes them onto the court row each time, so a connector that left them
+        ``None`` would erase what ``plt seed-vocabularies`` had put there. A court the
+        vocabulary does not list — or any court, when the vocabulary could not be read at all
+        — is stored with its name alone, which is the one case where the row carries no type.
+
+        **The identifying attribute is read by its local name on purpose.** The portal
+        qualifies it for the Caribbean courts of the Kingdom and not for the European Dutch
+        ones (:func:`_attribute`). Reading only the unqualified form left every Kingdom
+        judgment falling through to the name-derived key below, which matches nothing in the
+        vocabulary: those cases lost their court's level, domain and type, and pointed at a
+        court row of their own beside the one seeding had already created for the same court.
 
         Args:
             described: The projected metadata block.
