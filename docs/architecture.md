@@ -190,7 +190,7 @@ a deliberate minimum and adding to it is a decision, not a convenience:
   confirmation date, unsubscribe date, tenure and digests sent are all on the row, so nothing
   in the reporting path needs the address. It counts what was handed to the mail backend, not
   what was delivered, opened or clicked — none of which is recorded anywhere.
-- **Retention is configuration with no default** (§8, issue #75). `PLT_SUBSCRIBER_RETENTION_DAYS`
+- **Retention is configuration with no default** (§8). `PLT_SUBSCRIBER_RETENTION_DAYS`
   drops the digest from an unsubscribed row, leaving dates and the counter;
   `PLT_SUBSCRIBER_UNCONFIRMED_EXPIRY_DAYS` deletes a row that never confirmed. Unset means
   **not enforced**, never a guessed number: both periods are the Law group's to decide.
@@ -790,7 +790,7 @@ drops the digest from an unsubscribed row after `PLT_SUBSCRIBER_RETENTION_DAYS`,
 and `digest_count`, and deletes an address that never confirmed after
 `PLT_SUBSCRIBER_UNCONFIRMED_EXPIRY_DAYS` — that row records no consent, so nothing about it is
 kept. **Both are unset by default and unset means not enforced**, because the periods are the
-Law group's to decide (issue #75) and a default would be a policy nobody chose. The job says
+Law group's to decide and a default would be a policy nobody chose. The job says
 "not configured" rather than reporting a count of zero, since the two look identical in a log
 and mean opposite things.
 
