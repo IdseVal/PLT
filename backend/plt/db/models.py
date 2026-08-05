@@ -241,6 +241,13 @@ class Court(Base):
     level: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
     #: Subject-matter domain of the court, e.g. ``administrative``, ``civil``.
     domain: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
+    #: The source's own type for the court, verbatim: ``Koninkrijksinstantie``,
+    #: ``Rechtbank``, ``corporate-body``. ``level`` and ``domain`` above are this project's
+    #: normalisation of it and are deliberately lossy — every Kingdom court and every residual
+    #: instance flattens to level ``other`` — so the unflattened value is kept beside them.
+    #: The source states it once, when its vocabulary is read; without this column recovering
+    #: it would be a re-fetch rather than a query (architecture rule 2.6).
+    source_type: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
     abbreviation: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
     source_url: Mapped[str | None] = mapped_column(String(_URL_LEN))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
