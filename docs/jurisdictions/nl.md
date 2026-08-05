@@ -33,6 +33,54 @@ same decision, and neither aggregates the other: the EU is a jurisdiction in its
 The unit of selection is the **ECLI**, which is also the deduplication key
 (`docs/core-document.md` §2.6).
 
+### 1.1 The Caribbean courts of the Kingdom are in
+
+> **Decision by the project owner, 5 August 2026, on issue #62.** Recorded here under §2.9
+> because it is a scope decision and not an implementation detail. It confirms the behaviour
+> the connector already had; what changes is that the behaviour is now chosen.
+
+`data.rechtspraak.nl` publishes the judgments of the courts of the **Caribbean parts of the
+Kingdom** alongside the European Dutch ones, and the connector reads them because it reads
+the whole portal. Those decisions are part of the `NL` jurisdiction. They are **not**
+excluded, and they are **not** split into a jurisdiction of their own.
+
+What a reader has to know about them:
+
+- **They are Kingdom territory and not EU territory.** Aruba, Curaçao and Sint Maarten are
+  constituent countries of the Kingdom; Bonaire, Sint Eustatius and Saba are special
+  municipalities of the Netherlands. All six are Overseas Countries and Territories, outside
+  the customs union and outside the territorial scope of EU law. **Regulation (EC) No
+  1107/2009 does not apply there**, nor does Regulation (EU) No 528/2012 or Directive
+  2009/128/EC.
+- **So a Dutch filter returns cases governed by a different substantive legal order.** A
+  Caribbean pesticide judgment applies local landsverordeningen, not the Union régime that
+  every other case in this jurisdiction turns on. Nothing about the score, the terms or the
+  ECLI marks that difference, and the Dutch keyword list matches them anyway because the
+  legal Dutch of the Caribbean courts is the same language.
+- **The reason they are in.** Excluding them would be a deliberate false negative
+  (`docs/core-document.md` §2.7), against a population of genuine, published pesticide
+  judgments of a Dutch court, to enforce a territorial rule the tracker's users are unlikely
+  to be applying when they filter by jurisdiction. Under §2.10 an exclusion carries the
+  higher burden of justification, and this one was not carried: the size of the Caribbean
+  pesticide population has never been counted, so the cost of excluding it is unknown.
+  Splitting them into their own jurisdictions is the most accurate option and remains open;
+  it needs its own keyword lists (§2.5) and its own map treatment, and nothing here forecloses
+  it.
+
+**How a reader tells them apart.** Two ways, and the difference between them matters:
+
+| Signal | Where it lives | Usable today |
+| --- | --- | --- |
+| `Koninkrijksinstantie`, the court type in the portal's own `Waardelijst/Instanties` vocabulary | the source; the connector reads it | **No** — `_COURT_TYPES` maps it to level `other`, alongside `AndereGerechtelijkeInstantie`, and the raw type is not stored on the `court` row |
+| The **ECLI court code** and the court's name | `case.ecli`, `court.name`, `court.abbreviation` | **Yes** — `ECLI:NL:OGEAM:2025:155` is the Gerecht in eerste aanleg van Sint Maarten (verified against the live endpoint, issue #62), and `OCHM` is the Constitutioneel Hof Sint Maarten (from the portal's vocabulary, `backend/tests/fixtures/rechtspraak/instanties.xml`). No exhaustive list of the Caribbean court codes has been compiled |
+
+So the information exists at the source and is **lost in normalisation**: today a researcher
+can only separate these cases by recognising the court. Surfacing the Kingdom courts as a
+filterable property — persisting the vocabulary type, or flagging the jurisdiction on the
+case — is the natural follow-up, and it is a code change in the connector and the API rather
+than a curation one. It is **not** made here. Until it is made, §6 carries it as a known
+limitation.
+
 ---
 
 ## 2. Where the litigation is
@@ -109,13 +157,9 @@ make.
   the unpublished remainder is not measurable from the API.
 - **Arbitration.** The June 2026 run surfaced a construction arbitration (`ECLI:NL:GHAMS:2026:1519`)
   only because a court reviewed it; arbitral awards as such are not in the corpus.
-- **An open question: the Caribbean courts.** The portal carries courts of the Caribbean parts
-  of the Kingdom — the connector's vocabulary map has a `Koninkrijksinstantie` type, and the
-  dry run matched `ECLI:NL:OGEAM:2025:155`. Those territories are not EU territory, while
-  §1.1 of the core document scopes the PLT to "the EU and its member states". Whether their
-  decisions belong in the `NL` jurisdiction, in a jurisdiction of their own, or nowhere, has
-  not been decided and is not decided here. It is recorded so that a researcher counting
-  Dutch cases knows what may be in the count.
+
+**Not** out of scope: the Caribbean courts of the Kingdom. That was an open question when
+this document was written and is now a decision — they are in, see [§1.1](#11-the-caribbean-courts-of-the-kingdom-are-in).
 
 ---
 
@@ -606,7 +650,12 @@ scheme rather than a jurisdiction-specific exception.
    defeated by a double space before the word, and the `CTB` guard by the road base written
    without its hyphen. Both fail *open* — the document passes, scores at `min_score` and is
    caught by the review band — which is the direction §2.7 asks a failure to take.
-6. **The Caribbean question is open** (§2.3).
+6. **Caribbean cases are in the Dutch jurisdiction and nothing marks them as such** (§1.1).
+   The decision to include them is deliberate; the inability to filter them is not. The portal
+   types those courts as `Koninkrijksinstantie`, but the connector maps that to level `other`
+   and does not persist the type, so today the only way to identify them is by court name or
+   ECLI court code. **A researcher filtering for Dutch pesticide litigation therefore receives
+   cases to which EU pesticide law does not apply, with nothing in the record saying so.**
 7. **One language only.** The list covers Dutch. Frisian-language judgments, if any exist in
    the corpus, would not be matched; this has not been investigated.
 8. **No rows have been written yet.** Every figure in this document comes from dry runs. The
@@ -633,6 +682,7 @@ scheme rather than a jurisdiction-specific exception.
 | — | Statutory appeal route for Ctgb decisions | — | **Not verified** — CBb inferred from two dry-run cases |
 | — | Size of the historical `CTB` population (§5.6) | — | **Not measured** |
 | — | Effect of `nl.json` 1.2.0 over the June 2026 corpus | — | **Not measured** — the run wrote no rows and its report is not in the repository (§5.1) |
+| — | Number of Caribbean judgments in the corpus, and how many are pesticide cases (§1.1) | — | **Not counted** |
 
 ---
 
@@ -655,5 +705,7 @@ scheme rather than a jurisdiction-specific exception.
   light of §2.7.
 - **Issue #57** — the four term defects, each reproduced against the shipped list, and the
   owner's decision of 5 August 2026 to handle them as documented exceptions (§5.4–§5.7).
+- **Issue #62** — the Caribbean Kingdom courts, and the owner's decision of 5 August 2026 to
+  include them in the `NL` jurisdiction (§1.1).
 - **Issue #24** — contextual authority terms and the limits of `requires`.
 - **Issue #55** — the review queue that §2.7 puts in place of a threshold change.
