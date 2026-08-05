@@ -45,6 +45,7 @@ EXPECTED_TABLES = {
     "jurisdiction",
     "keyword_match",
     "party",
+    "subscriber",
     "topic",
 }
 

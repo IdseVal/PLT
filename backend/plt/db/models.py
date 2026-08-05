@@ -63,6 +63,8 @@ __all__ = [
     "PartyRole",
     "ReviewDecision",
     "ReviewStatus",
+    "Subscriber",
+    "SubscriberStatus",
     "Topic",
     "TopicAssignmentSource",
 ]
@@ -74,6 +76,10 @@ _IDENTIFIER_LEN = 255
 _LABEL_LEN = 255
 _SHORT_LEN = 64
 _URL_LEN = 2048
+
+#: Longest address the schema stores. RFC 5321 bounds a reverse-path at 256 octets including
+#: the angle brackets, which leaves 254 for the address itself.
+_EMAIL_LEN = 254
 
 
 class JurisdictionType(enum.StrEnum):
@@ -157,6 +163,21 @@ class ReviewStatus(enum.StrEnum):
     CONFIRMED = "confirmed"
     REJECTED = "rejected"
     WITHDRAWN = "withdrawn"
+
+
+class SubscriberStatus(enum.StrEnum):
+    """Where an address stands in the double opt-in lifecycle.
+
+    ``pending`` is an address that has been submitted and has **not** confirmed. It receives
+    nothing but its own confirmation message: without that click, anyone could subscribe
+    anyone. ``confirmed`` is the only state a digest is ever sent to. ``unsubscribed`` is a
+    withdrawal, kept rather than deleted so a later re-subscription is a state change on one
+    row and the record of consent stays coherent.
+    """
+
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    UNSUBSCRIBED = "unsubscribed"
 
 
 class IngestStatus(enum.StrEnum):
@@ -795,3 +816,75 @@ class IngestCheckpoint(Base):
     def __repr__(self) -> str:
         """Return an unambiguous representation for logs and test failures."""
         return f"IngestCheckpoint(connector={self.connector!r}, cursor={self.last_cursor!r})"
+
+
+class Subscriber(Base):
+    """One address on the mailing list.
+
+    An email address is personal data under the GDPR, and Wageningen University is an EU
+    institution, so the column list is a deliberate minimum: the address, where it stands, the
+    timestamps that make the lifecycle auditable, and the stored half of its token. There is
+    no name, no IP address, no user agent, no referrer and no delivery telemetry — the tracker
+    cannot report who opened a digest because it never records it, and a message carries no
+    tracking pixel and no redirected links.
+
+    **The token is stored as a seed, not as a token.** ``token_seed`` is an unguessable random
+    selector; the token in a link is ``<seed>.<verifier>``, where the verifier is an
+    HMAC-SHA256 of the seed and the purpose under a server-side key
+    (:mod:`plt.notifications.tokens`). A database dump therefore yields no working
+    confirmation or unsubscribe link, and a link stays valid across every digest without the
+    secret half of it ever being written down.
+
+    **Nothing here may be listed.** No API endpoint reads this table for anything but a single
+    address or a single seed, and the subscription endpoints answer identically whether or not
+    a row exists — an endpoint that behaved differently for a known address would be an
+    address-checking oracle for anyone with a word list.
+    """
+
+    __tablename__ = "subscriber"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    #: The address, normalised to lower case so one person cannot hold two rows.
+    email: Mapped[str] = mapped_column(String(_EMAIL_LEN), nullable=False, unique=True)
+    status: Mapped[SubscriberStatus] = mapped_column(
+        portable_enum(SubscriberStatus, "subscriber_status"),
+        nullable=False,
+        default=SubscriberStatus.PENDING,
+        index=True,
+    )
+    #: Selector half of the confirmation and unsubscribe tokens. Random, unique, and useless
+    #: without the server key; rotated when an address re-subscribes, which retires the links
+    #: of the previous subscription.
+    token_seed: Mapped[str] = mapped_column(String(_SHORT_LEN), nullable=False, unique=True)
+
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        UtcDateTime, nullable=False, default=utcnow, onupdate=utcnow
+    )
+    #: When the last transactional message went to this address — a confirmation request or
+    #: the note that it is already subscribed. Two jobs: it expires an unconfirmed
+    #: subscription, and it throttles the public endpoint so it cannot be turned into a
+    #: mail bomb aimed at a third party. Written on every branch, so the throttle itself
+    #: cannot become a way of telling a known address from an unknown one.
+    notice_sent_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+    #: When consent was given. ``None`` until the confirmation link is used.
+    confirmed_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+    #: When it was withdrawn. Kept so a withdrawal is auditable rather than a missing row.
+    unsubscribed_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+    #: The last digest window this address was sent, which is what makes an interrupted send
+    #: resumable: a re-run skips the recipients already served. Not a record of delivery, and
+    #: not a record of anything the reader did.
+    last_digest_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+
+    @property
+    def is_subscribed(self) -> bool:
+        """Return whether this address has confirmed and may receive a digest."""
+        return self.status is SubscriberStatus.CONFIRMED
+
+    def __repr__(self) -> str:
+        """Return a representation that never discloses the address.
+
+        A repr reaches logs and test output, and ``docs/architecture.md`` rule 2.7 keeps
+        personal data out of both, so the row is identified by its primary key alone.
+        """
+        return f"Subscriber(id={self.id!r}, status={self.status!r})"
