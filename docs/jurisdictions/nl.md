@@ -144,10 +144,10 @@ obvious sample for a first proper measurement of what the threshold costs.
 
 ## 4. Documented exceptions
 
-Seven rules apply to this jurisdiction beyond the shared method. The first decides which
-documents are fetched at all, and the second rejects a document on its content. Four of them
-only narrow how a single term matches, so a decision that mentions pesticides anywhere else
-still scores normally, and the last keeps one word out of the list altogether.
+Nine rules apply to this jurisdiction beyond the shared method. The first decides which
+documents are fetched at all, and the second rejects a document on its content. Five of them
+only narrow how a term matches, so a decision that mentions pesticides anywhere else still
+scores normally, and the last two keep words out of the list altogether.
 
 | What it excludes | Why | What it costs |
 | --- | --- | --- |
@@ -157,7 +157,9 @@ still scores normally, and the last keeps one word out of the list altogether.
 | *kwekerij* inside a longer word, such as *hennepkwekerij* | Cannabis-cultivation judgments were matching a nursery term | Nursery cases written only as *plantenkwekerij* or *rozenkwekerij* lose one contextual point. A judgment saying *kwekerij* on its own still matches |
 | `CTB` followed by *-laag* or *-lagen* | Cement-bound road base in construction disputes, sharing an abbreviation with the Ctgb's predecessor | Nothing measurable. The historical abbreviation is kept, so older judgments using it still match |
 | *toelatingsbesluit* where no plant-protection term appears in the document | In immigration law a *toelatingsbesluit* is a decision admitting a foreign national, and immigration is one of the largest categories in the Dutch corpus | An authorisation judgment that uses the word and never names a plant protection product would be missed. None has been seen; the Ctgb's own name contains the required term |
+| The register's abbreviations `DDAC`, `BBIT`, `TMAD`, `CIPC` and `DBNPA` inside longer words | Each was an alias of a long chemical name and matched on word fragments because the name does. `DDAC` matched inside the surname *Faddach*, `BBIT` inside *rabbits*, `TMAD` inside the place name *Westmade*: 86 decisions in 150,000 sampled, none about a plant protection product, and nothing gates them, so each was selected on the fragment alone | Nothing. Every abbreviation is kept, as a term of its own matched as a whole word. A decision naming both the abbreviation and the full name now scores twice, which takes it out of the review band |
 | The bare word *koper*, which the Ctgb register carries as an active substance | *Koper* is both copper and a buyer, and in the corpus it is the buyer: it appears in 77 of 2,000 sampled judgments, none of them about a plant protection product | Nothing measurable. The list carries sixteen unambiguous copper compounds — *kopersulfaat*, *koperoxychloride*, *koperdihydroxide* and the rest — and a judgment about a copper product names the authorised one. A judgment naming only the bare element scores three points less, which can put it in the review band |
+| The English names the register carries beside the Dutch ones — *beer*, *silver*, *Iron*, *Milk*, *Quartz*, *Vinegar*, *talc*, *honey*, *iodine*, *sulfur*, *Whey*, *yeast* — with *gist*, *Diamine* and *amorf*, the fragment left when *amorphous silica* was split | An English name in a Dutch list is a homonym the Dutch word never had. *Beer* is the surname *De Beer*, *Quartz* and *Silver* are watch and shipping brands, *Milk* is a dairy company, *Whey* is Papiamento. They matched 459 of 150,000 sampled judgments between them; *beer* alone accounts for 319, and every match read was a name, a brand or an English quotation rather than the substance | Nothing measurable. A Dutch court writing about these substances writes *bier*, *zilver*, *koemelk*, and the Dutch term stays in the list; only the English spelling is gone. English names that are chemical nomenclature rather than ordinary words are kept |
 
 Two of these rules can be defeated by a spelling the pattern does not anticipate: an extra
 space before *bestrijdingsmiddelen* in the toxicology sentence, or road base written as a
