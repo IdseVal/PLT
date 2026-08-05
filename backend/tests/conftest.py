@@ -37,6 +37,7 @@ from plt.db.models import (
 )
 from plt.db.session import create_session_factory, make_engine
 from plt.extensions import dispose_database
+from plt.notifications.mailer import MailError, Message
 
 #: Repository root, resolved from ``<repo>/backend/tests/conftest.py``.
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -60,13 +61,64 @@ def build_settings(**overrides: Any) -> Settings:  # noqa: ANN401 - arbitrary fi
     return Settings(**params)
 
 
+class RecordingMailer:
+    """A mail backend that keeps what it was handed instead of sending it.
+
+    Satisfies :class:`plt.notifications.mailer.Mailer` structurally. Tests assert on the
+    messages rather than on a mock's call log, because what a subscriber receives — the
+    unsubscribe link in the body, the ``List-Unsubscribe`` header, the fact that there is
+    exactly one recipient — is the behaviour under test.
+    """
+
+    def __init__(self, *, fail: bool = False) -> None:
+        """Prepare the recorder.
+
+        Args:
+            fail: Whether every send should raise, standing in for a mail server that is down.
+        """
+        self.sent: list[Message] = []
+        self.closed = False
+        self._fail = fail
+
+    def send(self, message: Message) -> None:
+        """Record the message.
+
+        Args:
+            message: The message that would have been sent.
+
+        Raises:
+            MailError: If this recorder was built to fail.
+        """
+        if self._fail:
+            detail = "the test mailer refuses everything"
+            raise MailError(detail)
+        self.sent.append(message)
+
+    def close(self) -> None:
+        """Mark the backend closed, so a test can check the caller released it."""
+        self.closed = True
+
+    @property
+    def recipients(self) -> list[str]:
+        """Return the addresses written to, in order."""
+        return [message.to for message in self.sent]
+
+
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
     """Return isolated test settings backed by a temporary SQLite database."""
     return build_settings(
         database_url=f"sqlite+pysqlite:///{tmp_path / 'test.db'}",
         rate_limit_enabled=False,
+        mail_outbox_dir=tmp_path / "outbox",
+        site_base_url="https://plt.test",
     )
+
+
+@pytest.fixture
+def mailer() -> RecordingMailer:
+    """Return a mail backend that records messages instead of sending them."""
+    return RecordingMailer()
 
 
 @pytest.fixture
