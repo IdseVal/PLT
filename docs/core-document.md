@@ -301,6 +301,45 @@ and records the fact durably.**
   always on carries no information, and an alarm that never fires carries none either. Run
   status must be able to return to green while quarantine keeps its own count.
 
+### 2.12 Subscriber data: pseudonymise on unsubscribe
+
+> *Added 5 August 2026. Decision by the project owner, resolving issue #75.*
+
+The PLT offers an email alert list. Subscriber addresses are **personal data** and Wageningen
+University is an EU controller, so GDPR Article 5(1)(e) — storage limitation — applies:
+personal data is kept no longer than the purpose requires. When someone unsubscribes, the
+purpose they consented to has ended.
+
+**On unsubscribe the address is replaced by a keyed one-way digest. The row survives; the
+address does not.** The project keeps its records and can report on the list, and the person's
+address is no longer held.
+
+Three properties this must have, because the obvious implementation does not deliver what the
+decision intends:
+
+1. **The digest is keyed, not bare.** `HMAC-SHA256(pepper, normalised_address)`. A plain hash
+   of an email address is *not* anonymisation: the address space is enumerable, so anyone with
+   a candidate list can hash it and match. The pepper lives **outside the database** — with the
+   other secrets, never in a column, never in a migration — so a database dump alone yields no
+   addresses. Rotating it breaks recognition of every existing row, so it is long-lived by
+   design.
+2. **This is pseudonymisation, and is described as such.** A digest that can still recognise a
+   returning address is reversible to anyone holding the key — that is what recognition means.
+   Calling it anonymous would be wrong, and the distinction decides whether a subject access
+   request can still reach these rows. **Suppression and full anonymisation are mutually
+   exclusive**; this project has chosen suppression.
+3. **It makes an unsubscribe durable.** Because a returning address is still recognisable,
+   "leave me alone" survives a third party retyping the address into the signup form. Without
+   it, an unsubscribe means only "removed until someone types this again".
+
+**Statistics are computed from the row, not the address** — subscribed, confirmed and
+unsubscribed dates, tenure, digests received. Nothing in the reporting needs the address.
+
+Retention of the *pseudonymised* row, and expiry of addresses that were never confirmed, are
+still open (#75) and belong to the Law group. Storage limitation does not stop at
+pseudonymisation, so both are configuration rather than constants, with no default that
+quietly becomes policy.
+
 ---
 
 ## 3. Design and layout
