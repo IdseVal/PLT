@@ -34,11 +34,15 @@ from plt.api.errors import ValidationError
 from plt.db.models import (
     Case,
     CaseDocument,
+    CaseReview,
+    CaseReviewDecision,
     CaseTopic,
     Citation,
     KeywordMatch,
     LawDomain,
     Party,
+    ReviewDecision,
+    ReviewStatus,
 )
 from plt.db.repositories import (
     CasePage,
@@ -47,6 +51,9 @@ from plt.db.repositories import (
     FacetValues,
     IngestRunSummary,
     JurisdictionStat,
+    ReviewPage,
+    ReviewSearchCriteria,
+    ReviewSort,
 )
 
 if TYPE_CHECKING:
@@ -60,6 +67,8 @@ __all__ = [
     "EXPORT_COLUMNS",
     "CaseQuery",
     "ExportFormat",
+    "ReviewDecisionInput",
+    "ReviewQuery",
     "case_detail_payload",
     "case_summary_payload",
     "csv_cell",
@@ -74,7 +83,11 @@ __all__ = [
     "parse_export_format",
     "parse_export_query",
     "parse_latest_limit",
+    "parse_review_decision",
+    "parse_review_query",
     "parse_source_id",
+    "review_item_payload",
+    "review_page_payload",
     "validate_jurisdiction_code",
 ]
 
@@ -98,6 +111,16 @@ _MAX_JURISDICTIONS: Final[int] = 32
 #: Longest echoed back in an error message, so a huge value cannot inflate the response.
 _MAX_ECHO_LENGTH: Final[int] = 100
 
+#: Longest accepted reviewer identifier; matches ``case_review.decided_by`` in the schema.
+_MAX_DECIDED_BY_LENGTH: Final[int] = 255
+
+#: Longest accepted rationale on a review decision. The column is unbounded ``TEXT``; the
+#: bound is an input guard, not a policy about how much a reviewer may write.
+_MAX_NOTE_LENGTH: Final[int] = 4000
+
+#: Most review statuses accepted in one request; there are four in the enumeration.
+_MAX_STATUSES: Final[int] = 8
+
 # ASCII digits only: ``\d`` also matches other Unicode decimal digits, which ``int()``
 # happily parses, and a parameter that reads as ``page=٤`` is not one this API accepts.
 _INTEGER_RE: Final[re.Pattern[str]] = re.compile(r"^[+-]?[0-9]+$")
@@ -106,6 +129,11 @@ _CODE_RE: Final[re.Pattern[str]] = re.compile(r"^[A-Z0-9]{2,8}$")
 _SLUG_RE: Final[re.Pattern[str]] = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _LANGUAGE_RE: Final[re.Pattern[str]] = re.compile(r"^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$")
 _SOURCE_ID_RE: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:()\-/ ]*$")
+_LIST_VERSION_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
+
+#: Control characters rejected in a stored free-text value. A reviewer identifier and a note
+#: are read back out of the API, so they are kept free of anything that is not text.
+_CONTROL_RE: Final[re.Pattern[str]] = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 #: Characters removed before a client value is reflected in an error message.
 _UNSAFE_ECHO_RE: Final[re.Pattern[str]] = re.compile(r"[<>&\x00-\x1f\x7f]")
@@ -128,6 +156,29 @@ class CaseQuery:
     criteria: CaseSearchCriteria
     page: int
     page_size: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewQuery:
+    """A validated ``/api/reviews`` request: which part of the queue, and which page."""
+
+    criteria: ReviewSearchCriteria
+    page: int
+    page_size: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewDecisionInput:
+    """A validated review verdict: the outcome, who reached it and why.
+
+    ``decided_by`` is an opaque identifier and may name a person or an agent — the project
+    has not decided which reviews the queue (core document section 2.7), so nothing here
+    assumes either.
+    """
+
+    decision: ReviewDecision
+    decided_by: str
+    note: str | None
 
 
 def _echo(value: str) -> str:
@@ -532,6 +583,171 @@ def parse_latest_limit(args: MultiDict[str, str], settings: Settings) -> int:
     )
 
 
+def _parse_statuses(args: MultiDict[str, str]) -> tuple[ReviewStatus, ...]:
+    """Parse the repeatable ``status`` parameter of the review queue.
+
+    Args:
+        args: The request's query parameters.
+
+    Returns:
+        The requested statuses, or the pending queue when none were named. ``status=any``
+        selects every status, which is how a caller asks for the full history without having
+        to know the members.
+
+    Raises:
+        ValidationError: If a value is not a review status or too many were supplied.
+    """
+    raw_values = [
+        part.strip().lower()
+        for raw in args.getlist("status")
+        for part in raw.split(",")
+        if part.strip()
+    ]
+    if not raw_values:
+        return (ReviewStatus.PENDING,)
+    if "any" in raw_values:
+        return ()
+    if len(raw_values) > _MAX_STATUSES:
+        raise _reject(
+            "status",
+            f"At most {_MAX_STATUSES} statuses may be requested at once.",
+            maximum=_MAX_STATUSES,
+        )
+
+    statuses: list[ReviewStatus] = []
+    for value in raw_values:
+        try:
+            status = ReviewStatus(value)
+        except ValueError as exc:
+            members = ", ".join(sorted(member.value for member in ReviewStatus))
+            raise _reject(
+                "status",
+                f"status must be one of: {members}, or 'any'.",
+                value=_echo(value),
+            ) from exc
+        if status not in statuses:
+            statuses.append(status)
+    return tuple(statuses)
+
+
+def parse_review_query(args: MultiDict[str, str], settings: Settings) -> ReviewQuery:
+    """Validate an ``/api/reviews`` request.
+
+    Args:
+        args: The request's query parameters.
+        settings: Settings supplying the pagination default and maximum.
+
+    Returns:
+        The validated :class:`ReviewQuery`.
+
+    Raises:
+        ValidationError: If any parameter fails validation.
+    """
+    criteria = ReviewSearchCriteria(
+        statuses=_parse_statuses(args),
+        jurisdictions=_parse_jurisdictions(args),
+        list_version=_parse_text(
+            args, "list_version", max_length=_MAX_CODE_LENGTH * 4, pattern=_LIST_VERSION_RE
+        ),
+        decided_by=_parse_text(args, "decided_by", max_length=_MAX_DECIDED_BY_LENGTH),
+        sort=_parse_enum(args, "sort", ReviewSort, ReviewSort.FLAGGED_ASC),
+    )
+    return ReviewQuery(
+        criteria=criteria,
+        page=_parse_int(args, "page", default=1, minimum=1, maximum=2**31 - 1),
+        page_size=_parse_int(
+            args,
+            "page_size",
+            default=settings.review_page_size_default,
+            minimum=1,
+            maximum=settings.page_size_max,
+        ),
+    )
+
+
+def _required_text(payload: dict[str, Any], field: str, *, max_length: int) -> str:
+    """Read a required free-text member of a JSON request body.
+
+    Args:
+        payload: The parsed request body.
+        field: Member name.
+        max_length: Longest accepted value.
+
+    Returns:
+        The stripped value.
+
+    Raises:
+        ValidationError: If the member is missing, not a string, empty, over-long or carries
+            a control character.
+    """
+    raw = payload.get(field)
+    if not isinstance(raw, str):
+        raise _reject(field, f"{field} is required and must be a string.")
+    value = raw.strip()
+    if not value:
+        raise _reject(field, f"{field} must not be empty.")
+    if len(value) > max_length:
+        raise _reject(
+            field,
+            f"{field} may not exceed {max_length} characters.",
+            max_length=max_length,
+        )
+    if _CONTROL_RE.search(value):
+        raise _reject(field, f"{field} contains an illegal character.")
+    return value
+
+
+def parse_review_decision(body: object) -> ReviewDecisionInput:
+    """Validate the body of a review decision.
+
+    Args:
+        body: The parsed JSON request body.
+
+    Returns:
+        The validated :class:`ReviewDecisionInput`.
+
+    Raises:
+        ValidationError: If the body is not an object, the outcome is not one of the two
+            recorded verdicts, or the reviewer identifier is missing or malformed.
+    """
+    if not isinstance(body, dict):
+        raise _reject("body", "The request body must be a JSON object.")
+    payload: dict[str, Any] = body
+
+    raw_decision = payload.get("decision")
+    if not isinstance(raw_decision, str):
+        raise _reject("decision", "decision is required and must be a string.")
+    try:
+        decision = ReviewDecision(raw_decision.strip().lower())
+    except ValueError as exc:
+        members = ", ".join(sorted(member.value for member in ReviewDecision))
+        raise _reject(
+            "decision",
+            f"decision must be one of: {members}.",
+            value=_echo(raw_decision),
+        ) from exc
+
+    note = payload.get("note")
+    if note is not None and not isinstance(note, str):
+        raise _reject("note", "note must be a string.")
+    if isinstance(note, str):
+        note = note.strip()
+        if len(note) > _MAX_NOTE_LENGTH:
+            raise _reject(
+                "note",
+                f"note may not exceed {_MAX_NOTE_LENGTH} characters.",
+                max_length=_MAX_NOTE_LENGTH,
+            )
+        if _CONTROL_RE.search(note):
+            raise _reject("note", "note contains an illegal character.")
+
+    return ReviewDecisionInput(
+        decision=decision,
+        decided_by=_required_text(payload, "decided_by", max_length=_MAX_DECIDED_BY_LENGTH),
+        note=note or None,
+    )
+
+
 def _iso(value: date | datetime | None) -> str | None:
     """Render a date or timestamp as an ISO 8601 string.
 
@@ -734,6 +950,91 @@ def page_payload(page: CasePage) -> dict[str, Any]:
     """
     return {
         "items": [case_summary_payload(case) for case in page.items],
+        "page": page.page,
+        "page_size": page.page_size,
+        "total": page.total,
+        "page_count": page.page_count,
+        "has_next": page.has_next,
+    }
+
+
+def _review_decision_payload(entry: CaseReviewDecision) -> dict[str, Any]:
+    """Serialise one entry of a review item's decision history.
+
+    Args:
+        entry: The recorded decision.
+
+    Returns:
+        The wire representation, including the revision it was taken on — which is what
+        makes a superseded verdict readable rather than merely old.
+    """
+    return {
+        "decision": _enum_value(entry.decision),
+        "decided_by": entry.decided_by,
+        "decided_at": _iso(entry.decided_at),
+        "note": entry.note,
+        "case_revision": entry.case_revision,
+        "content_hash": entry.content_hash,
+    }
+
+
+def review_item_payload(review: CaseReview) -> dict[str, Any]:
+    """Serialise one item of the review queue.
+
+    Everything a reviewer needs to decide travels with the item: the case itself, the score
+    against the band it was judged in, the list version that produced the flag, and the
+    matched terms with their fields, weights and snippets. None of it is recomputed — it is
+    what the run recorded, which is what makes an individual verdict explainable after the
+    list has moved on (``docs/core-document.md`` section 2.8).
+
+    Args:
+        review: The review item, loaded with its case, that case's keyword matches and its
+            decision history.
+
+    Returns:
+        The wire representation of a queue entry.
+    """
+    case = review.case
+    return {
+        "id": review.id,
+        "status": _enum_value(review.status),
+        "score": review.score,
+        "min_score": review.min_score,
+        "band_ceiling": review.band_ceiling,
+        "list_version": review.list_version,
+        "reason": review.reason,
+        "flagged_at": _iso(review.flagged_at),
+        "flagged_revision": review.flagged_revision,
+        "flagged_content_hash": review.flagged_content_hash,
+        "decision": _enum_value(review.decision),
+        "decided_by": review.decided_by,
+        "decided_at": _iso(review.decided_at),
+        "decided_revision": review.decided_revision,
+        "decision_note": review.decision_note,
+        # A decision taken before the current revision no longer covers the text in front of
+        # the reviewer. Stated here rather than left to the client to derive from two
+        # revision numbers, because getting it wrong means inheriting a stale verdict.
+        "decision_is_current": review.decision is not None
+        and review.decided_revision == case.revision,
+        "case_revision": case.revision,
+        "published": case.is_published,
+        "case": case_summary_payload(case),
+        "keyword_matches": [_match_payload(match) for match in case.keyword_matches],
+        "decisions": [_review_decision_payload(entry) for entry in review.decisions],
+    }
+
+
+def review_page_payload(page: ReviewPage) -> dict[str, Any]:
+    """Serialise a page of the review queue.
+
+    Args:
+        page: The page returned by :func:`~plt.db.repositories.search_reviews`.
+
+    Returns:
+        The same paginated envelope every list endpoint uses (architecture section 5.1).
+    """
+    return {
+        "items": [review_item_payload(review) for review in page.items],
         "page": page.page,
         "page_size": page.page_size,
         "total": page.total,
