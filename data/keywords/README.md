@@ -88,6 +88,7 @@ Two mechanisms, used together:
    > documents in the same sample, and `captan` inside *mercaptanen*. A length rule cannot
    > see that; only measuring a candidate literal against the corpus can. Do that for any
    > short name before giving it `substring`.
+
 2. **`requires`.** Match mode cannot save `beer`. A name that is an ordinary word in the
    jurisdiction's language keeps its weight and its place in the list but is gated on a
    plant-protection term — `en-pesticide` in `eu.json`, `nl-gewasbeschermingsmiddel` in
