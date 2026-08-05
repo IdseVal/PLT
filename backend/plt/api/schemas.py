@@ -86,6 +86,8 @@ __all__ = [
     "parse_review_decision",
     "parse_review_query",
     "parse_source_id",
+    "parse_subscription_request",
+    "parse_subscription_token",
     "review_item_payload",
     "review_page_payload",
     "validate_jurisdiction_code",
@@ -121,6 +123,17 @@ _MAX_NOTE_LENGTH: Final[int] = 4000
 #: Most review statuses accepted in one request; there are four in the enumeration.
 _MAX_STATUSES: Final[int] = 8
 
+#: Longest address accepted, matching ``subscriber.email`` and RFC 5321's bound on a
+#: reverse-path once the angle brackets are taken off.
+_MAX_EMAIL_LENGTH: Final[int] = 254
+
+#: Longest local part, per RFC 5321.
+_MAX_EMAIL_LOCAL_LENGTH: Final[int] = 64
+
+#: Longest subscription token accepted. The tokens this API issues are a fixed shape; the
+#: bound stops a client making the server hash a megabyte.
+_MAX_TOKEN_LENGTH: Final[int] = 128
+
 # ASCII digits only: ``\d`` also matches other Unicode decimal digits, which ``int()``
 # happily parses, and a parameter that reads as ``page=٤`` is not one this API accepts.
 _INTEGER_RE: Final[re.Pattern[str]] = re.compile(r"^[+-]?[0-9]+$")
@@ -130,6 +143,20 @@ _SLUG_RE: Final[re.Pattern[str]] = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _LANGUAGE_RE: Final[re.Pattern[str]] = re.compile(r"^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$")
 _SOURCE_ID_RE: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:()\-/ ]*$")
 _LIST_VERSION_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
+
+#: An email address, deliberately narrower than RFC 5322 allows. Quoted local parts, comments
+#: and address literals are legal and are refused here: none of them appears in an address a
+#: researcher subscribes with, and each is a way of smuggling something past a later reader.
+#: Matched with ``fullmatch`` and against a value already checked for control characters, so
+#: no line break can reach a mail header through it.
+_EMAIL_RE: Final[re.Pattern[str]] = re.compile(
+    r"[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*"
+    r"@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+    r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+"
+)
+
+#: A subscription token: the selector and the verifier, separated by a dot.
+_TOKEN_RE: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")
 
 #: Control characters rejected in a stored free-text value. A reviewer identifier and a note
 #: are read back out of the API, so they are kept free of anything that is not text.
@@ -746,6 +773,87 @@ def parse_review_decision(body: object) -> ReviewDecisionInput:
         decided_by=_required_text(payload, "decided_by", max_length=_MAX_DECIDED_BY_LENGTH),
         note=note or None,
     )
+
+
+def parse_subscription_request(body: object) -> str:
+    """Validate and normalise the address a signup form submitted.
+
+    Validation here is not about politeness to the user: this is the input to an
+    unauthenticated endpoint that sends mail to whatever it is given, so an address is
+    checked, bounded and normalised before anything downstream acts on it. The failures it
+    reports are all decidable from the request alone — a syntax error is not a statement about
+    who is on the list, so rejecting one is not an enumeration oracle.
+
+    Args:
+        body: The parsed JSON request body.
+
+    Returns:
+        The address, lower-cased. The whole address is normalised, not only its domain: a
+        reader who signs up twice with different capitals is one subscriber, and two rows for
+        one person would mean two copies of their personal data and two digests a week.
+
+    Raises:
+        ValidationError: If the body is not an object, or the address is missing, over-long,
+            malformed or carries a control character.
+    """
+    if not isinstance(body, dict):
+        raise _reject("body", "The request body must be a JSON object.")
+    payload: dict[str, Any] = body
+
+    raw = payload.get("email")
+    if not isinstance(raw, str):
+        raise _reject("email", "email is required and must be a string.")
+    value = raw.strip()
+    if not value:
+        raise _reject("email", "email must not be empty.")
+    if len(value) > _MAX_EMAIL_LENGTH:
+        raise _reject(
+            "email",
+            f"email may not exceed {_MAX_EMAIL_LENGTH} characters.",
+            max_length=_MAX_EMAIL_LENGTH,
+        )
+    if _CONTROL_RE.search(value) or "\x00" in value:
+        raise _reject("email", "email contains an illegal character.")
+    if not _EMAIL_RE.fullmatch(value):
+        raise _reject("email", "email is not a valid address.", value=_echo(value))
+    local, _, _domain = value.partition("@")
+    if len(local) > _MAX_EMAIL_LOCAL_LENGTH:
+        raise _reject("email", "email is not a valid address.", value=_echo(value))
+    return value.lower()
+
+
+def parse_subscription_token(body: object) -> str:
+    """Validate the token a confirmation or unsubscribe link carried.
+
+    Only the *shape* is checked here. Whether the token verifies is decided by
+    :func:`plt.notifications.tokens.verify_token`, in constant time, and a token that does not
+    verify is reported exactly as one that was never issued.
+
+    Args:
+        body: The parsed JSON request body.
+
+    Returns:
+        The token.
+
+    Raises:
+        ValidationError: If the body is not an object, or the token is missing, over-long or
+            not the shape a token has.
+    """
+    if not isinstance(body, dict):
+        raise _reject("body", "The request body must be a JSON object.")
+    payload: dict[str, Any] = body
+
+    raw = payload.get("token")
+    if not isinstance(raw, str):
+        raise _reject("token", "token is required and must be a string.")
+    value = raw.strip()
+    if not value:
+        raise _reject("token", "token must not be empty.")
+    if len(value) > _MAX_TOKEN_LENGTH or not _TOKEN_RE.fullmatch(value):
+        # The value is never echoed: it is a credential, and an error message is one of the
+        # places a credential ends up in a log.
+        raise _reject("token", "token is not a valid subscription token.")
+    return value
 
 
 def _iso(value: date | datetime | None) -> str | None:

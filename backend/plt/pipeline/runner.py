@@ -17,10 +17,11 @@ implementation detail.
 Peak memory is one batch of candidates plus the document in hand, whatever the size of the
 window — a run over five thousand documents holds no more than a run over fifty.
 
-**Interruptibility.** ``SIGINT`` (and ``SIGTERM``) sets a flag rather than raising. The
-document in flight is finished, its batch is committed, the checkpoint is written, the run
-row is closed as ``interrupted`` and the process exits cleanly. A second signal falls through
-to the default handler, so an impatient operator can still force the issue.
+**Interruptibility.** ``SIGINT`` (and ``SIGTERM``) sets a flag rather than raising, through
+:class:`plt.utils.shutdown.StopRequest`. The document in flight is finished, its batch is
+committed, the checkpoint is written, the run row is closed as ``interrupted`` and the
+process exits cleanly. A second signal falls through to the default handler, so an impatient
+operator can still force the issue.
 
 **Checkpoint safety.** The position advances only over documents that were processed
 successfully *and* committed, and it stops advancing at the first document that failed, so
@@ -42,15 +43,12 @@ eight hundred documents and then stalled from one that never started.
 
 from __future__ import annotations
 
-import signal
-import threading
 from collections.abc import Iterator, Sequence
 from contextlib import ExitStack
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from types import FrameType, TracebackType
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING
 
 from plt.config import Settings, get_settings
 from plt.db.base import utcnow
@@ -77,6 +75,7 @@ from plt.pipeline.persistence import PersistOutcome, persist_case, touch_last_se
 from plt.pipeline.registry import connector_for
 from plt.pipeline.report import MatchReport, default_report_path
 from plt.utils.logging import get_logger
+from plt.utils.shutdown import StopRequest
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session, sessionmaker
@@ -193,102 +192,6 @@ class IngestReport:
         )
 
 
-class _StopRequest:
-    """A graceful-shutdown flag, set by ``SIGINT``/``SIGTERM`` while a run is in progress.
-
-    Trapping the signal beats letting ``KeyboardInterrupt`` propagate: the interrupt would
-    land in the middle of a batch, roll it back and throw away work the run had already done.
-    With a flag, the document in flight finishes, its batch commits, and the checkpoint
-    records exactly what was committed.
-
-    Handlers can only be installed from the main thread; anywhere else the guard degrades to
-    a no-op and the caller's own ``KeyboardInterrupt`` handling applies.
-    """
-
-    def __init__(self, signals: Sequence[int] | None = None) -> None:
-        """Prepare the guard.
-
-        Args:
-            signals: Signal numbers to trap. Defaults to ``SIGINT`` and, where the platform
-                has it, ``SIGTERM`` — what a container runtime or a cancelled CI job sends.
-        """
-        if signals is None:
-            signals = [signal.SIGINT, *([signal.SIGTERM] if hasattr(signal, "SIGTERM") else [])]
-        self._signals = tuple(signals)
-        self._previous: dict[int, Any] = {}
-        self._requested = False
-
-    @property
-    def requested(self) -> bool:
-        """Return whether a shutdown has been requested."""
-        return self._requested
-
-    def __call__(self) -> bool:
-        """Return whether a shutdown has been requested, as a predicate.
-
-        Passed to :class:`plt.pipeline.http.PoliteClient`, so a backoff sleep is abandoned
-        as soon as the run is asked to stop.
-        """
-        return self._requested
-
-    def request(self, reason: str) -> None:
-        """Request a graceful shutdown.
-
-        Args:
-            reason: What asked for it, for the log line.
-        """
-        if not self._requested:
-            log.warning(
-                "shutdown requested; finishing the document in flight",
-                extra={"context": {"reason": reason}},
-            )
-        self._requested = True
-
-    def _handle(self, signal_number: int, frame: FrameType | None) -> None:
-        """Handle a trapped signal.
-
-        The first requests a graceful stop; a second restores the previous handler and
-        re-raises, so ``Ctrl+C`` twice still stops the process at once.
-
-        Args:
-            signal_number: The signal received.
-            frame: The interrupted stack frame, unused.
-        """
-        del frame
-        if self._requested:
-            self._restore()
-            signal.raise_signal(signal_number)
-            return
-        self.request(f"signal {signal.Signals(signal_number).name}")
-
-    def _restore(self) -> None:
-        """Put the previous signal handlers back."""
-        for number, handler in self._previous.items():
-            signal.signal(number, handler)
-        self._previous.clear()
-
-    def __enter__(self) -> Self:
-        """Install the handlers, if this is the main thread."""
-        if threading.current_thread() is not threading.main_thread():
-            return self
-        for number in self._signals:
-            try:
-                self._previous[number] = signal.signal(number, self._handle)
-            except (ValueError, OSError):  # pragma: no cover - platform dependent
-                log.debug("could not trap signal", extra={"context": {"signal": number}})
-        return self
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc: BaseException | None,
-        traceback: TracebackType | None,
-    ) -> None:
-        """Restore the previous handlers."""
-        del exc_type, exc, traceback
-        self._restore()
-
-
 def _batched(candidates: Iterator[Candidate], size: int) -> Iterator[list[Candidate]]:
     """Slice a candidate stream into batches without materialising the stream.
 
@@ -332,7 +235,7 @@ class _Run:
         dry_run: bool,
         batch_size: int,
         report: MatchReport | None,
-        stop: _StopRequest,
+        stop: StopRequest,
     ) -> None:
         """Bind the run to its collaborators.
 
@@ -791,7 +694,7 @@ def run_jurisdiction(
         dry_run=dry_run,
         window_until=until,
     )
-    stop = _StopRequest()
+    stop = StopRequest()
 
     try:
         with session_scope(factory) as session:

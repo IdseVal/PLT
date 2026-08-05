@@ -15,6 +15,7 @@ import type {
   HealthResponse,
   JurisdictionStat,
   Paginated,
+  SubscriptionResponse,
 } from '@/types/api'
 
 /** Base URL every request is resolved against. Empty means "the site's own origin". */
@@ -419,6 +420,94 @@ export async function getJurisdictionStats(signal?: AbortSignal): Promise<Jurisd
   }
 
   return stats
+}
+
+/**
+ * Ask for email alerts (`POST /api/subscriptions`).
+ *
+ * The address is sent in a body over `POST`, never in a URL: a query string reaches the
+ * browser history, the server log and any `Referer` the page emits, and a subscriber's
+ * address is personal data. The endpoint answers the same way whatever it found, so the
+ * caller learns nothing about who is on the list and neither does the reader.
+ *
+ * @param email - The address the reader typed. Validated server-side; the form checks only
+ *   enough to give immediate feedback.
+ * @param signal - Optional abort signal.
+ * @returns The acknowledgement, whose `message` is what the form should show.
+ * @throws {ApiError} With code `validation_error` when the address is malformed,
+ *   `mail_unavailable` when the message could not be sent, or status 429 when the caller has
+ *   submitted too often.
+ */
+export function subscribe(email: string, signal?: AbortSignal): Promise<SubscriptionResponse> {
+  return request<SubscriptionResponse>('/subscriptions', {
+    method: 'POST',
+    body: { email },
+    ...(signal === undefined ? {} : { signal }),
+  })
+}
+
+/**
+ * Confirm a subscription with the token from the emailed link
+ * (`POST /api/subscriptions/confirm`).
+ *
+ * @param token - The token from the link's query string.
+ * @param signal - Optional abort signal.
+ * @returns The confirmation.
+ * @throws {ApiError} With code `invalid_token` when the link has expired or is not one this
+ *   deployment issued.
+ */
+export function confirmSubscription(
+  token: string,
+  signal?: AbortSignal,
+): Promise<SubscriptionResponse> {
+  return request<SubscriptionResponse>('/subscriptions/confirm', {
+    method: 'POST',
+    body: { token },
+    ...(signal === undefined ? {} : { signal }),
+  })
+}
+
+/**
+ * End a subscription (`POST /api/subscriptions/unsubscribe`).
+ *
+ * `POST`, not `GET`, although the link in an email is an ordinary link: the page behind that
+ * link performs this request, so a mailbox provider's link scanner cannot unsubscribe a
+ * reader merely by following the URL to check it.
+ *
+ * @param token - The token from the link's query string.
+ * @param signal - Optional abort signal.
+ * @returns The acknowledgement.
+ * @throws {ApiError} With code `invalid_token` when the token does not verify.
+ */
+export function unsubscribe(token: string, signal?: AbortSignal): Promise<SubscriptionResponse> {
+  return request<SubscriptionResponse>('/subscriptions/unsubscribe', {
+    method: 'POST',
+    body: { token },
+    ...(signal === undefined ? {} : { signal }),
+  })
+}
+
+/**
+ * Ask for an unsubscribe link by email (`POST /api/subscriptions/unsubscribe-link`).
+ *
+ * The route out for a reader who no longer has one of the emails. The link goes to the
+ * address itself, so nobody can cancel somebody else's subscription, and the answer is the
+ * same whether or not the address is on the list.
+ *
+ * @param email - The address to send the link to.
+ * @param signal - Optional abort signal.
+ * @returns The acknowledgement.
+ * @throws {ApiError} As {@link subscribe}.
+ */
+export function requestUnsubscribeLink(
+  email: string,
+  signal?: AbortSignal,
+): Promise<SubscriptionResponse> {
+  return request<SubscriptionResponse>('/subscriptions/unsubscribe-link', {
+    method: 'POST',
+    body: { email },
+    ...(signal === undefined ? {} : { signal }),
+  })
 }
 
 /** The configured API base URL, exported for diagnostics and tests. */

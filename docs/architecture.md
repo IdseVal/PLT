@@ -33,8 +33,16 @@ backend/
       cases.py              /api/cases*
       reviews.py            /api/reviews* — the content manager's queue (§2.7), authenticated
       stats.py              /api/stats*
+      subscriptions.py      /api/subscriptions* — the mailing list (§8), public
       schemas.py            Request/response (de)serialisation + validation
       errors.py             Uniform error envelope
+    notifications/
+      mailer.py             Console / file / SMTP backends behind one interface
+      messages.py           Every message the tracker sends, as plain text
+      tokens.py             Purpose-bound HMAC tokens for confirm and unsubscribe
+      subscriptions.py      The subscribe / confirm / unsubscribe lifecycle
+      digest.py             The weekly send: batched, resumable, interruptible
+      reviews.py            The administrator's notice that the queue has items
     pipeline/
       runner.py             Orchestrator: run_jurisdiction(code, since=None)
       base.py               SourceConnector ABC + RawDocument/NormalisedCase dataclasses
@@ -48,6 +56,7 @@ backend/
         eurlex.py           EU
     cli.py                  `flask plt ...` / `python -m plt.cli` entry points
     utils/logging.py        Structured logging setup
+    utils/shutdown.py       StopRequest: the graceful-shutdown flag every long job uses
   tests/
     unit/  integration/  fixtures/
 frontend/
@@ -61,7 +70,7 @@ frontend/
   tests/
 data/keywords/              Curated filter lists (schema.json + one file per jurisdiction)
 docs/
-.github/workflows/          ci.yml, weekly-ingest.yml
+.github/workflows/          ci.yml, weekly-ingest.yml, weekly-digest.yml
 ```
 
 **Language and tooling:** backend Python 3.11+, fully type-annotated, `ruff` + `mypy` +
@@ -111,6 +120,7 @@ add source-specific fields to `source_metadata`.
 | `citation` | Instruments and cases cited (CELEX/ECLI) | `id`, `case_id` (FK), `target_identifier`, `citation_type` |
 | `ingest_run` | One row per pipeline execution | `id`, `jurisdiction_code`, `connector`, `started_at`, `finished_at`, `status`, `fetched_count`, `matched_count`, `inserted_count`, `updated_count`, `skipped_duplicate_count`, `error_count`, `checkpoint_before`, `checkpoint_after` |
 | `ingest_checkpoint` | Resumable position per connector | `connector` (PK), `jurisdiction_code`, `last_modified_seen`, `last_cursor`, `updated_at` |
+| `subscriber` | One address on the mailing list (§8) | `id`, `email` (**unique**), `status` (`pending`\|`confirmed`\|`unsubscribed`), `token_seed` (**unique**), `created_at`, `updated_at`, `notice_sent_at`, `confirmed_at`, `unsubscribed_at`, `last_digest_at` |
 
 **Deduplication key:** `UNIQUE (jurisdiction_code, source_id)`. On conflict, compare
 `content_hash`; identical → touch `last_seen_at` only; different → update in place and
@@ -142,6 +152,37 @@ rules the schema enforces:
 - A case that leaves the band on a later evaluation retires an *undecided* item as
   `withdrawn`; a decision that has been taken stands regardless.
 
+**`subscriber` holds personal data, and its column list is the rule.** An email address is
+personal data under the GDPR and Wageningen University is an EU institution, so the table is
+a deliberate minimum and adding to it is a decision, not a convenience:
+
+- **What is stored:** the address, the state, the timestamps that make consent auditable, and
+  the selector half of the token. **What is not:** a name, an IP address, a user agent, a
+  referrer, or any record of a message being opened or a link being followed. A digest
+  carries no tracking pixel and no rewritten links, so there is nothing of that kind to hold.
+- **`status` is the double opt-in.** A row is `pending` until its confirmation link is used,
+  and **only a `confirmed` row is ever sent a digest**. `unsubscribed` is kept rather than
+  deleted so a withdrawal is a fact on the record and a re-subscription is a state change on
+  one row; `unsubscribed_at` is what a later retention purge would work from.
+- **`token_seed` is a selector, not a token.** A link carries `<seed>.<verifier>`, where the
+  verifier is `HMAC-SHA256(key, "plt.subscription.v1:<purpose>:<seed>")` under
+  `PLT_SUBSCRIPTION_TOKEN_SECRET` (defaulting to `PLT_SECRET_KEY`), base64url and never
+  stored. A database dump therefore yields no working confirmation or unsubscribe link, the
+  purpose is inside the HMAC so one link cannot be replayed as the other, and comparison is
+  `hmac.compare_digest`. A re-subscription rotates the seed, which retires the previous
+  subscription's links.
+- **Expiry is on the row, not in the token.** `notice_sent_at` is both the confirmation
+  deadline (`PLT_SUBSCRIPTION_CONFIRM_TTL_HOURS`) and the per-address throttle
+  (`PLT_SUBSCRIPTION_NOTICE_INTERVAL_SECONDS`), so the deadline can be seen, changed and
+  audited, and a link can be retired by rotating a seed rather than by waiting for a claim to
+  lapse.
+- **`last_digest_at` is a position, not telemetry.** It holds the end of the last digest
+  window the address was sent, which is what makes an interrupted send resumable. It records
+  nothing about what the reader did.
+- **The table may never be listed.** It is read by exactly one address or one verified seed
+  at a time (see the repository helpers below), and the endpoints above it answer identically
+  whether or not a row exists.
+
 **Portability rules, fixed by the implementation of the schema:**
 
 - Timestamps use `plt.db.base.UtcDateTime`, which is `TIMESTAMP WITH TIME ZONE` on
@@ -169,6 +210,15 @@ zero-case jurisdictions retained), `list_facets`, `latest_successful_runs`, and 
 `search_reviews` / `count_reviews` (taking a `ReviewSearchCriteria`), `get_review_by_id` and
 `record_review_decision`. Clamping `page`, `page_size` and `limit` against `Settings` stays
 the caller's job.
+
+The notification layer adds `cases_first_seen` / `count_cases_first_seen` (the digest window,
+over `first_seen_at` and published cases only), `reviews_flagged_since` /
+`count_reviews_flagged_since` (the administrator's notice), and three subscriber helpers:
+`get_subscriber_by_email`, `get_subscriber_by_token_seed` and `confirmed_subscribers_after`.
+**There is deliberately no `search_subscribers` and no `count_subscribers`.** The first two
+answer a caller that already knows the address or holds a verified token; the third is
+keyset pagination for the digest send and filters to `confirmed`. Nothing in the API layer
+may list this table, and adding a helper that could is a contract change, not a refactor.
 
 ---
 
@@ -343,6 +393,10 @@ Base path `/api`. JSON only. All list endpoints paginate. Errors use one envelop
 | `GET` | `/api/health` | Liveness + last successful ingest per jurisdiction |
 | `GET` | `/api/reviews` | **Authenticated.** The review queue. Query params: `status` (repeatable, `pending` default, `any` for every status), `jurisdiction` (repeatable), `list_version`, `decided_by`, `sort` (`flagged_asc` default, `flagged_desc`, `score_asc`, `score_desc`), `page`, `page_size` |
 | `POST` | `/api/reviews/<id>/decision` | **Authenticated.** Record a confirmation or a rejection |
+| `POST` | `/api/subscriptions` | Public. Take an address and email it a confirmation link. Body `{"email": "..."}` |
+| `POST` | `/api/subscriptions/confirm` | Public. Complete the double opt-in. Body `{"token": "..."}` |
+| `POST` | `/api/subscriptions/unsubscribe` | Public. End a subscription immediately. Body `{"token": "..."}` |
+| `POST` | `/api/subscriptions/unsubscribe-link` | Public. Email an address its own unsubscribe link. Body `{"email": "..."}` |
 
 **The two review routes are not public.** They list cases a rejection has unpublished — which
 `/api/cases` reports as absent — and can unpublish more, so they require a bearer token
@@ -352,6 +406,26 @@ travels in the `Authorization` header, so the state-changing route is not reacha
 cross-site form post and needs no CSRF token of its own. The reviewer identity `decided_by`
 is an opaque string: the content manager may be a person or an agent (core document §2.7),
 and neither is assumed.
+
+**The four subscription routes are public, and every one of them is `POST`.** They are the
+only unauthenticated, state-changing, mail-sending routes in the API, and three rules bind
+them:
+
+- **An address never appears in a URL.** It travels in a JSON body, so it does not reach the
+  browser history, an access log or a `Referer` header. There is no `GET` on any of them, and
+  no route takes an address as a path or query parameter.
+- **Subscribe and unsubscribe-link never vary their answer.** Both return `202` with one
+  fixed body whatever the server found — unknown address, pending, confirmed, previously
+  unsubscribed, or throttled out of a message entirely. A response that varied would be an
+  address-checking oracle for anyone with a word list. `confirm` and `unsubscribe` *do*
+  report success or failure, because the caller holds a token only the address itself could
+  have received, and what they report is about the token: a forged token, an expired one and
+  one whose subscription has since gone are all `400 invalid_token`, and the token is never
+  echoed back into the message.
+- **Unsubscribe is `POST` on purpose.** The link in an email points at the site's
+  `/unsubscribe` page, which posts the token, so a mailbox provider's link scanner following
+  the URL cannot cancel a subscription; `List-Unsubscribe-Post` (RFC 8058) still lets a mail
+  client do it in one click.
 
 ### 5.1 Response shapes
 
@@ -458,6 +532,26 @@ that produced them. Nothing is recomputed; it is what the run recorded.
 `decided_by` are required; `note` is optional. `decided_by` is bounded at 255 characters and
 `note` at 4000, and neither may contain control characters.
 
+**The subscription routes** answer one shape, `{"status": ..., "message": ...}`, and nothing
+else. There is no subscriber object on the wire in either direction, because there is no
+endpoint that reads one out.
+
+```json
+{ "status": "accepted", "message": "If that address needs an email from us, one is on its way. …" }
+```
+
+| Route | Status | `status` | What it means |
+| --- | --- | --- | --- |
+| `POST /api/subscriptions` | `202` | `accepted` | The request was taken. **Nothing more**: this is the same body whether the address was unknown, pending, confirmed, previously unsubscribed, or throttled |
+| `POST /api/subscriptions/unsubscribe-link` | `202` | `accepted` | The same body, and the same silence about what was found |
+| `POST /api/subscriptions/confirm` | `200` | `confirmed` | The address is on the list. Idempotent: a second use of the link answers identically |
+| `POST /api/subscriptions/unsubscribe` | `200` | `unsubscribed` | The address is off the list. Idempotent, and a verified token whose row has gone also reports success |
+
+`message` is written for a reader and is what the page shows, so it may be reworded; `status`
+is the contract. A malformed address is `400 validation_error`, a token that does not verify
+(for any reason) is `400 invalid_token`, and a mail backend that could not accept the message
+is `503 mail_unavailable` — never with the backend's own error text, which names the server.
+
 **`/api/stats/jurisdictions`** — a bare array, one entry per jurisdiction, ordered by code,
 **including jurisdictions whose `case_count` is `0`** so the map renders intended coverage
 in its muted state rather than dropping the shape:
@@ -505,17 +599,41 @@ The review routes add `401 unauthorized` for a missing or wrong bearer token and
 `503 review_queue_disabled` when none is configured; a rejected token is logged without its
 value.
 
+The subscription routes carry the strictest limits in the API, because they are
+unauthenticated and send email: `PLT_RATE_LIMIT_SUBSCRIBE` (default `5 per hour`) on the two
+that mail an address a caller supplied, and `PLT_RATE_LIMIT_SUBSCRIPTION_TOKEN` (default
+`30 per hour`) on confirm and unsubscribe. **The per-client limit is not the whole defence**:
+`PLT_SUBSCRIPTION_NOTICE_INTERVAL_SECONDS` caps how often any one *address* can be written
+to, whatever the source of the requests, which is what makes the form useless as a way of
+bombarding a third party.
+
+**No subscriber address is logged**, at any level, and neither is a token: the routes log an
+outcome and an internal id. The `console` mail backend is the one deliberate exception — it
+renders whole messages to the log so a developer can follow a confirmation link locally, and
+it is refused in production for exactly that reason (§8). The subscription routes need no
+CSRF token: they carry no session, cookie or credential a browser would attach on a caller's
+behalf, and each requires a JSON body, which an HTML form cannot send and a cross-origin
+`fetch` can only send after a preflight the CORS policy refuses.
+
 ---
 
 ## 6. Frontend contract
 
 - **Routes:** `/` (home), `/cases` (all cases), `/cases/:jurisdiction/:sourceId` (detail),
-  `/about`, `/methodology`, `/faq`, `/contact`.
+  `/about`, `/methodology`, `/faq`, `/contact`, plus the two mailing-list routes
+  `/subscribe/confirm` and `/unsubscribe`, which are reached from an emailed link or from the
+  front-page form and are **not** in the site menu.
 - **Header** on every route: branding + menu *About Wageningen Law*, *Methodology*, *FAQ*,
   *Contact*.
 - **Home:** title "Pesticide Litigation Tracker (PLT)"; search bar directly beneath it; map
   below the search bar; right-hand sidebar with the 20 latest cases and a button to
-  `/cases`.
+  `/cases`. The email-alert signup is the only addition to that composition and sits **at the
+  end of the right-hand column, below the sidebar's button**, so none of the four fixed
+  elements moves.
+- **`/unsubscribe`** works two ways: with the `token` from an email it cancels on load, with
+  no button and no login, posting the token rather than following a link; without one it
+  offers to email the link to an address, which is the only way to reach the flow from the
+  site without either a login or an open invitation to cancel somebody else's subscription.
 - **Map:** Europe, one hoverable shape per jurisdiction, tooltip showing the case count from
   `/api/stats/jurisdictions`. An **EU logo positioned in the North Sea** is hoverable on the
   same footing and links through to `/cases?jurisdiction=EU`. Jurisdictions with no data
@@ -546,3 +664,46 @@ stored checkpoint supply the window. Implemented as a GitHub Actions workflow
 (`.github/workflows/weekly-ingest.yml`) with `workflow_dispatch` for manual runs, and as a
 CLI command so a server cron can call the identical path. A failed run must not advance the
 checkpoint.
+
+A second weekly job sends the subscriber digest (`.github/workflows/weekly-digest.yml`,
+`plt digest`). It is triggered by the *completion of the scheduled ingest* rather than by a
+clock of its own, so it announces the cases that scan just landed; a dispatched ingest, which
+defaults to a dry run, does not trigger it. Runs cannot overlap, and the workflow pins
+`--until` to the top of the hour so that repeating a failed send covers the same window and
+therefore reaches only the recipients it missed.
+
+---
+
+## 8. Notifications
+
+Two audiences, deliberately kept apart, and the constraints on each are contracts rather than
+implementation choices.
+
+**Readers** subscribe to the weekly digest from the front page. `subscriber` (§3) holds the
+list; the endpoints are in §5; the sending is `plt.notifications`. Five rules:
+
+1. **Double opt-in.** A submitted address is `pending` and receives exactly one message, its
+   own confirmation request. It is sent no digest until the link is used.
+2. **Unsubscribe needs no account.** A purpose-bound HMAC token in the link is the whole
+   authorisation, it appears in the body *and* in `List-Unsubscribe` of every message the
+   list sends, and it is honoured immediately.
+3. **The minimum is stored, and no behaviour is recorded.** Plain-text messages only, so no
+   tracking pixel; no link is rewritten through a redirector; one recipient per message, so a
+   digest cannot disclose the list.
+4. **Nothing may enumerate the list**, in the API (§5) or in the repository layer (§3).
+5. **The abuse surface is bounded twice**: per client by the rate limit, per address by the
+   notice interval (§5.2).
+
+**The administrator** is told when the review queue gains items, at `PLT_ADMIN_EMAIL`. One
+message per scan, not one per case; the flags themselves stay off every public endpoint, so
+this notification is what makes core document §2.7's review possible at all. Unset means no
+notification, and the queue is unaffected either way. When the quarantine record of core
+document §2.11 exists it belongs in the same message, for the same reason.
+
+**Sending** goes through one interface with three backends, chosen by `PLT_MAIL_BACKEND`:
+`console` (the default; renders to the log, opens no socket), `file` (writes `.eml` files),
+and `smtp` (the standard library's `smtplib`, TLS verified). **A development checkout cannot
+mail a real address**, production refuses the `console` backend, and there is no third-party
+email service: a handful of plain-text messages a week from a university mail server is what
+SMTP is for, and a vendor would add a data processor to a system holding personal data for no
+capability in return.

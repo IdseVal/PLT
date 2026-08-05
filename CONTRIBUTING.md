@@ -224,6 +224,54 @@ unit's environment file (mode `0600`, never in the repository), and leave the po
 settings alone — `PLT_HTTP_REQUESTS_PER_SECOND` and the backoff are what keep the project
 welcome at a public court endpoint.
 
+## 5a. The mailing list and the digest
+
+The subscriber alert (`docs/architecture.md` §8) is `plt digest`, and the same
+trigger-not-a-second-implementation rule applies: the scheduled workflow, a server cron and
+your terminal all call the one command.
+
+**A checkout cannot email a real person.** `PLT_MAIL_BACKEND` defaults to `console`, which
+renders each message to the log and opens no socket. Set it to `file` when you want to read
+what a subscriber would receive:
+
+```bash
+cd backend
+PLT_MAIL_BACKEND=file PLT_MAIL_OUTBOX_DIR=./outbox flask --app plt.app run
+# subscribe on http://localhost:5173, then open the .eml the outbox now holds and
+# follow the confirmation link in it.
+python -m plt.cli digest --dry-run          # render every message, send none
+python -m plt.cli digest                    # the real send, through the configured backend
+```
+
+Only `PLT_MAIL_BACKEND=smtp` reaches a mail server, and it needs `PLT_SMTP_HOST` before the
+settings will validate. Production refuses the `console` backend outright: a confirmation
+written to the log there is a subscriber left waiting for an email that was never sent.
+
+Two things to know before touching this code:
+
+- **The window identifies a send.** `plt digest --until` pins it; repeating a run with the
+  same window reaches only the recipients the previous attempt did not, which is how you
+  resume an interrupted digest. Re-running without `--until` opens a *new* window, and a case
+  still inside it is announced again.
+- **Nothing may report who is on the list.** The subscribe endpoints answer identically
+  whatever they found, no repository helper lists the table, and no subscriber address is
+  logged at any level. If a change would make a known address distinguishable from an unknown
+  one — in a status code, a body, an error, or a log line — it is a contract change and needs
+  `docs/architecture.md` §3 and §5 updated with it.
+
+The scheduled send is [`.github/workflows/weekly-digest.yml`](.github/workflows/weekly-digest.yml),
+triggered by the *completion of the scheduled ingest* so it announces the cases that scan
+just landed. Beyond `PLT_DATABASE_URL` it needs the mail secrets to send anything live:
+
+| Secret | Purpose |
+| --- | --- |
+| `PLT_SMTP_HOST`, `PLT_SMTP_USERNAME`, `PLT_SMTP_PASSWORD` | The mail server. Without the host the job runs the console backend, and a *live* run refuses to start. |
+| `PLT_SUBSCRIPTION_TOKEN_SECRET` | Key the confirm and unsubscribe tokens are derived from. Rotating it invalidates every link already sent. |
+
+`PLT_SITE_BASE_URL`, `PLT_MAIL_FROM` and `PLT_SMTP_PORT` are repository *variables*, not
+secrets. `PLT_ADMIN_EMAIL` belongs wherever `plt ingest` runs: it is the address the review
+queue's notice goes to, and unset means no notice is sent.
+
 ## 6. Conventions
 
 **Python.** Full type annotations, complete docstrings, `ruff` and `mypy` clean. Long loops

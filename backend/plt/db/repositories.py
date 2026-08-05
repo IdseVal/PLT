@@ -40,6 +40,8 @@ from plt.db.models import (
     LawDomain,
     ReviewDecision,
     ReviewStatus,
+    Subscriber,
+    SubscriberStatus,
     Topic,
 )
 
@@ -58,18 +60,25 @@ __all__ = [
     "ReviewPage",
     "ReviewSearchCriteria",
     "ReviewSort",
+    "cases_first_seen",
+    "confirmed_subscribers_after",
     "count_cases",
+    "count_cases_first_seen",
     "count_reviews",
+    "count_reviews_flagged_since",
     "get_case_by_id",
     "get_case_by_source_id",
     "get_case_fingerprint",
     "get_review_by_id",
+    "get_subscriber_by_email",
+    "get_subscriber_by_token_seed",
     "jurisdiction_stats",
     "latest_cases",
     "latest_successful_runs",
     "like_pattern",
     "list_facets",
     "record_review_decision",
+    "reviews_flagged_since",
     "search_cases",
     "search_reviews",
     "stream_cases",
@@ -903,3 +912,203 @@ def latest_successful_runs(session: Session) -> tuple[IngestRunSummary, ...]:
         )
         for run in session.scalars(stmt)
     )
+
+
+def cases_first_seen(
+    session: Session,
+    *,
+    since: datetime,
+    until: datetime,
+    limit: int,
+) -> tuple[Case, ...]:
+    """Return the published cases the tracker first saw inside a window.
+
+    This is what a digest lists: cases *new to the tracker*, not cases decided recently. A
+    judgment handed down in 2019 that the pipeline reached this week is news to a subscriber,
+    and one delivered yesterday that the tracker has held for a month is not.
+
+    Args:
+        session: Open database session.
+        since: Inclusive lower bound on ``first_seen_at``.
+        until: Exclusive upper bound.
+        limit: Most rows to return. The caller bounds it from configuration.
+
+    Returns:
+        Up to ``limit`` cases, newest decision first, with their court loaded so rendering a
+        listing costs no further query.
+
+    Raises:
+        ValueError: If ``limit`` is below 1.
+    """
+    if limit < 1:
+        message = f"limit must be 1 or greater, got {limit}"
+        raise ValueError(message)
+    stmt = (
+        select(Case)
+        .options(selectinload(Case.court))
+        .where(
+            Case.is_published.is_(True),
+            Case.first_seen_at >= since,
+            Case.first_seen_at < until,
+        )
+        .order_by(Case.decision_date.desc().nullslast(), Case.id.desc())
+        .limit(limit)
+    )
+    return tuple(session.scalars(stmt).all())
+
+
+def count_cases_first_seen(session: Session, *, since: datetime, until: datetime) -> int:
+    """Count the published cases first seen inside a window.
+
+    Args:
+        session: Open database session.
+        since: Inclusive lower bound on ``first_seen_at``.
+        until: Exclusive upper bound.
+
+    Returns:
+        The number of cases, which may exceed what :func:`cases_first_seen` returns.
+    """
+    stmt = (
+        select(func.count())
+        .select_from(Case)
+        .where(
+            Case.is_published.is_(True),
+            Case.first_seen_at >= since,
+            Case.first_seen_at < until,
+        )
+    )
+    return int(session.scalar(stmt) or 0)
+
+
+def reviews_flagged_since(
+    session: Session,
+    *,
+    since: datetime,
+    limit: int,
+) -> tuple[CaseReview, ...]:
+    """Return review items flagged at or after an instant and still awaiting a verdict.
+
+    Feeds the administrator's notification (core document section 2.7). Only ``pending`` items
+    are reported: an item a content manager has already decided on is not news, and one that
+    was withdrawn needs nobody's attention.
+
+    Args:
+        session: Open database session.
+        since: Inclusive lower bound on ``flagged_at``.
+        limit: Most rows to return. The caller bounds it from configuration.
+
+    Returns:
+        Up to ``limit`` items, oldest flag first, with their case and court loaded.
+
+    Raises:
+        ValueError: If ``limit`` is below 1.
+    """
+    if limit < 1:
+        message = f"limit must be 1 or greater, got {limit}"
+        raise ValueError(message)
+    stmt = (
+        select(CaseReview)
+        .options(selectinload(CaseReview.case).selectinload(Case.court))
+        .where(CaseReview.status == ReviewStatus.PENDING, CaseReview.flagged_at >= since)
+        .order_by(CaseReview.flagged_at, CaseReview.id)
+        .limit(limit)
+    )
+    return tuple(session.scalars(stmt).all())
+
+
+def count_reviews_flagged_since(session: Session, *, since: datetime) -> int:
+    """Count the pending review items flagged at or after an instant.
+
+    Args:
+        session: Open database session.
+        since: Inclusive lower bound on ``flagged_at``.
+
+    Returns:
+        The number of items, which may exceed what :func:`reviews_flagged_since` returns.
+    """
+    stmt = (
+        select(func.count())
+        .select_from(CaseReview)
+        .where(CaseReview.status == ReviewStatus.PENDING, CaseReview.flagged_at >= since)
+    )
+    return int(session.scalar(stmt) or 0)
+
+
+def get_subscriber_by_email(session: Session, email: str) -> Subscriber | None:
+    """Look one address up.
+
+    The **only** way this table is read by address, and it answers a caller that already knows
+    the address it is asking about. Nothing here lists the table, and the callers are written
+    so that a hit and a miss are indistinguishable from outside: an endpoint that behaved
+    differently for a known address would be an address-checking oracle.
+
+    Args:
+        session: Open database session.
+        email: The address, already normalised to lower case by the API layer.
+
+    Returns:
+        The row, or ``None``.
+    """
+    return session.scalars(select(Subscriber).where(Subscriber.email == email)).one_or_none()
+
+
+def get_subscriber_by_token_seed(session: Session, seed: str) -> Subscriber | None:
+    """Look a subscriber up by the selector half of a token.
+
+    Called only after :func:`plt.notifications.tokens.verify_token` has accepted the token, so
+    an unauthenticated caller cannot reach this with a seed of their own choosing.
+
+    Args:
+        session: Open database session.
+        seed: The verified selector.
+
+    Returns:
+        The row, or ``None`` when the subscription has since been removed.
+    """
+    return session.scalars(select(Subscriber).where(Subscriber.token_seed == seed)).one_or_none()
+
+
+def confirmed_subscribers_after(
+    session: Session,
+    *,
+    after_id: int,
+    limit: int,
+    not_sent_since: datetime | None = None,
+) -> tuple[Subscriber, ...]:
+    """Return one batch of confirmed subscribers, for the digest send.
+
+    Keyset pagination on the primary key rather than ``OFFSET``: the send commits after every
+    batch, so an offset would shift under a row that changed in the meantime. Combined with
+    ``not_sent_since`` it is what makes an interrupted digest resumable — a re-run skips the
+    recipients the previous attempt already served, and nobody is sent the same digest twice.
+
+    Args:
+        session: Open database session.
+        after_id: Exclusive lower bound on the primary key; ``0`` starts at the beginning.
+        limit: Batch size.
+        not_sent_since: When given, only subscribers whose ``last_digest_at`` is unset or
+            older than this instant.
+
+    Returns:
+        Up to ``limit`` confirmed subscribers, in primary-key order.
+
+    Raises:
+        ValueError: If ``limit`` is below 1.
+    """
+    if limit < 1:
+        message = f"limit must be 1 or greater, got {limit}"
+        raise ValueError(message)
+    stmt = (
+        select(Subscriber)
+        .where(Subscriber.status == SubscriberStatus.CONFIRMED, Subscriber.id > after_id)
+        .order_by(Subscriber.id)
+        .limit(limit)
+    )
+    if not_sent_since is not None:
+        stmt = stmt.where(
+            or_(
+                Subscriber.last_digest_at.is_(None),
+                Subscriber.last_digest_at < not_sent_since,
+            )
+        )
+    return tuple(session.scalars(stmt).all())

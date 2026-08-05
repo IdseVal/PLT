@@ -6,6 +6,11 @@
  * and a right-hand sidebar of the twenty most recent cases with a button through to the
  * all-cases page.
  *
+ * The email-alert signup is the one addition, and it is placed *after* all four so none of
+ * them moves: it is the last thing in the right-hand column, under the sidebar's "All cases"
+ * button, where it reads as the email version of the feed above it rather than as a banner
+ * competing with the search bar.
+ *
  * On narrow viewports the two-column grid collapses to one column, so the sidebar moves
  * below the main column rather than disappearing. It follows the map in the document, so
  * reading order and visual order agree at every width.
@@ -18,6 +23,7 @@
 import JurisdictionMap from '@/components/JurisdictionMap'
 import LatestCasesSidebar from '@/components/LatestCasesSidebar'
 import SearchBar from '@/components/SearchBar'
+import SubscribeForm from '@/components/SubscribeForm'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 
 export default function Home(): JSX.Element {
@@ -38,7 +44,10 @@ export default function Home(): JSX.Element {
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <JurisdictionMap className="min-h-[22rem]" />
-        <LatestCasesSidebar />
+        <div className="space-y-8">
+          <LatestCasesSidebar />
+          <SubscribeForm />
+        </div>
       </div>
     </div>
   )

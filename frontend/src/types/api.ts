@@ -48,6 +48,19 @@ export interface HealthResponse {
 export type CaseSort = 'date_desc' | 'date_asc' | 'relevance'
 
 /**
+ * Answer of every `/api/subscriptions` route (`docs/architecture.md` section 5.1).
+ *
+ * `accepted` is the *only* thing `POST /api/subscriptions` and
+ * `POST /api/subscriptions/unsubscribe-link` ever report, whatever the server found: an
+ * answer that varied with the state of an address would let anyone test addresses against
+ * the tracker. `message` is written for a reader and is what the form shows.
+ */
+export interface SubscriptionResponse {
+  status: 'accepted' | 'confirmed' | 'unsubscribed'
+  message: string
+}
+
+/**
  * Case-law payloads, as `docs/architecture.md` section 5.1 fixes them.
  *
  * Section 5.1 is the authority for every field below: names, nesting and nullability. Two

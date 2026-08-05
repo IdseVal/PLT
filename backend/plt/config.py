@@ -24,6 +24,7 @@ __all__ = [
     "AppEnv",
     "EurLexDiscoveryDate",
     "LogFormat",
+    "MailBackend",
     "Settings",
     "get_settings",
 ]
@@ -51,6 +52,24 @@ class LogFormat(StrEnum):
 
     JSON = "json"
     TEXT = "text"
+
+
+class MailBackend(StrEnum):
+    """How outbound mail leaves the process.
+
+    ``console`` and ``file`` never open a network connection: the first renders a message to
+    the log, the second writes it to a ``.eml`` file. Both exist so the whole subscription
+    flow — confirmation, digest, unsubscribe — can be exercised in development without a
+    single real address receiving anything. ``console`` is the default, so sending real mail
+    is always a deliberate configuration change rather than something a checkout does on its
+    own.
+
+    ``smtp`` is the real path, and the only one that talks to a mail server.
+    """
+
+    CONSOLE = "console"
+    FILE = "file"
+    SMTP = "smtp"
 
 
 class EurLexDiscoveryDate(StrEnum):
@@ -180,6 +199,130 @@ class Settings(BaseSettings):
     review_page_size_default: Annotated[int, Field(ge=1, le=1000)] = Field(
         default=20,
         description="Default page size for the review queue listing.",
+    )
+
+    # -- Public site ----------------------------------------------------------------
+    site_base_url: str = Field(
+        default="http://localhost:5173",
+        description=(
+            "Origin the public site is served from. Every link the tracker puts in an "
+            "email - confirmation, unsubscribe, a case page - is built from it, so it must "
+            "be the address a reader can actually reach."
+        ),
+    )
+
+    # -- Mail -----------------------------------------------------------------------
+    mail_backend: MailBackend = Field(
+        default=MailBackend.CONSOLE,
+        description=(
+            "console | file | smtp. The first two never send real mail and are what "
+            "development uses; smtp is the deliberate, configured path."
+        ),
+    )
+    mail_from: str = Field(
+        default="Pesticide Litigation Tracker <plt@wur.nl>",
+        description="From address on every message the tracker sends.",
+    )
+    mail_reply_to: str | None = Field(
+        default=None,
+        description="Optional Reply-To, when replies should reach a different mailbox.",
+    )
+    mail_outbox_dir: Path = Field(
+        default=_REPO_ROOT / "outbox",
+        description="Directory the file backend writes .eml files to. Git-ignored.",
+    )
+    admin_email: str | None = Field(
+        default=None,
+        description=(
+            "Address the review-queue notification is sent to (core document 2.7). Unset - "
+            "the default - sends no notification; the queue itself is unaffected."
+        ),
+    )
+    smtp_host: str | None = Field(
+        default=None,
+        description="SMTP server host. Required when mail_backend is smtp.",
+    )
+    smtp_port: Annotated[int, Field(ge=1, le=65535)] = Field(
+        default=587,
+        description="SMTP server port. 587 for STARTTLS submission, 465 for implicit TLS.",
+    )
+    smtp_username: str | None = Field(
+        default=None,
+        description="SMTP username. Omit for a relay that authenticates by network.",
+    )
+    smtp_password: SecretStr | None = Field(
+        default=None,
+        description="SMTP password. Supply through the deployment secret store, never a file.",
+    )
+    smtp_starttls: bool = Field(
+        default=True,
+        description="Upgrade the connection with STARTTLS. Leave on for port 587.",
+    )
+    smtp_ssl: bool = Field(
+        default=False,
+        description="Connect with implicit TLS instead of STARTTLS. Use for port 465.",
+    )
+    smtp_timeout_seconds: Annotated[float, Field(gt=0, le=300)] = Field(
+        default=30.0,
+        description="Socket timeout for the SMTP conversation.",
+    )
+    admin_notice_max_items: Annotated[int, Field(ge=1, le=1000)] = Field(
+        default=50,
+        description=(
+            "Most review items listed in one admin notification. A larger batch is reported "
+            "as a count, so an unusually long queue still produces a readable message."
+        ),
+    )
+
+    # -- Mailing list ---------------------------------------------------------------
+    subscription_token_secret: SecretStr | None = Field(
+        default=None,
+        description=(
+            "Key the confirmation and unsubscribe tokens are derived from with HMAC-SHA256. "
+            "Defaults to secret_key. Rotating it invalidates every outstanding link, so "
+            "rotate it only deliberately."
+        ),
+    )
+    subscription_confirm_ttl_hours: Annotated[int, Field(ge=1, le=8760)] = Field(
+        default=72,
+        description=(
+            "How long a confirmation link stays usable. An address that never confirms is "
+            "never mailed a digest and its row can be purged."
+        ),
+    )
+    subscription_notice_interval_seconds: Annotated[int, Field(ge=0, le=86400)] = Field(
+        default=3600,
+        description=(
+            "Shortest interval between two transactional messages to the same address. This "
+            "is what stops the public subscribe endpoint being used to mail-bomb a third "
+            "party: the second submission inside the window sends nothing."
+        ),
+    )
+    rate_limit_subscribe: str = Field(
+        default="5 per hour",
+        description=(
+            "Rate limit on the endpoints that send mail to an address a caller supplied. "
+            "Unauthenticated and email-sending, so it is far stricter than the default."
+        ),
+    )
+    rate_limit_subscription_token: str = Field(
+        default="30 per hour",
+        description="Rate limit on the confirm and unsubscribe endpoints, which send no mail.",
+    )
+    digest_period_days: Annotated[int, Field(ge=1, le=365)] = Field(
+        default=7,
+        description="Width of the digest window when --since is not given. Weekly by default.",
+    )
+    digest_max_cases: Annotated[int, Field(ge=1, le=1000)] = Field(
+        default=50,
+        description=(
+            "Most cases listed in one digest. A larger week is reported as a count with a "
+            "link to the collection rather than as an unreadable message."
+        ),
+    )
+    digest_batch_size: Annotated[int, Field(ge=1, le=1000)] = Field(
+        default=50,
+        description="Recipients per committed batch, so an interrupted send resumes cleanly.",
     )
 
     # -- Outbound HTTP (source connectors) ------------------------------------------
@@ -401,6 +544,56 @@ class Settings(BaseSettings):
             raise ValueError(message)
         return value.rstrip("/") or "/"
 
+    @field_validator("site_base_url")
+    @classmethod
+    def _validate_site_base_url(cls, value: str) -> str:
+        """Require an absolute http(s) origin and drop any trailing slash.
+
+        Args:
+            value: The configured value.
+
+        Returns:
+            The origin without a trailing slash, so paths concatenate onto it.
+
+        Raises:
+            ValueError: If the value is not an absolute ``http``/``https`` URL. A relative
+                value would produce a link that only works inside the site, and the links
+                built from it are read in a mail client.
+        """
+        candidate = value.strip()
+        if not candidate.startswith(("http://", "https://")):
+            message = f"site_base_url must be an absolute http(s) URL, got {value!r}"
+            raise ValueError(message)
+        return candidate.rstrip("/")
+
+    @model_validator(mode="after")
+    def _check_mail(self) -> Settings:
+        """Refuse a mail configuration that could not deliver, or that leaks in production.
+
+        Returns:
+            The validated settings.
+
+        Raises:
+            ValueError: If the SMTP backend has no host, if both TLS modes are demanded at
+                once, or if a production deployment leaves the backend on ``console`` —
+                where a confirmation message would go to the process log and the reader
+                would wait for an email that was never sent.
+        """
+        if self.mail_backend is MailBackend.SMTP and not (self.smtp_host or "").strip():
+            message = "PLT_SMTP_HOST is required when PLT_MAIL_BACKEND=smtp"
+            raise ValueError(message)
+        if self.smtp_ssl and self.smtp_starttls:
+            message = "PLT_SMTP_SSL and PLT_SMTP_STARTTLS are alternatives; enable one"
+            raise ValueError(message)
+        if self.app_env is AppEnv.PRODUCTION and self.mail_backend is MailBackend.CONSOLE:
+            message = (
+                "PLT_MAIL_BACKEND=console writes messages to the log instead of sending them, "
+                "which in production means a subscriber never receives the confirmation their "
+                "subscription depends on; set smtp, or file for a relay that collects them"
+            )
+            raise ValueError(message)
+        return self
+
     @model_validator(mode="after")
     def _check_bounds(self) -> Settings:
         """Keep the default page size within its own maximum."""
@@ -437,6 +630,32 @@ class Settings(BaseSettings):
     def is_testing(self) -> bool:
         """Return whether the process runs under the test environment."""
         return self.app_env is AppEnv.TESTING
+
+    @property
+    def token_secret(self) -> bytes:
+        """Return the key subscription tokens are derived from.
+
+        Falls back to :attr:`secret_key` so a deployment has one secret to manage rather than
+        two, while leaving room to rotate the mailing-list tokens on their own — rotating
+        ``secret_key`` alone would otherwise silently break every unsubscribe link that has
+        already been sent out.
+
+        Returns:
+            The key as bytes, ready for :func:`hmac.new`.
+        """
+        secret = self.subscription_token_secret or self.secret_key
+        return secret.get_secret_value().encode("utf-8")
+
+    def site_url(self, path: str = "/") -> str:
+        """Build an absolute URL into the public site.
+
+        Args:
+            path: Rooted path, e.g. ``/unsubscribe``.
+
+        Returns:
+            The absolute URL a reader can open from a mail client.
+        """
+        return f"{self.site_base_url}{path if path.startswith('/') else f'/{path}'}"
 
     def keyword_list_path(self, jurisdiction_code: str) -> Path:
         """Return the keyword list path for a jurisdiction code.

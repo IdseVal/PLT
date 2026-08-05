@@ -25,6 +25,7 @@ from plt.api.cases import cases_bp
 from plt.api.reviews import reviews_bp
 from plt.api.schemas import health_ingest_payload
 from plt.api.stats import filters_bp, stats_bp
+from plt.api.subscriptions import subscriptions_bp
 from plt.config import Settings
 from plt.db.repositories import latest_successful_runs
 from plt.extensions import db_session
@@ -79,3 +80,4 @@ def register_blueprints(app: Flask, settings: Settings) -> None:
     app.register_blueprint(cases_bp, url_prefix=f"{prefix}/cases")
     app.register_blueprint(reviews_bp, url_prefix=f"{prefix}/reviews")
     app.register_blueprint(stats_bp, url_prefix=f"{prefix}/stats")
+    app.register_blueprint(subscriptions_bp, url_prefix=f"{prefix}/subscriptions")
