@@ -6,11 +6,12 @@ Two equivalent routes into the same commands, per ``docs/architecture.md`` secti
 * ``python -m plt.cli <command>`` / ``plt <command>`` - the same group standalone, so a
   server cron can call the identical code path as the scheduled workflow.
 
-Four commands live here. ``plt ingest`` scans a jurisdiction, ``plt digest`` sends the weekly
-mailing-list digest, ``plt purge-subscribers`` applies whatever retention rules a deployment
-has configured for that list, and ``plt seed-vocabularies`` refreshes the court tables. All
-of them are what the scheduled workflows call, so anything reproducible in a terminal is what
-runs unattended.
+Five commands live here. ``plt ingest`` scans a jurisdiction, ``plt mirror`` copies a
+jurisdiction's corpus to disk verbatim so a selection experiment can be repeated over an
+identical corpus, ``plt digest`` sends the weekly mailing-list digest,
+``plt purge-subscribers`` applies whatever retention rules a deployment has configured for
+that list, and ``plt seed-vocabularies`` refreshes the court tables. All of them are what the
+scheduled workflows call, so anything reproducible in a terminal is what runs unattended.
 
 ``plt ingest`` is that path. It is a thin shell around
 :func:`plt.pipeline.runner.run_jurisdiction`: parse the window, pick the jurisdictions, print
@@ -34,9 +35,10 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 import click
 from sqlalchemy.orm import Session, sessionmaker
@@ -49,6 +51,7 @@ from plt.notifications.mailer import MailError, build_mailer
 from plt.notifications.retention import run_purge
 from plt.notifications.reviews import notify_new_reviews
 from plt.pipeline.base import PipelineError
+from plt.pipeline.mirror import MirrorReport, mirror_jurisdiction
 from plt.pipeline.persistence import resolve_court
 from plt.pipeline.registry import available_jurisdictions, connector_classes, connector_for
 from plt.pipeline.runner import IngestReport, run_jurisdiction
@@ -253,6 +256,100 @@ def _notify_reviews(reports: list[IngestReport], settings: Settings) -> None:
         mailer.close()
     if flagged:
         click.echo(f"  review queue: {flagged} new item(s); notice sent to the configured admin")
+
+
+@plt_cli.command(name="mirror")
+@click.option(
+    "--jurisdiction",
+    "-j",
+    "jurisdictions",
+    multiple=True,
+    metavar="CODE",
+    help="Jurisdiction to mirror, e.g. EU. Repeat for several.",
+)
+@click.option(
+    "--all",
+    "every_jurisdiction",
+    is_flag=True,
+    help="Mirror every jurisdiction a connector exists for.",
+)
+@click.option(
+    "--since",
+    metavar="TIMESTAMP",
+    callback=_parse_timestamp,
+    default=None,
+    help="Start of the window, ISO 8601 UTC. Defaults to the store's own checkpoint, which "
+    "is what makes an interrupted capture resume rather than start over.",
+)
+@click.option(
+    "--until",
+    metavar="TIMESTAMP",
+    callback=_parse_timestamp,
+    default=None,
+    help="End of the window, ISO 8601 UTC. Pin it for a capture that will take days: it is "
+    "what gives the corpus a stated edge, and it is recorded in the manifest as such.",
+)
+@click.option(
+    "--store",
+    "store_root",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=None,
+    help="Root of the case-law store. Defaults to PLT_CORPUS_STORE_DIR.",
+)
+@click.option(
+    "--limit",
+    type=click.IntRange(1),
+    default=None,
+    help="Stop after this many cases have been fetched. For rehearsing a capture.",
+)
+@click.option(
+    "--fail-on-partial",
+    is_flag=True,
+    help="Exit 3 when a run completed but cases failed, so an unattended job goes red "
+    "instead of reporting success over a window that stopped advancing.",
+)
+def mirror(
+    jurisdictions: tuple[str, ...],
+    every_jurisdiction: bool,
+    since: datetime | None,
+    until: datetime | None,
+    store_root: Path | None,
+    limit: int | None,
+    fail_on_partial: bool,
+) -> None:
+    """Mirror a jurisdiction's corpus to disk, verbatim, resuming where the last run stopped.
+
+    This is not an ingestion: nothing is filtered, classified or written to the database. It
+    stores what the source served, so that a selection experiment can be re-run over an
+    identical corpus and two keyword lists compared on their merits rather than on the day
+    they happened to run (core document 2.8).
+
+    A case already on disk costs no request, so an interrupted capture is resumed by running
+    the same command again. ``Ctrl+C`` finishes the case in flight, writes the position and
+    exits 130.
+
+    Raises:
+        click.UsageError: If no jurisdiction was named.
+        click.ClickException: If any run failed; the message names the jurisdictions.
+    """
+    settings = get_settings()
+    codes = _selected_jurisdictions(jurisdictions, every_jurisdiction=every_jurisdiction)
+    reports: list[MirrorReport] = []
+    for code in codes:
+        report = mirror_jurisdiction(
+            code,
+            since,
+            until,
+            settings=settings,
+            store_root=store_root,
+            limit=limit,
+        )
+        reports.append(report)
+        click.echo(report.summary())
+        if report.status is IngestStatus.INTERRUPTED:
+            # Do not start the next jurisdiction after Ctrl+C.
+            break
+    _exit_for(reports, strict=fail_on_partial)
 
 
 @plt_cli.command(name="digest")
@@ -473,14 +570,47 @@ def _selected_jurisdictions(
     return tuple(code.strip().upper() for code in jurisdictions)
 
 
-def _exit_for(reports: list[IngestReport], *, strict: bool = False) -> None:
+class _Counted(Protocol):
+    """The one counter the exit-code policy reads off a run."""
+
+    @property
+    def errors(self) -> int:
+        """Return how many documents or cases failed."""
+
+
+class _RunOutcome(Protocol):
+    """What :func:`_exit_for` needs of a run, whichever command produced it.
+
+    Structural rather than nominal on purpose: ``plt ingest`` and ``plt mirror`` are different
+    jobs over different stores, but "failed outranks interrupted outranks partial" is one
+    policy and a scheduler reads it from one place.
+    """
+
+    @property
+    def status(self) -> IngestStatus:
+        """Return the run's terminal state."""
+
+    @property
+    def jurisdiction_code(self) -> str:
+        """Return the jurisdiction the run covered."""
+
+    @property
+    def error_message(self) -> str | None:
+        """Return why the run failed, when it did."""
+
+    @property
+    def counters(self) -> _Counted:
+        """Return what the run did, counted."""
+
+
+def _exit_for(reports: Sequence[_RunOutcome], *, strict: bool = False) -> None:
     """Translate the runs' outcomes into an exit code.
 
     The order is deliberate: a failure outranks an interruption, and an interruption outranks
     a partial run, so the worst outcome of the batch is the one the scheduler sees.
 
     Args:
-        reports: One report per jurisdiction that ran.
+        reports: One report per jurisdiction that ran, from ``plt ingest`` or ``plt mirror``.
         strict: Whether a ``partial`` run should exit non-zero. Off by default, which keeps
             the documented ``0``/``1``/``130`` contract for interactive use; the weekly job
             turns it on.
