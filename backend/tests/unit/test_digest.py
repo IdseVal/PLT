@@ -19,11 +19,16 @@ from plt.db.models import Case, Subscriber, SubscriberStatus
 from plt.notifications.digest import DigestReport, run_digest
 from plt.notifications.mailer import MailError, Message
 from plt.notifications.messages import unsubscribe_url
+from plt.notifications.pseudonyms import address_digest
 from plt.utils.shutdown import StopRequest
 from tests.conftest import RecordingMailer
 
 NOW = datetime(2026, 8, 5, 12, 0, tzinfo=UTC)
 WINDOW_START = NOW - timedelta(days=7)
+
+#: Pepper for the withdrawn rows these tests build directly. Any value will do: nothing here
+#: recognises a returning address, it only needs a row shaped as an unsubscribe leaves it.
+PEPPER = b"a-test-pepper-value"
 
 
 @pytest.fixture
@@ -65,20 +70,28 @@ def add_subscriber(
 ) -> Subscriber:
     """Store one subscriber in a chosen state.
 
+    An unsubscribed row holds no address — the schema forbids it, because unsubscribing
+    replaces the address with a keyed digest (core document 2.12) — so this builds that state
+    as the lifecycle would leave it rather than as a row that could never exist.
+
     Args:
         session: Open session.
-        email: The address.
+        email: The address, or the address the row used to hold when ``status`` is
+            ``unsubscribed``.
         status: Lifecycle state.
         last_digest_at: The position of the last digest this address was sent.
 
     Returns:
         The stored subscriber.
     """
+    withdrawn = status is SubscriberStatus.UNSUBSCRIBED
     subscriber = Subscriber(
-        email=email,
+        email=None if withdrawn else email,
+        email_digest=address_digest(email, PEPPER) if withdrawn else None,
         status=status,
         token_seed=f"seed-for-{email.split('@')[0]}",
         confirmed_at=NOW - timedelta(days=30) if status is SubscriberStatus.CONFIRMED else None,
+        unsubscribed_at=NOW - timedelta(days=1) if withdrawn else None,
         last_digest_at=last_digest_at,
     )
     session.add(subscriber)

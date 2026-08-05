@@ -6,9 +6,10 @@ Two equivalent routes into the same commands, per ``docs/architecture.md`` secti
 * ``python -m plt.cli <command>`` / ``plt <command>`` - the same group standalone, so a
   server cron can call the identical code path as the scheduled workflow.
 
-Three commands live here. ``plt ingest`` scans a jurisdiction, ``plt digest`` sends the
-weekly mailing-list digest, and ``plt seed-vocabularies`` refreshes the court tables. All
-three are what the scheduled workflows call, so anything reproducible in a terminal is what
+Four commands live here. ``plt ingest`` scans a jurisdiction, ``plt digest`` sends the weekly
+mailing-list digest, ``plt purge-subscribers`` applies whatever retention rules a deployment
+has configured for that list, and ``plt seed-vocabularies`` refreshes the court tables. All
+of them are what the scheduled workflows call, so anything reproducible in a terminal is what
 runs unattended.
 
 ``plt ingest`` is that path. It is a thin shell around
@@ -45,6 +46,7 @@ from plt.db.models import IngestStatus
 from plt.db.session import get_session_factory, session_scope
 from plt.notifications.digest import run_digest
 from plt.notifications.mailer import MailError, build_mailer
+from plt.notifications.retention import run_purge
 from plt.notifications.reviews import notify_new_reviews
 from plt.pipeline.base import PipelineError
 from plt.pipeline.persistence import resolve_court
@@ -300,6 +302,28 @@ def digest(since: datetime | None, until: datetime | None, dry_run: bool) -> Non
     except MailError as error:
         raise click.ClickException(f"the digest could not be sent: {error}") from error
 
+    click.echo(report.summary())
+    if report.interrupted:
+        raise click.exceptions.Exit(_EXIT_INTERRUPTED)
+
+
+@plt_cli.command(name="purge-subscribers")
+def purge_subscribers() -> None:
+    """Apply the mailing list's retention rules, if a deployment has configured any.
+
+    Two rules, neither of them decided here (issue #75, core document section 2.12): drop the
+    digest from an unsubscribed row once ``PLT_SUBSCRIBER_RETENTION_DAYS`` has passed, and
+    delete an address that never confirmed once ``PLT_SUBSCRIBER_UNCONFIRMED_EXPIRY_DAYS``
+    has. An unset period means the rule is **not enforced**, and the output says so rather
+    than reporting a count of zero — the two look the same and mean opposite things.
+
+    Belongs beside the weekly digest in whatever schedule runs this deployment.
+
+    Raises:
+        click.exceptions.Exit: With 130 when a signal ended the purge, so a scheduler can tell
+            a cancellation from a failure. What was committed stays committed.
+    """
+    report = run_purge(settings=get_settings())
     click.echo(report.summary())
     if report.interrupted:
         raise click.exceptions.Exit(_EXIT_INTERRUPTED)

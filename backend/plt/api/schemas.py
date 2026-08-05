@@ -55,6 +55,7 @@ from plt.db.repositories import (
     ReviewSearchCriteria,
     ReviewSort,
 )
+from plt.notifications.pseudonyms import normalise_address
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -788,9 +789,16 @@ def parse_subscription_request(body: object) -> str:
         body: The parsed JSON request body.
 
     Returns:
-        The address, lower-cased. The whole address is normalised, not only its domain: a
-        reader who signs up twice with different capitals is one subscriber, and two rows for
-        one person would mean two copies of their personal data and two digests a week.
+        The address as :func:`plt.notifications.pseudonyms.normalise_address` gives it: lower
+        cased throughout, not only in the domain, so a reader who signs up twice with
+        different capitals is one subscriber rather than two copies of one person's data
+        receiving two digests a week.
+
+        **Normalising here and hashing there must not be two rules.** The address stored by
+        this function is the address the keyed digest is computed over when the subscription
+        ends (core document section 2.12), and if the two ever disagreed a returning address
+        would stop being recognised without anything failing — it would simply look like a
+        first-time subscriber. Hence the shared function rather than a second ``.lower()``.
 
     Raises:
         ValidationError: If the body is not an object, or the address is missing, over-long,
@@ -819,7 +827,7 @@ def parse_subscription_request(body: object) -> str:
     local, _, _domain = value.partition("@")
     if len(local) > _MAX_EMAIL_LOCAL_LENGTH:
         raise _reject("email", "email is not a valid address.", value=_echo(value))
-    return value.lower()
+    return normalise_address(value)
 
 
 def parse_subscription_token(body: object) -> str:
