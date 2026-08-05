@@ -442,6 +442,18 @@ class Settings(BaseSettings):
         description="Directory a --dry-run match report is written to. Git-ignored.",
     )
 
+    # -- Corpus mirror --------------------------------------------------------------
+    corpus_store_dir: Path = Field(
+        default=_REPO_ROOT / "corpus",
+        description=(
+            "Root of the local case-law store `plt mirror` writes to: one directory per "
+            "jurisdiction, one folder per case inside it. A corpus outgrows a checkout, so "
+            "every real deployment overrides this with the volume it keeps the store on - "
+            "see .env.example. The default stays inside the repository, git-ignored, so a "
+            "misconfigured run writes somewhere obvious rather than somewhere surprising."
+        ),
+    )
+
     # -- Source endpoints -----------------------------------------------------------
     rechtspraak_search_url: str = Field(
         default="https://data.rechtspraak.nl/uitspraken/zoeken",
