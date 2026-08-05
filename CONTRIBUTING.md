@@ -196,6 +196,13 @@ npm run test:a11y -- --width=320       # one width
 npm run test:a11y -- --concurrency=1   # serially, for readable output
 ```
 
+**Fonts are the one thing the harness cannot pin down.** The site runs on a system font stack
+until the styling package arrives, so glyph widths are whichever machine is measuring: the
+3 px overflow this harness first found on `/cases` shows with Segoe UI and not with the
+Liberation faces on `ubuntu-latest`. A run is reproducible on a platform, approximate across
+platforms — the CI job is the authority, and a width that only just fits is not really
+passing anywhere. Real font files will end this.
+
 ## 5. Running the ingestion pipeline
 
 The weekly scan (`docs/core-document.md` §2.6, `docs/architecture.md` §7) is `plt ingest`.

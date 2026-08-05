@@ -59,6 +59,22 @@
  * - Only infrastructure failures (a navigation timeout, a lost browser target) are retried,
  *   once. A violation is never retried.
  *
+ * ## The one thing this cannot pin down: fonts
+ *
+ * The site runs on a system font stack until the Wageningen Law fonts arrive (README §7), so
+ * the glyph widths are the *runner's*, not the reader's. A run is therefore reproducible on
+ * a given platform and only approximate across platforms: the 3 px overflow on `/cases` that
+ * this harness first found is visible with Segoe UI and not with the Liberation faces on
+ * `ubuntu-latest`. Two consequences, both worth knowing before trusting a green tick:
+ *
+ * - **The CI job is the authority for CI.** A local run is a good approximation of it, not
+ *   the same measurement, and a width that only just fits is not really passing anywhere.
+ * - **A reflow defect can be real on a reader's platform and invisible here.** Nothing in a
+ *   browser can fix that while the typeface is whatever the reader happens to have. It stops
+ *   being a limitation the day the styling package supplies real font files, because then
+ *   every reader and this harness measure the same glyphs.
+ *
+
  * ## Running it
  *
  * ```bash
