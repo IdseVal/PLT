@@ -9,6 +9,20 @@
 
   body {
     @apply bg-plt-surface text-plt-ink font-sans antialiased;
+
+    /*
+     * Court text is not editorial copy. An ECLI, a CELEX number and a Dutch or German
+     * compound noun - "gewasbeschermingsmiddelen" is 25 characters - are single unbreakable
+     * words, and at 320 CSS px one of them is wider than the column it sits in. Left alone
+     * the page then scrolls sideways, which WCAG 2.1 SC 1.4.10 (Reflow) forbids; found by
+     * `tests/a11y/run.mjs`, which fails the build on exactly that.
+     *
+     * `break-word` is the conservative half of the pair: it breaks a word only when that
+     * word would otherwise overflow its line, so ordinary prose is unaffected. It does not
+     * change any element's min-content size, which is deliberate - a grid or flex track is
+     * still sized by the longest word unless the item itself opts out with `min-width: 0`.
+     */
+    overflow-wrap: break-word;
   }
 
   /*

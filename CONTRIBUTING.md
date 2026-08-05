@@ -142,6 +142,7 @@ the dev-server process rather than the bundle, so they mean nothing to a built s
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | ESLint, type-aware |
 | `npm run test` | Vitest once (`npm run test:watch` to iterate) |
+| `npm run test:a11y` | Accessibility and responsive checks in a real browser (see §4) |
 | `node scripts/generate-map-geometry.mjs` | Regenerate the map's geometry asset (see below) |
 
 The jurisdiction map ships **pre-projected**: `scripts/generate-map-geometry.mjs` turns Natural
@@ -182,6 +183,7 @@ npm run lint
 npm run typecheck
 npm run test
 npm run build
+npm run test:a11y       # needs `npm run build` first, and a browser (below)
 ```
 
 CI additionally runs the **Migrations** step ahead of those, because a broken revision chain
@@ -197,6 +199,55 @@ Tests are part of the deliverable, not an afterthought (`docs/architecture.md` �
 - Tests that do hit a live endpoint are marked `@pytest.mark.integration` and are opt-in.
 - Frontend tests render through `@testing-library/react` and assert on accessible roles and
   names, so the tests break when the page stops being accessible.
+
+### The accessibility and responsive checks
+
+`npm run test:a11y` serves the **production build** with a stubbed API and drives headless
+Chrome over every route, in every data state that route can be in, at 320, 414, 768, 1024,
+1280 and 1440 px. It checks four things:
+
+| Check | Why a unit test cannot |
+| --- | --- |
+| axe-core, `wcag2a` / `wcag2aa` / `wcag21a` / `wcag21aa` / `best-practice` | Some rules need layout and a stacking context. |
+| Colour contrast, measured on rendered pixels | `tests/theme.test.ts` bans ad-hoc colour *values*; only a browser knows what a token looks like once composited on the background it ends up over. |
+| No horizontal overflow, `scrollWidth === clientWidth` | jsdom has no layout at all. |
+| A visible focus indicator at every tab stop | `:focus-visible` depends on how focus arrived. This is the check that catches a control the site-wide focus ring silently does not reach. |
+
+The browser is deliberately **not** installed by `npm ci` — most work in this repository does
+not need a 150 MB Chrome. Install it once:
+
+```bash
+cd frontend
+npx puppeteer browsers install chrome
+```
+
+`puppeteer` and `axe-core` are pinned to exact versions. A new axe minor adds rules and a new
+Chrome changes layout; either would turn CI red on a pull request that touched neither, which
+is how a check stops being read. **Bump them in their own pull request**, with the resulting
+diff in the report.
+
+**Contrast is enforced, not reported**, even though the palette is a placeholder until the
+Wageningen Law styling package lands (README §7). `tailwind.config.js` records a contrast
+ratio per token; a failure today is a regression against a budget the project has written
+down. When the real palette arrives and does not hold AA, this job going red is the point of
+having it. So that such a pull request can still be assembled in steps,
+`A11Y_CONTRAST=report npm run test:a11y` prints contrast findings instead of failing on
+them — for that one run, never as a setting in CI.
+
+Useful while iterating:
+
+```bash
+npm run test:a11y -- --only=cases      # one route
+npm run test:a11y -- --width=320       # one width
+npm run test:a11y -- --concurrency=1   # serially, for readable output
+```
+
+**Fonts are the one thing the harness cannot pin down.** The site runs on a system font stack
+until the styling package arrives, so glyph widths are whichever machine is measuring: the
+3 px overflow this harness first found on `/cases` shows with Segoe UI and not with the
+Liberation faces on `ubuntu-latest`. A run is reproducible on a platform, approximate across
+platforms — the CI job is the authority, and a width that only just fits is not really
+passing anywhere. Real font files will end this.
 
 ## 5. Running the ingestion pipeline
 
