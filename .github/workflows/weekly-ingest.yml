@@ -1,0 +1,263 @@
+name: Weekly ingest
+
+# The weekly scan promised in docs/core-document.md section 2.6, scheduled per
+# docs/architecture.md section 7.
+#
+# This workflow is a *trigger*, not a second implementation: every job below shells out to
+# `plt ingest`, the same command a server cron calls (CONTRIBUTING.md section 5). Nothing
+# here knows how to fetch, filter or store a case, and nothing here names a jurisdiction —
+# the matrix is built from the connector registry, so onboarding a jurisdiction stays one
+# connector plus one keyword list.
+#
+# Three properties are requirements rather than incidental:
+#
+#   * One jurisdiction failing does not stop the others. The matrix is `fail-fast: false`
+#     and each jurisdiction is its own job, so a job that is cancelled, times out or dies
+#     outright takes nothing else with it.
+#   * A failed run does not advance that connector's checkpoint. That is the runner's
+#     guarantee (docs/architecture.md section 4.4), which is why the window is left to the
+#     stored checkpoint here and `--since` is never passed on the schedule.
+#   * Runs cannot overlap for one jurisdiction. The concurrency group below is keyed on the
+#     jurisdiction and does not cancel what is already running: a scan in flight is doing
+#     real network and database work and finishes; the later run waits.
+
+on:
+  schedule:
+    # Mondays, 04:20 UTC. Off the hour on purpose: GitHub queues the top of the hour
+    # heavily, and a delayed scan is a scan that ran against a different window than the
+    # one its log claims.
+    - cron: '20 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      jurisdiction:
+        description: 'Jurisdiction code (e.g. NL), or "all" for every registered one'
+        type: string
+        default: all
+      dry_run:
+        description: 'Run every stage and write no database changes'
+        type: boolean
+        default: true
+      since:
+        description: 'Window lower bound, ISO 8601 UTC. Empty lets the checkpoint decide'
+        type: string
+        default: ''
+      until:
+        description: 'Window upper bound, ISO 8601 UTC. Empty means "up to now"'
+        type: string
+        default: ''
+
+# Nothing here writes to the repository.
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.11'
+  # The schedule is the destructive path and says so by omission: `inputs` is empty on a
+  # schedule, so DRY_RUN is false there and true by default for anyone dispatching by hand.
+  DRY_RUN: ${{ inputs.dry_run || false }}
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      jurisdictions: ${{ steps.plan.outputs.jurisdictions }}
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            backend/pyproject.toml
+            backend/constraints.txt
+
+      - name: Install
+        # -c constraints.txt, exactly as CI installs: an unattended weekly job resolving
+        # whatever was released on Sunday is a run whose failure nobody can reproduce.
+        # No [dev] extra — this job runs the pipeline, it does not lint it.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c constraints.txt -e .
+
+      - name: Decide which jurisdictions to run
+        id: plan
+        env:
+          # Through the environment, never interpolated into the script: a dispatch input is
+          # attacker-controlled text as far as this runner is concerned.
+          REQUESTED: ${{ inputs.jurisdiction }}
+        run: |
+          REGISTERED="$(python -m plt.cli jurisdictions --json)"
+          export REGISTERED
+          python - >> "$GITHUB_OUTPUT" <<'PY'
+          import json
+          import os
+
+          registered = json.loads(os.environ["REGISTERED"])
+          requested = os.environ.get("REQUESTED", "").strip()
+          if requested and requested.lower() != "all":
+              code = requested.upper()
+              if code not in registered:
+                  known = ", ".join(registered)
+                  raise SystemExit(
+                      f"::error title=Unknown jurisdiction::{requested!r} has no connector. "
+                      f"Registered: {known}"
+                  )
+              registered = [code]
+          print("jurisdictions=" + json.dumps(registered))
+          PY
+
+      - name: Describe the run
+        env:
+          PLANNED: ${{ steps.plan.outputs.jurisdictions }}
+          SINCE: ${{ inputs.since }}
+          UNTIL: ${{ inputs.until }}
+        run: |
+          {
+            echo "## Weekly ingest"
+            echo
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| Trigger | \`${GITHUB_EVENT_NAME}\` |"
+            echo "| Jurisdictions | \`${PLANNED}\` |"
+            echo "| Mode | $([ "$DRY_RUN" = "true" ] && echo 'dry run — no database changes' || echo '**live** — writes to the database') |"
+            echo "| Window | ${SINCE:-stored checkpoint} → ${UNTIL:-now} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  ingest:
+    name: Ingest ${{ matrix.jurisdiction }}
+    needs: plan
+    runs-on: ubuntu-latest
+    # A full first scan of a jurisdiction is long, and the politeness throttle and any
+    # Retry-After the source sends are respected rather than skipped, so this bound is
+    # generous. Hitting it fails the job, and the checkpoint stays where the last committed
+    # batch left it.
+    timeout-minutes: 300
+    strategy:
+      # The point of the matrix: EU being down is not a reason to skip the Netherlands.
+      fail-fast: false
+      matrix:
+        jurisdiction: ${{ fromJSON(needs.plan.outputs.jurisdictions) }}
+    concurrency:
+      group: weekly-ingest-${{ matrix.jurisdiction }}
+      # Never cancel a scan in flight. The runner would shut down cleanly, but the window it
+      # was covering would be split across two runs for no reason. The newer run waits.
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            backend/pyproject.toml
+            backend/constraints.txt
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c constraints.txt -e .
+
+      - name: Choose the target database
+        env:
+          DATABASE_URL: ${{ secrets.PLT_DATABASE_URL }}
+        run: |
+          if [ -n "$DATABASE_URL" ]; then
+            case "$DATABASE_URL" in
+              *[![:print:]]*)
+                echo "::error title=Malformed secret::PLT_DATABASE_URL contains a control character."
+                exit 1
+                ;;
+            esac
+            # Written to the environment file, not echoed: the value carries a password.
+            # GitHub masks a secret wherever it surfaces, and this job never prints it.
+            printf 'PLT_DATABASE_URL=%s\n' "$DATABASE_URL" >> "$GITHUB_ENV"
+            echo 'PLT_DATABASE_TARGET=secret' >> "$GITHUB_ENV"
+            echo 'Target: the database behind the PLT_DATABASE_URL secret.'
+          elif [ "$DRY_RUN" = "true" ]; then
+            printf 'PLT_DATABASE_URL=sqlite+pysqlite:///%s/plt-dry-run.db\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+            echo 'PLT_DATABASE_TARGET=ephemeral' >> "$GITHUB_ENV"
+            echo 'Target: a throwaway SQLite file. No PLT_DATABASE_URL secret is configured,'
+            echo 'and a dry run makes no database changes in any case. Deduplication reads it,'
+            echo 'so every document will look new — the counts are about the mechanism, not the corpus.'
+          else
+            echo '::error title=No database configured::A live weekly run needs the PLT_DATABASE_URL repository secret. Dispatch with dry_run enabled to exercise the workflow without one.'
+            exit 1
+          fi
+
+      - name: Create the throwaway schema
+        if: env.PLT_DATABASE_TARGET == 'ephemeral'
+        # Only ever run against the SQLite file created above. Migrating a real database is a
+        # deployment step, not something a scheduled scan does behind the operator's back: a
+        # live run against a database whose schema is behind fails loudly instead.
+        run: python -m alembic upgrade head
+
+      - name: Ingest
+        id: ingest
+        env:
+          JURISDICTION: ${{ matrix.jurisdiction }}
+          SINCE: ${{ inputs.since }}
+          UNTIL: ${{ inputs.until }}
+          PLT_LOG_FORMAT: json
+          PLT_PIPELINE_REPORT_DIR: ${{ runner.temp }}/reports
+        run: |
+          args=(ingest --jurisdiction "$JURISDICTION" --fail-on-partial)
+          # No --since on the schedule: the stored checkpoint supplies the window, which is
+          # what makes the run incremental and re-runnable (architecture section 7).
+          if [ -n "$SINCE" ]; then args+=(--since "$SINCE"); fi
+          if [ -n "$UNTIL" ]; then args+=(--until "$UNTIL"); fi
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--dry-run --report "$RUNNER_TEMP/match-report-$JURISDICTION.jsonl")
+          fi
+          # Structured logs and the CLI's own summary both go to stdout; tee keeps a copy for
+          # the run summary. pipefail is on by default, so the exit code is the CLI's:
+          # 0 completed, 1 failed, 3 completed with failed documents, 130 interrupted.
+          python -m plt.cli "${args[@]}" | tee "$RUNNER_TEMP/ingest.log"
+
+      - name: Upload the match report
+        if: ${{ always() && env.DRY_RUN == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: match-report-${{ matrix.jurisdiction }}
+          path: ${{ runner.temp }}/match-report-*.jsonl
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Summarise
+        if: always()
+        env:
+          JURISDICTION: ${{ matrix.jurisdiction }}
+          OUTCOME: ${{ steps.ingest.outcome }}
+        run: |
+          log="$RUNNER_TEMP/ingest.log"
+          {
+            echo "### ${JURISDICTION} — ${OUTCOME}"
+            echo
+            if [ -s "$log" ]; then
+              echo '```'
+              # Everything the CLI printed itself. The structured log lines are single-line
+              # JSON objects and are dropped here; they stay in the job log, where a
+              # traceback belongs.
+              grep -v '^{' "$log" || echo '(the run printed no summary line)'
+              echo '```'
+            else
+              echo 'The run produced no output at all; see the job log.'
+            fi
+            if [ "$OUTCOME" != "success" ]; then
+              echo
+              echo "The run did not succeed. \`partial\` means documents failed and the checkpoint"
+              echo "stopped at the first of them, so this window is retried rather than skipped."
+              echo "The reason is in the job log."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

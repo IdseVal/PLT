@@ -134,7 +134,97 @@ Tests are part of the deliverable, not an afterthought (`docs/architecture.md` �
 - Frontend tests render through `@testing-library/react` and assert on accessible roles and
   names, so the tests break when the page stops being accessible.
 
-## 5. Conventions
+## 5. Running the ingestion pipeline
+
+The weekly scan (`docs/core-document.md` §2.6, `docs/architecture.md` §7) is `plt ingest`.
+The scheduled workflow, a server cron and your terminal all call that one command — the
+scheduler is a trigger, never a second implementation, so anything you can reproduce here is
+what the weekly job does.
+
+### Locally
+
+```bash
+cd backend
+python -m plt.cli jurisdictions                     # what --all would run, from the registry
+python -m plt.cli ingest -j NL --dry-run            # every stage, no database changes
+python -m plt.cli ingest -j NL                      # the real thing, incremental
+python -m plt.cli ingest --all --fail-on-partial    # what the weekly job runs
+```
+
+**Run without `--since`.** The stored checkpoint supplies the window, which is what makes the
+run incremental and safe to repeat; `--since` is for deliberately re-crawling a period. A
+dry run writes a JSON Lines match report — every document judged, accepted *and* rejected —
+to `PLT_PIPELINE_REPORT_DIR`, or to `--report PATH`.
+
+Exit codes, because a scheduler acts on them:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | The run completed. |
+| `1` | The run failed. The checkpoint was not advanced, so the window is retried next time. |
+| `2` | Usage error (click's own): a bad option or an unknown jurisdiction. |
+| `3` | Only with `--fail-on-partial`: the run completed but documents failed. |
+| `130` | Interrupted (`Ctrl+C`). The document in flight finished and its batch was committed. |
+
+`3` exists because a `partial` run stops advancing the checkpoint at the first failed
+document. That is the correct behaviour — the window is retried rather than skipped — but for
+an unattended job it means a jurisdiction can stay frozen for months while every run reports
+success. Pass `--fail-on-partial` anywhere nobody is reading the output; leave it off
+interactively, where `0` still means "the run completed".
+
+### On a schedule, in GitHub Actions
+
+[`.github/workflows/weekly-ingest.yml`](.github/workflows/weekly-ingest.yml) runs Mondays at
+04:20 UTC, one job per jurisdiction, and the matrix is built from `plt jurisdictions` so
+onboarding a jurisdiction never means editing the workflow. It needs one repository secret:
+
+| Secret | Purpose |
+| --- | --- |
+| `PLT_DATABASE_URL` | SQLAlchemy URL of the database to write to. Never echoed by the workflow. |
+
+Without it a **live** run refuses to start, and a **dry** run falls back to a throwaway
+SQLite file so the workflow can still be exercised. To run it by hand: *Actions → Weekly
+ingest → Run workflow*, which offers a jurisdiction (or `all`), a `dry_run` box that is
+**ticked by default**, and an optional window. Untick `dry_run` only when you mean to write.
+
+Each job appends its jurisdiction's counts to the run summary, and a dry run uploads its
+match report as an artifact.
+
+> GitHub disables scheduled workflows in a repository with no activity for 60 days, and
+> queues `schedule` events on a busy fleet rather than firing them punctually. Neither is a
+> problem for a weekly incremental scan — a late run covers the same window — but if the
+> schedule matters more than that, run it from a server instead.
+
+### On a schedule, from a server cron
+
+The same command, with the environment supplied by the deployment rather than by `.env`:
+
+```cron
+# m  h  dom mon dow
+  20 4  *   *   1  cd /srv/plt/backend && /srv/plt/.venv/bin/plt ingest --all --fail-on-partial >> /var/log/plt/ingest.log 2>&1
+```
+
+Two things to add in production:
+
+- **A lock, so two runs cannot overlap.** The workflow gets this from its concurrency group;
+  a crontab needs `flock`, and the pipeline holds no lock of its own:
+
+  ```cron
+  20 4 * * 1 /usr/bin/flock -n /var/lock/plt-ingest.lock -c 'cd /srv/plt/backend && /srv/plt/.venv/bin/plt ingest --all --fail-on-partial' >> /var/log/plt/ingest.log 2>&1
+  ```
+
+  `-n` skips the run rather than queueing it: the next scan picks the window up from the
+  checkpoint, so a skipped run loses nothing.
+- **Something that reads the exit code.** `cron` mails a non-zero exit to the crontab's
+  owner; make sure that mailbox goes somewhere a person looks, or wrap the command in
+  whatever alerting the deployment already has.
+
+Set `PLT_LOG_FORMAT=json` for a log a collector can parse, keep `PLT_DATABASE_URL` in the
+unit's environment file (mode `0600`, never in the repository), and leave the politeness
+settings alone — `PLT_HTTP_REQUESTS_PER_SECOND` and the backoff are what keep the project
+welcome at a public court endpoint.
+
+## 6. Conventions
 
 **Python.** Full type annotations, complete docstrings, `ruff` and `mypy` clean. Long loops
 must be interruptible (`KeyboardInterrupt` finishes the item in flight, writes the
@@ -162,7 +252,7 @@ ECLI or CELEX number are fine; case text, personal data, tokens and credentials 
 **Sources are public research endpoints.** Respect the configured request rate, back off on
 429 and 5xx, and keep the descriptive `User-Agent`. Never hammer them.
 
-## 6. Branches, commits and pull requests
+## 7. Branches, commits and pull requests
 
 - Branch from `dev`: `feature/<issue-number>-<short-description>` or
   `fix/<issue-number>-<short-description>`.
@@ -174,7 +264,7 @@ ECLI or CELEX number are fine; case text, personal data, tokens and credentials 
 A change is done when the code lints and typechecks, the tests pass, every acceptance
 criterion in the issue is addressed, and the pull request says which checks were run.
 
-## 7. Data files
+## 8. Data files
 
 Keyword lists in [`data/keywords/`](data/keywords/) are **curated data owned by the content
 manager**, not code. Validate against `schema.json`, bump `list_version`, and record the
