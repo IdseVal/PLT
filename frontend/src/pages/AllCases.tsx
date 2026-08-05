@@ -162,7 +162,7 @@ export default function AllCases(): JSX.Element {
         </div>
 
         <div className="min-w-0 lg:col-span-3">
-          <div className="border-plt-border flex min-w-[24rem] flex-wrap items-end justify-between gap-4 border-b pb-4">
+          <div className="border-plt-border flex flex-wrap items-end justify-between gap-4 border-b pb-4">
             <p
               ref={summaryRef}
               tabIndex={-1}
