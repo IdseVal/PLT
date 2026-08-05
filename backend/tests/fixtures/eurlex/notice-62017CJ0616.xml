@@ -1,0 +1,2984 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NOTICE decoding="eng" type="object">
+   <WORK>
+      <URI>
+         <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1</VALUE>
+         <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1</IDENTIFIER>
+         <TYPE>cellar</TYPE>
+      </URI>
+      <SAMEAS>
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800</VALUE>
+            <IDENTIFIER>ECLI:EU:C:2019:800</IDENTIFIER>
+            <TYPE>ecli</TYPE>
+         </URI>
+      </SAMEAS>
+      <SAMEAS>
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616</VALUE>
+            <IDENTIFIER>62017CJ0616</IDENTIFIER>
+            <TYPE>celex</TYPE>
+         </URI>
+      </SAMEAS>
+      <RESOURCE_LEGAL_TYPE type="data">
+         <VALUE>CJ</VALUE>
+      </RESOURCE_LEGAL_TYPE>
+      <CASE-LAW_COMMENTED_BY_AGENT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/corporate-body/CONSIL</VALUE>
+            <IDENTIFIER>CONSIL</IDENTIFIER>
+            <TYPE>corporate-body</TYPE>
+         </URI>
+         <OP-CODE>CONSIL</OP-CODE>
+         <IDENTIFIER>CONSIL</IDENTIFIER>
+         <PREFLABEL>Council of the European Union</PREFLABEL>
+         <ALTLABEL>Council</ALTLABEL>
+      </CASE-LAW_COMMENTED_BY_AGENT>
+      <PART_OF type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/e227915b-44d4-11e9-a8ed-01aa75ed71a1</VALUE>
+            <IDENTIFIER>e227915b-44d4-11e9-a8ed-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/case/C-616%2F17</VALUE>
+               <IDENTIFIER>C-616/17</IDENTIFIER>
+               <TYPE>case</TYPE>
+            </URI>
+         </SAMEAS>
+      </PART_OF>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0022</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0022</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.DAN</VALUE>
+               <IDENTIFIER>62017CJ0616.DAN</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.DAN</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.DAN</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <WORK_PART_OF_WORK type="link">
+         <EMBEDDED_NOTICE>
+            <WORK>
+               <CONTAINER_CASE-LAW_FASCICULE type="data">
+                  <VALUE>10</VALUE>
+               </CONTAINER_CASE-LAW_FASCICULE>
+               <WORK_HAS_RESOURCE-TYPE type="concept">
+                  <URI>
+                     <VALUE>http://publications.europa.eu/resource/authority/resource-type/CASE_LAW</VALUE>
+                     <IDENTIFIER>CASE_LAW</IDENTIFIER>
+                     <TYPE>resource-type</TYPE>
+                  </URI>
+                  <OP-CODE>CASE_LAW</OP-CODE>
+                  <IDENTIFIER>CASE_LAW</IDENTIFIER>
+                  <PREFLABEL>Reports of cases</PREFLABEL>
+               </WORK_HAS_RESOURCE-TYPE>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616_RES</VALUE>
+                        <IDENTIFIER>62017CJ0616_RES</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <CONTAINER_CASE-LAW_YEAR_DECISION type="data">
+                  <VALUE>2019</VALUE>
+               </CONTAINER_CASE-LAW_YEAR_DECISION>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CC0616</VALUE>
+                        <IDENTIFIER>62017CC0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <NUMBER type="data">
+                  <VALUE>01201706160</VALUE>
+               </NUMBER>
+               <CONTAINER_CASE-LAW_NUMBER type="data">
+                  <VALUE>01201706160</VALUE>
+               </CONTAINER_CASE-LAW_NUMBER>
+               <WORK_DATE_DOCUMENT type="date">
+                  <VALUE>2019-03-12</VALUE>
+                  <YEAR>2019</YEAR>
+                  <MONTH>03</MONTH>
+                  <DAY>12</DAY>
+               </WORK_DATE_DOCUMENT>
+               <CONTAINER_CASE-LAW_COURT type="data">
+                  <VALUE>C</VALUE>
+               </CONTAINER_CASE-LAW_COURT>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616</VALUE>
+                        <IDENTIFIER>62017CJ0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <CONTAINER_CASE-LAW_ID_NUMPUB type="data">
+                  <VALUE>numpub:201910C101201706160</VALUE>
+               </CONTAINER_CASE-LAW_ID_NUMPUB>
+               <TYPE>cdm:container_work</TYPE>
+               <TYPE>cdm:work</TYPE>
+               <TYPE>cdm:container_case-law</TYPE>
+            </WORK>
+            <EXPRESSION>
+               <EXPRESSION_TITLE type="data">
+                  <VALUE>Judgment of the Court (Grand Chamber) of 1 October 2019.#Criminal proceedings against Mathieu Blaise and Others.#Reference for a preliminary ruling — Environment — Placing of plant protection products on the market — Regulation (EC) No 1107/2009 — Validity — Precautionary principle — Definition of the concept of ‘active substance’ — Combination of active substances — Reliability of the assessment procedure — Public access to the dossier — Tests of long-term toxicity — Pesticides — Glyphosate.#Case C-616/17.</VALUE>
+                  <LANG>en</LANG>
+               </EXPRESSION_TITLE>
+               <EXPRESSION_USES_LANGUAGE type="concept">
+                  <URI>
+                     <VALUE>http://publications.europa.eu/resource/authority/language/ENG</VALUE>
+                     <IDENTIFIER>ENG</IDENTIFIER>
+                     <TYPE>language</TYPE>
+                  </URI>
+                  <OP-CODE>ENG</OP-CODE>
+                  <IDENTIFIER>ENG</IDENTIFIER>
+                  <PREFLABEL>English</PREFLABEL>
+                  <ALTLABEL>English</ALTLABEL>
+               </EXPRESSION_USES_LANGUAGE>
+            </EXPRESSION>
+         </EMBEDDED_NOTICE>
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/13d4e02c-e42d-11e9-9c4e-01aa75ed71a1</VALUE>
+            <IDENTIFIER>13d4e02c-e42d-11e9-9c4e-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/numpub/201910C101201706160</VALUE>
+               <IDENTIFIER>201910C101201706160</IDENTIFIER>
+               <TYPE>numpub</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_PART_OF_WORK>
+      <CASE-LAW_PUBLISHED_IN_ERECUEIL type="data">
+         <VALUE>true</VALUE>
+      </CASE-LAW_PUBLISHED_IN_ERECUEIL>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0015</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0015</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.BUL</VALUE>
+               <IDENTIFIER>62017CJ0616.BUL</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.BUL</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.BUL</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <DATE_CREATION_LEGACY type="date">
+         <VALUE>2019-10-01</VALUE>
+         <YEAR>2019</YEAR>
+         <MONTH>10</MONTH>
+         <DAY>01</DAY>
+      </DATE_CREATION_LEGACY>
+      <IS_ABOUT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/subject-matter/RAPL</VALUE>
+            <IDENTIFIER>RAPL</IDENTIFIER>
+            <TYPE>subject-matter</TYPE>
+         </URI>
+         <OP-CODE>RAPL</OP-CODE>
+         <IDENTIFIER>RAPL</IDENTIFIER>
+         <PREFLABEL>Approximation of laws</PREFLABEL>
+      </IS_ABOUT>
+      <CASE-LAW_IS_ABOUT_CONCEPT type="concept_level">
+         <CASE-LAW_IS_ABOUT_CONCEPT_4 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11.15.04</VALUE>
+               <IDENTIFIER>4.11.15.04</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4.11.15.04</OP-CODE>
+            <IDENTIFIER>4.11.15.04</IDENTIFIER>
+            <PREFLABEL>Plant protection products</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_4>
+         <CASE-LAW_IS_ABOUT_CONCEPT_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4</VALUE>
+               <IDENTIFIER>4</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4</OP-CODE>
+            <IDENTIFIER>4</IDENTIFIER>
+            <PREFLABEL>Internal policy of the European Union</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_1>
+         <CASE-LAW_IS_ABOUT_CONCEPT_3 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11.15</VALUE>
+               <IDENTIFIER>4.11.15</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4.11.15</OP-CODE>
+            <IDENTIFIER>4.11.15</IDENTIFIER>
+            <PREFLABEL>Chemicals</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_3>
+         <CASE-LAW_IS_ABOUT_CONCEPT_2 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11</VALUE>
+               <IDENTIFIER>4.11</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4.11</OP-CODE>
+            <IDENTIFIER>4.11</IDENTIFIER>
+            <PREFLABEL>Approximation of laws</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_2>
+      </CASE-LAW_IS_ABOUT_CONCEPT>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/6c533f70-1ed2-4707-848e-5a87f83fe994</VALUE>
+            <IDENTIFIER>6c533f70-1ed2-4707-848e-5a87f83fe994</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/12008E168</VALUE>
+               <IDENTIFIER>12008E168</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/treaty/tfeu_2008/art_168/oj</VALUE>
+               <IDENTIFIER>treaty:tfeu_2008:art_168:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 42</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/7520305c-bf4c-4951-837f-326bada660bd</VALUE>
+            <IDENTIFIER>7520305c-bf4c-4951-837f-326bada660bd</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62009CJ0077</VALUE>
+               <IDENTIFIER>62009CJ0077</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2010%3A803</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2010:803</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 41</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N72</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 46</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N75</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 43</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N73</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 43</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N76</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 41</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N71</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/d7b1353f-0d22-4c51-858e-24212a2808b0</VALUE>
+            <IDENTIFIER>d7b1353f-0d22-4c51-858e-24212a2808b0</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62014CJ0477</VALUE>
+               <IDENTIFIER>62014CJ0477</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2016%3A324</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2016:324</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 42</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N116</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/4bceeeb2-f7a4-11e8-9982-01aa75ed71a1</VALUE>
+            <IDENTIFIER>4bceeeb2-f7a4-11e8-9982-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0378</VALUE>
+               <IDENTIFIER>62017CJ0378</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2018%3A979</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2018:979</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 35</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N27</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 34</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N26</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <CASE-LAW_ARTICLE_JOURNAL_RELATED type="data">
+         <VALUE>6. Donati, Alessandra: Le contentieux du glyphosate devant la Cour de justice de l’Union européenne : état des lieux et perspectives, Cahiers de droit européen 2023-2025, n°1, p. 151-178 (FR)</VALUE>
+      </CASE-LAW_ARTICLE_JOURNAL_RELATED>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1ad90f5a-4dfe-4ad2-adda-e290d0e23c8b</VALUE>
+            <IDENTIFIER>1ad90f5a-4dfe-4ad2-adda-e290d0e23c8b</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/32009R1107</VALUE>
+               <IDENTIFIER>32009R1107</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/reg/2009/1107/oj</VALUE>
+               <IDENTIFIER>reg:2009:1107:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/oj/JOL_2009_309_R_0001_01</VALUE>
+               <IDENTIFIER>JOL_2009_309_R_0001_01</IDENTIFIER>
+               <TYPE>oj</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 89</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A08P5</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 16 74</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A27</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 8 67 68 71</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A04P3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 99</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A21P3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 78</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A08P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 10</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A08</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 69</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A12P2L2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 9 78 79</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A07P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 22</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A63</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 47</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A01P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 84</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N2PT3.5</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 47</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A01P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 78</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A33P3LA</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 16</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A26</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 105</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A63P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 21 99</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A44P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 12 66</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A11P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 72</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A29P6</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 5</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A01</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 12 92</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A11P3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 59 64</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A29P1LA</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 13 98</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A12P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 18</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A33P3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 79 114</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A29P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 69 99 104</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A04</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 24</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N2PT1.5</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 11 103</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A10</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 60</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A44P3LA</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 106</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A63P3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 21 99</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A44P3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 14 70</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A13P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 55 78</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A33P3LB</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 85</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A29P3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 25 112</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N2PT3.6.3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 13 97 104</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A12P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 44</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A01P4</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 8 67</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A04P5</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 4 44</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>C8</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 53</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A03</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 16 74</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A25</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 15</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A21</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 25 112</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N2PT3.6.4</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 20 92</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A37P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 19 66</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A36P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 105</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A63P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 14 70</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A13P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 71 91 114</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A29P1LE</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 6 54 57</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A02P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 91 114</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A04P3LB</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 99</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A21P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 8 67</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A04P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 1 29 30 32 33 36 37 40 42 50 52 63 76 81 96 100 101 110 113 117</FRAGMENT_CITING_SOURCE>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 17 99</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A29</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 56</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A78P1LB</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 13 92 98</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A12P3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 12 97 104</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A11P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 18</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A33P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 60</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A44P3LB</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 8 67 68</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A04P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 23 90</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N2PT1.2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 78 83 103</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A08P1</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 56 86</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A08P4</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <RESOURCE_LEGAL_NUMBER_NATURAL_CELEX type="data">
+         <VALUE>0616</VALUE>
+      </RESOURCE_LEGAL_NUMBER_NATURAL_CELEX>
+      <IDENTIFIER type="data">
+         <VALUE>celex:62017CJ0616</VALUE>
+      </IDENTIFIER>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0016</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0016</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.SLV</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.SLV</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.SLV</VALUE>
+               <IDENTIFIER>62017CJ0616.SLV</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <DATE_DOCUMENT type="date">
+         <VALUE>2019-10-01</VALUE>
+         <YEAR>2019</YEAR>
+         <MONTH>10</MONTH>
+         <DAY>01</DAY>
+      </DATE_DOCUMENT>
+      <WORK_PART_OF_DOSSIER type="link">
+         <EMBEDDED_NOTICE>
+            <DOSSIER>
+               <DOSSIER_CONTAINS_WORK type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CN0616</VALUE>
+                        <IDENTIFIER>62017CN0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </DOSSIER_CONTAINS_WORK>
+               <DOSSIER_CONTAINS_WORK type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CA0616</VALUE>
+                        <IDENTIFIER>62017CA0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </DOSSIER_CONTAINS_WORK>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CA0616</VALUE>
+                        <IDENTIFIER>62017CA0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <DOSSIER_IDENTIFIER type="data">
+                  <VALUE>C-616/17</VALUE>
+               </DOSSIER_IDENTIFIER>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CN0616</VALUE>
+                        <IDENTIFIER>62017CN0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <DOSSIER_CONTAINS_WORK type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616</VALUE>
+                        <IDENTIFIER>62017CJ0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </DOSSIER_CONTAINS_WORK>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616</VALUE>
+                        <IDENTIFIER>62017CJ0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <DOSSIER_TYPE_REFERENCE type="data">
+                  <VALUE>case</VALUE>
+               </DOSSIER_TYPE_REFERENCE>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CC0616</VALUE>
+                        <IDENTIFIER>62017CC0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616_RES</VALUE>
+                        <IDENTIFIER>62017CJ0616_RES</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/case-event/C-616%2F17.CC_NC_PUB_OJ_2018-01-22</VALUE>
+                        <IDENTIFIER>C-616/17.CC_NC_PUB_OJ_2018-01-22</IDENTIFIER>
+                        <TYPE>case-event</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <DOSSIER_CONTAINS_WORK type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616_RES</VALUE>
+                        <IDENTIFIER>62017CJ0616_RES</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </DOSSIER_CONTAINS_WORK>
+               <DOSSIER_CONTAINS_WORK type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CC0616</VALUE>
+                        <IDENTIFIER>62017CC0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </DOSSIER_CONTAINS_WORK>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/case-event/C-616%2F17.DELIV_JUDG_ORDER_2019-10-01</VALUE>
+                        <IDENTIFIER>C-616/17.DELIV_JUDG_ORDER_2019-10-01</IDENTIFIER>
+                        <TYPE>case-event</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/case-event/C-616%2F17.CC_CD_PUB_OJ_2019-12-09</VALUE>
+                        <IDENTIFIER>C-616/17.CC_CD_PUB_OJ_2019-12-09</IDENTIFIER>
+                        <TYPE>case-event</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/case-event/C-616%2F17.DELIV_OPI_VIEW_2019-03-12</VALUE>
+                        <IDENTIFIER>C-616/17.DELIV_OPI_VIEW_2019-03-12</IDENTIFIER>
+                        <TYPE>case-event</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <DOSSIER_TITLE type="data">
+                  <VALUE>C-616/17</VALUE>
+               </DOSSIER_TITLE>
+               <TYPE>cdm:entity_temporal</TYPE>
+               <TYPE>cdm:dossier</TYPE>
+               <TYPE>cdm:period</TYPE>
+               <TYPE>cdm:case_court</TYPE>
+            </DOSSIER>
+            <EVENT>
+               <EVENT_CONTAINS_WORK type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CC0616</VALUE>
+                        <IDENTIFIER>62017CC0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </EVENT_CONTAINS_WORK>
+               <PART_OF type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/case/C-616%2F17</VALUE>
+                        <IDENTIFIER>C-616/17</IDENTIFIER>
+                        <TYPE>case</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </PART_OF>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CC0616</VALUE>
+                        <IDENTIFIER>62017CC0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+            </EVENT>
+            <EVENT>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616</VALUE>
+                        <IDENTIFIER>62017CJ0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <EVENT_CONTAINS_WORK type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616_RES</VALUE>
+                        <IDENTIFIER>62017CJ0616_RES</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </EVENT_CONTAINS_WORK>
+               <PART_OF type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/case/C-616%2F17</VALUE>
+                        <IDENTIFIER>C-616/17</IDENTIFIER>
+                        <TYPE>case</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </PART_OF>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616_RES</VALUE>
+                        <IDENTIFIER>62017CJ0616_RES</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <EVENT_CONTAINS_WORK type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616</VALUE>
+                        <IDENTIFIER>62017CJ0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </EVENT_CONTAINS_WORK>
+            </EVENT>
+            <EVENT>
+               <PART_OF type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/case/C-616%2F17</VALUE>
+                        <IDENTIFIER>C-616/17</IDENTIFIER>
+                        <TYPE>case</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </PART_OF>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CA0616</VALUE>
+                        <IDENTIFIER>62017CA0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <EVENT_CONTAINS_WORK type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CA0616</VALUE>
+                        <IDENTIFIER>62017CA0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </EVENT_CONTAINS_WORK>
+            </EVENT>
+            <EVENT>
+               <PART_OF type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/case/C-616%2F17</VALUE>
+                        <IDENTIFIER>C-616/17</IDENTIFIER>
+                        <TYPE>case</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </PART_OF>
+               <CONTAINS type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CN0616</VALUE>
+                        <IDENTIFIER>62017CN0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </CONTAINS>
+               <EVENT_CONTAINS_WORK type="embedded_link">
+                  <SAMEAS>
+                     <URI>
+                        <VALUE>http://publications.europa.eu/resource/celex/62017CN0616</VALUE>
+                        <IDENTIFIER>62017CN0616</IDENTIFIER>
+                        <TYPE>celex</TYPE>
+                     </URI>
+                  </SAMEAS>
+               </EVENT_CONTAINS_WORK>
+            </EVENT>
+         </EMBEDDED_NOTICE>
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/e227915b-44d4-11e9-a8ed-01aa75ed71a1</VALUE>
+            <IDENTIFIER>e227915b-44d4-11e9-a8ed-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/case/C-616%2F17</VALUE>
+               <IDENTIFIER>C-616/17</IDENTIFIER>
+               <TYPE>case</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_PART_OF_DOSSIER>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0008</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0008</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.RON</VALUE>
+               <IDENTIFIER>62017CJ0616.RON</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.RON</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.RON</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <IDENTIFIER type="data">
+         <VALUE>62017CJ0616</VALUE>
+      </IDENTIFIER>
+      <CASE-LAW_IS_ABOUT_CONCEPT.MEMBERLIST type="memberlist">
+         <NESTEDLIST>
+            <CASE-LAW_IS_ABOUT_CONCEPT type="concept_level">
+               <CASE-LAW_IS_ABOUT_CONCEPT_4 type="concept">
+                  <URI>
+                     <VALUE>http://publications.europa.eu/resource/authority/fd_578/1.01.02.11</VALUE>
+                     <IDENTIFIER>1.01.02.11</IDENTIFIER>
+                     <TYPE>fd_578</TYPE>
+                  </URI>
+                  <OP-CODE>1.01.02.11</OP-CODE>
+                  <IDENTIFIER>1.01.02.11</IDENTIFIER>
+                  <PREFLABEL>Precautionary principle</PREFLABEL>
+               </CASE-LAW_IS_ABOUT_CONCEPT_4>
+               <CASE-LAW_IS_ABOUT_CONCEPT_2 type="concept">
+                  <URI>
+                     <VALUE>http://publications.europa.eu/resource/authority/fd_578/1.01</VALUE>
+                     <IDENTIFIER>1.01</IDENTIFIER>
+                     <TYPE>fd_578</TYPE>
+                  </URI>
+                  <OP-CODE>1.01</OP-CODE>
+                  <IDENTIFIER>1.01</IDENTIFIER>
+                  <PREFLABEL>Sources of EU law</PREFLABEL>
+               </CASE-LAW_IS_ABOUT_CONCEPT_2>
+               <CASE-LAW_IS_ABOUT_CONCEPT_3 type="concept">
+                  <URI>
+                     <VALUE>http://publications.europa.eu/resource/authority/fd_578/1.01.02</VALUE>
+                     <IDENTIFIER>1.01.02</IDENTIFIER>
+                     <TYPE>fd_578</TYPE>
+                  </URI>
+                  <OP-CODE>1.01.02</OP-CODE>
+                  <IDENTIFIER>1.01.02</IDENTIFIER>
+                  <PREFLABEL>General principles of law</PREFLABEL>
+               </CASE-LAW_IS_ABOUT_CONCEPT_3>
+               <CASE-LAW_IS_ABOUT_CONCEPT_1 type="concept">
+                  <URI>
+                     <VALUE>http://publications.europa.eu/resource/authority/fd_578/1</VALUE>
+                     <IDENTIFIER>1</IDENTIFIER>
+                     <TYPE>fd_578</TYPE>
+                  </URI>
+                  <OP-CODE>1</OP-CODE>
+                  <IDENTIFIER>1</IDENTIFIER>
+                  <PREFLABEL>The legal order of the European Union</PREFLABEL>
+               </CASE-LAW_IS_ABOUT_CONCEPT_1>
+            </CASE-LAW_IS_ABOUT_CONCEPT>
+            <CASE-LAW_IS_ABOUT_CONCEPT type="concept_level">
+               <CASE-LAW_IS_ABOUT_CONCEPT_4 type="concept">
+                  <URI>
+                     <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11.15.04</VALUE>
+                     <IDENTIFIER>4.11.15.04</IDENTIFIER>
+                     <TYPE>fd_578</TYPE>
+                  </URI>
+                  <OP-CODE>4.11.15.04</OP-CODE>
+                  <IDENTIFIER>4.11.15.04</IDENTIFIER>
+                  <PREFLABEL>Plant protection products</PREFLABEL>
+               </CASE-LAW_IS_ABOUT_CONCEPT_4>
+               <CASE-LAW_IS_ABOUT_CONCEPT_1 type="concept">
+                  <URI>
+                     <VALUE>http://publications.europa.eu/resource/authority/fd_578/4</VALUE>
+                     <IDENTIFIER>4</IDENTIFIER>
+                     <TYPE>fd_578</TYPE>
+                  </URI>
+                  <OP-CODE>4</OP-CODE>
+                  <IDENTIFIER>4</IDENTIFIER>
+                  <PREFLABEL>Internal policy of the European Union</PREFLABEL>
+               </CASE-LAW_IS_ABOUT_CONCEPT_1>
+               <CASE-LAW_IS_ABOUT_CONCEPT_3 type="concept">
+                  <URI>
+                     <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11.15</VALUE>
+                     <IDENTIFIER>4.11.15</IDENTIFIER>
+                     <TYPE>fd_578</TYPE>
+                  </URI>
+                  <OP-CODE>4.11.15</OP-CODE>
+                  <IDENTIFIER>4.11.15</IDENTIFIER>
+                  <PREFLABEL>Chemicals</PREFLABEL>
+               </CASE-LAW_IS_ABOUT_CONCEPT_3>
+               <CASE-LAW_IS_ABOUT_CONCEPT_2 type="concept">
+                  <URI>
+                     <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11</VALUE>
+                     <IDENTIFIER>4.11</IDENTIFIER>
+                     <TYPE>fd_578</TYPE>
+                  </URI>
+                  <OP-CODE>4.11</OP-CODE>
+                  <IDENTIFIER>4.11</IDENTIFIER>
+                  <PREFLABEL>Approximation of laws</PREFLABEL>
+               </CASE-LAW_IS_ABOUT_CONCEPT_2>
+            </CASE-LAW_IS_ABOUT_CONCEPT>
+         </NESTEDLIST>
+         <CASE-LAW_IS_ABOUT_CONCEPT type="concept_level">
+            <CASE-LAW_IS_ABOUT_CONCEPT_2 type="concept">
+               <URI>
+                  <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.23</VALUE>
+                  <IDENTIFIER>4.23</IDENTIFIER>
+                  <TYPE>fd_578</TYPE>
+               </URI>
+               <OP-CODE>4.23</OP-CODE>
+               <IDENTIFIER>4.23</IDENTIFIER>
+               <PREFLABEL>Environment, sustainable development and climate</PREFLABEL>
+            </CASE-LAW_IS_ABOUT_CONCEPT_2>
+            <CASE-LAW_IS_ABOUT_CONCEPT_1 type="concept">
+               <URI>
+                  <VALUE>http://publications.europa.eu/resource/authority/fd_578/4</VALUE>
+                  <IDENTIFIER>4</IDENTIFIER>
+                  <TYPE>fd_578</TYPE>
+               </URI>
+               <OP-CODE>4</OP-CODE>
+               <IDENTIFIER>4</IDENTIFIER>
+               <PREFLABEL>Internal policy of the European Union</PREFLABEL>
+            </CASE-LAW_IS_ABOUT_CONCEPT_1>
+         </CASE-LAW_IS_ABOUT_CONCEPT>
+         <CASE-LAW_IS_ABOUT_CONCEPT type="concept_level">
+            <CASE-LAW_IS_ABOUT_CONCEPT_4 type="concept">
+               <URI>
+                  <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11.15.04</VALUE>
+                  <IDENTIFIER>4.11.15.04</IDENTIFIER>
+                  <TYPE>fd_578</TYPE>
+               </URI>
+               <OP-CODE>4.11.15.04</OP-CODE>
+               <IDENTIFIER>4.11.15.04</IDENTIFIER>
+               <PREFLABEL>Plant protection products</PREFLABEL>
+            </CASE-LAW_IS_ABOUT_CONCEPT_4>
+            <CASE-LAW_IS_ABOUT_CONCEPT_1 type="concept">
+               <URI>
+                  <VALUE>http://publications.europa.eu/resource/authority/fd_578/4</VALUE>
+                  <IDENTIFIER>4</IDENTIFIER>
+                  <TYPE>fd_578</TYPE>
+               </URI>
+               <OP-CODE>4</OP-CODE>
+               <IDENTIFIER>4</IDENTIFIER>
+               <PREFLABEL>Internal policy of the European Union</PREFLABEL>
+            </CASE-LAW_IS_ABOUT_CONCEPT_1>
+            <CASE-LAW_IS_ABOUT_CONCEPT_3 type="concept">
+               <URI>
+                  <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11.15</VALUE>
+                  <IDENTIFIER>4.11.15</IDENTIFIER>
+                  <TYPE>fd_578</TYPE>
+               </URI>
+               <OP-CODE>4.11.15</OP-CODE>
+               <IDENTIFIER>4.11.15</IDENTIFIER>
+               <PREFLABEL>Chemicals</PREFLABEL>
+            </CASE-LAW_IS_ABOUT_CONCEPT_3>
+            <CASE-LAW_IS_ABOUT_CONCEPT_2 type="concept">
+               <URI>
+                  <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11</VALUE>
+                  <IDENTIFIER>4.11</IDENTIFIER>
+                  <TYPE>fd_578</TYPE>
+               </URI>
+               <OP-CODE>4.11</OP-CODE>
+               <IDENTIFIER>4.11</IDENTIFIER>
+               <PREFLABEL>Approximation of laws</PREFLABEL>
+            </CASE-LAW_IS_ABOUT_CONCEPT_2>
+         </CASE-LAW_IS_ABOUT_CONCEPT>
+      </CASE-LAW_IS_ABOUT_CONCEPT.MEMBERLIST>
+      <CREATED_BY type="link">
+         <EMBEDDED_NOTICE>
+            <AGENT>
+               <AGENT_NAME type="data">
+                  <VALUE>Sharpston</VALUE>
+               </AGENT_NAME>
+               <TYPE>cdm:agent-textual</TYPE>
+               <TYPE>cdm:person</TYPE>
+               <TYPE>cdm:agent</TYPE>
+            </AGENT>
+         </EMBEDDED_NOTICE>
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/7063630e-817e-4bde-a978-1bdd89aa92bb</VALUE>
+            <IDENTIFIER>7063630e-817e-4bde-a978-1bdd89aa92bb</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/agent/Sharpston</VALUE>
+               <IDENTIFIER>Sharpston</IDENTIFIER>
+               <TYPE>agent</TYPE>
+            </URI>
+         </SAMEAS>
+      </CREATED_BY>
+      <RESOURCE_LEGAL_YEAR type="data">
+         <VALUE>2017</VALUE>
+      </RESOURCE_LEGAL_YEAR>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0005</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0005</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.POL</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.POL</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.POL</VALUE>
+               <IDENTIFIER>62017CJ0616.POL</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0013</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0013</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.NLD</VALUE>
+               <IDENTIFIER>62017CJ0616.NLD</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.NLD</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.NLD</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <YEAR type="data">
+         <VALUE>2017</VALUE>
+      </YEAR>
+      <IS_ABOUT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/subject-matter/SANT</VALUE>
+            <IDENTIFIER>SANT</IDENTIFIER>
+            <TYPE>subject-matter</TYPE>
+         </URI>
+         <OP-CODE>SANT</OP-CODE>
+         <IDENTIFIER>SANT</IDENTIFIER>
+         <PREFLABEL>Public health</PREFLABEL>
+      </IS_ABOUT>
+      <IS_ABOUT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.23</VALUE>
+            <IDENTIFIER>4.23</IDENTIFIER>
+            <TYPE>fd_578</TYPE>
+         </URI>
+         <OP-CODE>4.23</OP-CODE>
+         <IDENTIFIER>4.23</IDENTIFIER>
+         <PREFLABEL>Environment, sustainable development and climate</PREFLABEL>
+      </IS_ABOUT>
+      <CASE-LAW_IS_ABOUT_CONCEPT type="concept_level">
+         <CASE-LAW_IS_ABOUT_CONCEPT_4 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/1.01.02.11</VALUE>
+               <IDENTIFIER>1.01.02.11</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>1.01.02.11</OP-CODE>
+            <IDENTIFIER>1.01.02.11</IDENTIFIER>
+            <PREFLABEL>Precautionary principle</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_4>
+         <CASE-LAW_IS_ABOUT_CONCEPT_2 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/1.01</VALUE>
+               <IDENTIFIER>1.01</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>1.01</OP-CODE>
+            <IDENTIFIER>1.01</IDENTIFIER>
+            <PREFLABEL>Sources of EU law</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_2>
+         <CASE-LAW_IS_ABOUT_CONCEPT_3 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/1.01.02</VALUE>
+               <IDENTIFIER>1.01.02</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>1.01.02</OP-CODE>
+            <IDENTIFIER>1.01.02</IDENTIFIER>
+            <PREFLABEL>General principles of law</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_3>
+         <CASE-LAW_IS_ABOUT_CONCEPT_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/1</VALUE>
+               <IDENTIFIER>1</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>1</OP-CODE>
+            <IDENTIFIER>1</IDENTIFIER>
+            <PREFLABEL>The legal order of the European Union</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_1>
+      </CASE-LAW_IS_ABOUT_CONCEPT>
+      <CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER type="concept_level">
+         <CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/case-law-subject-matter/SANT</VALUE>
+               <IDENTIFIER>SANT</IDENTIFIER>
+               <TYPE>case-law-subject-matter</TYPE>
+            </URI>
+            <OP-CODE>SANT</OP-CODE>
+            <IDENTIFIER>SANT</IDENTIFIER>
+            <PREFLABEL>Public health</PREFLABEL>
+         </CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER_1>
+      </CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER>
+      <ID_SECTOR type="data">
+         <VALUE>6</VALUE>
+      </ID_SECTOR>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0018</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0018</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.FIN</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.FIN</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.FIN</VALUE>
+               <IDENTIFIER>62017CJ0616.FIN</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <CASE-LAW_DELIVERED_BY_ADVOCATE-GENERAL type="link">
+         <EMBEDDED_NOTICE>
+            <AGENT>
+               <AGENT_NAME type="data">
+                  <VALUE>Sharpston</VALUE>
+               </AGENT_NAME>
+               <TYPE>cdm:agent-textual</TYPE>
+               <TYPE>cdm:person</TYPE>
+               <TYPE>cdm:agent</TYPE>
+            </AGENT>
+         </EMBEDDED_NOTICE>
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/7063630e-817e-4bde-a978-1bdd89aa92bb</VALUE>
+            <IDENTIFIER>7063630e-817e-4bde-a978-1bdd89aa92bb</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/agent/Sharpston</VALUE>
+               <IDENTIFIER>Sharpston</IDENTIFIER>
+               <TYPE>agent</TYPE>
+            </URI>
+         </SAMEAS>
+      </CASE-LAW_DELIVERED_BY_ADVOCATE-GENERAL>
+      <CASE-LAW_COMMENTED_BY_AGENT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/country/FRA</VALUE>
+            <IDENTIFIER>FRA</IDENTIFIER>
+            <TYPE>country</TYPE>
+         </URI>
+         <OP-CODE>FRA</OP-CODE>
+         <IDENTIFIER>FRA</IDENTIFIER>
+         <PREFLABEL>France</PREFLABEL>
+         <ALTLABEL>French</ALTLABEL>
+         <ALTLABEL>French Republic</ALTLABEL>
+      </CASE-LAW_COMMENTED_BY_AGENT>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0003</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0003</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.DEU</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.DEU</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.DEU</VALUE>
+               <IDENTIFIER>62017CJ0616.DEU</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <DATE type="date">
+         <VALUE>2019-10-01</VALUE>
+         <YEAR>2019</YEAR>
+         <MONTH>10</MONTH>
+         <DAY>01</DAY>
+      </DATE>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/efa0a899-9e2f-48d1-b34a-ad5db8b95780</VALUE>
+            <IDENTIFIER>efa0a899-9e2f-48d1-b34a-ad5db8b95780</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/treaty/tfeu_2008/art_267/oj</VALUE>
+               <IDENTIFIER>treaty:tfeu_2008:art_267:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/12008E267</VALUE>
+               <IDENTIFIER>12008E267</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 34 37</FRAGMENT_CITING_SOURCE>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/9e70096f-8781-4250-baca-2a95137bca41</VALUE>
+            <IDENTIFIER>9e70096f-8781-4250-baca-2a95137bca41</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/treaty/tfeu_2008/art_9/oj</VALUE>
+               <IDENTIFIER>treaty:tfeu_2008:art_9:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/12008E009</VALUE>
+               <IDENTIFIER>12008E009</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 42</FRAGMENT_CITING_SOURCE>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/fab29fde-9c3b-11e2-ab01-01aa75ed71a1</VALUE>
+            <IDENTIFIER>fab29fde-9c3b-11e2-ab01-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/reg/2013/283/oj</VALUE>
+               <IDENTIFIER>reg:2013:283:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/32013R0283</VALUE>
+               <IDENTIFIER>32013R0283</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/oj/JOL_2013_093_R_0001_01</VALUE>
+               <IDENTIFIER>JOL_2013_093_R_0001_01</IDENTIFIER>
+               <TYPE>oj</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 87</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>NPT3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 56</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>NS1LA</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/74f31e9b-e72b-11e8-b690-01aa75ed71a1</VALUE>
+            <IDENTIFIER>74f31e9b-e72b-11e8-b690-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0033</VALUE>
+               <IDENTIFIER>62017CJ0033</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2018%3A896</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2018:896</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 37</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N24</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER type="concept_level">
+         <RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/subject-matter/RAPL</VALUE>
+               <IDENTIFIER>RAPL</IDENTIFIER>
+               <TYPE>subject-matter</TYPE>
+            </URI>
+            <OP-CODE>RAPL</OP-CODE>
+            <IDENTIFIER>RAPL</IDENTIFIER>
+            <PREFLABEL>Approximation of laws</PREFLABEL>
+         </RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER_1>
+      </RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER>
+      <RESOURCE_LEGAL_DATE_REQUEST_OPINION type="date">
+         <VALUE>2017-10-26</VALUE>
+         <YEAR>2017</YEAR>
+         <MONTH>10</MONTH>
+         <DAY>26</DAY>
+      </RESOURCE_LEGAL_DATE_REQUEST_OPINION>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0023</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0023</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.SWE</VALUE>
+               <IDENTIFIER>62017CJ0616.SWE</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.SWE</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.SWE</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW type="concept_level">
+         <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_2 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.23</VALUE>
+               <IDENTIFIER>4.23</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4.23</OP-CODE>
+            <IDENTIFIER>4.23</IDENTIFIER>
+            <PREFLABEL>Environment, sustainable development and climate</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_2>
+         <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4</VALUE>
+               <IDENTIFIER>4</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4</OP-CODE>
+            <IDENTIFIER>4</IDENTIFIER>
+            <PREFLABEL>Internal policy of the European Union</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_1>
+      </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/495bbc81-140c-11e5-8817-01aa75ed71a1</VALUE>
+            <IDENTIFIER>495bbc81-140c-11e5-8817-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2015%3A400</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2015:400</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62014CJ0062</VALUE>
+               <IDENTIFIER>62014CJ0062</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 35</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N25</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 34</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N24</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <IS_ABOUT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/case-law-subject-matter/SANT</VALUE>
+            <IDENTIFIER>SANT</IDENTIFIER>
+            <TYPE>case-law-subject-matter</TYPE>
+         </URI>
+         <OP-CODE>SANT</OP-CODE>
+         <IDENTIFIER>SANT</IDENTIFIER>
+         <PREFLABEL>Public health</PREFLABEL>
+      </IS_ABOUT>
+      <CASE-LAW_COMMENTED_BY_AGENT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/role-qualifier/EUMS</VALUE>
+            <IDENTIFIER>EUMS</IDENTIFIER>
+            <TYPE>role-qualifier</TYPE>
+         </URI>
+         <OP-CODE>EUMS</OP-CODE>
+         <IDENTIFIER>EUMS</IDENTIFIER>
+         <PREFLABEL>EU Member States</PREFLABEL>
+      </CASE-LAW_COMMENTED_BY_AGENT>
+      <RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER type="concept_level">
+         <RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/subject-matter/SANT</VALUE>
+               <IDENTIFIER>SANT</IDENTIFIER>
+               <TYPE>subject-matter</TYPE>
+            </URI>
+            <OP-CODE>SANT</OP-CODE>
+            <IDENTIFIER>SANT</IDENTIFIER>
+            <PREFLABEL>Public health</PREFLABEL>
+         </RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER_1>
+      </RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER>
+      <WORK_SUMMARIZED_BY_SUMMARY type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/c7e9d7d9-651e-11ef-a8ba-01aa75ed71a1</VALUE>
+            <IDENTIFIER>c7e9d7d9-651e-11ef-a8ba-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616_RES</VALUE>
+               <IDENTIFIER>62017CJ0616_RES</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_SUMMARIZED_BY_SUMMARY>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0001</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0001</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.FRA</VALUE>
+               <IDENTIFIER>62017CJ0616.FRA</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.FRA</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.FRA</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <CASE-LAW_ARTICLE_JOURNAL_RELATED type="data">
+         <VALUE>3. Röttger-Wirtz, Sabrina: Case C-616/17 Blaise and Others: The precautionary principle and its role in judicial review – Glyphosate and the regulatory framework for pesticides, Maastricht Journal of European and Comparative Law 2020 p. 529–542 (EN)</VALUE>
+      </CASE-LAW_ARTICLE_JOURNAL_RELATED>
+      <DATE type="date">
+         <VALUE>2017-10-26</VALUE>
+         <YEAR>2017</YEAR>
+         <MONTH>10</MONTH>
+         <DAY>26</DAY>
+      </DATE>
+      <COMPLEX_WORK_HAS_MEMBER_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/25f5b99e-e42e-11e9-9c4e-01aa75ed71a1</VALUE>
+            <IDENTIFIER>25f5b99e-e42e-11e9-9c4e-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616_1</VALUE>
+               <IDENTIFIER>62017CJ0616_1</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800_1</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800_1</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </COMPLEX_WORK_HAS_MEMBER_WORK>
+      <CASE-LAW_HAS_TYPE_PROCEDURE_CONCEPT_TYPE_PROCEDURE type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/fd_100/PREJ</VALUE>
+            <IDENTIFIER>PREJ</IDENTIFIER>
+            <TYPE>fd_100</TYPE>
+         </URI>
+         <OP-CODE>PREJ</OP-CODE>
+         <IDENTIFIER>PREJ</IDENTIFIER>
+         <PREFLABEL>Reference for a preliminary ruling</PREFLABEL>
+      </CASE-LAW_HAS_TYPE_PROCEDURE_CONCEPT_TYPE_PROCEDURE>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0019</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0019</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.LAV</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.LAV</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.LAV</VALUE>
+               <IDENTIFIER>62017CJ0616.LAV</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <CASE-LAW_ARTICLE_JOURNAL_RELATED type="data">
+         <VALUE>2. Donati, Alessandra: The Glyphosate Saga, a Further but Not a Final Step: The CJEU Confirms the Validity of the Regulation on Plant Protection Products in Light of the Precautionary Principle, European Journal of Risk Regulation 2020 nº 11/1 p. 148-154 (EN)</VALUE>
+      </CASE-LAW_ARTICLE_JOURNAL_RELATED>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/7d62e61d-b167-11e6-871e-01aa75ed71a1</VALUE>
+            <IDENTIFIER>7d62e61d-b167-11e6-871e-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62014CJ0442</VALUE>
+               <IDENTIFIER>62014CJ0442</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2016%3A890</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2016:890</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 108</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N87</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 108</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N79</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 108</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N91</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 106</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N44</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <WORK_ID_DOCUMENT type="data">
+         <VALUE>ecli:ECLI:EU:C:2019:800</VALUE>
+      </WORK_ID_DOCUMENT>
+      <WORK_CREATED_BY_AGENT type="link">
+         <EMBEDDED_NOTICE>
+            <AGENT>
+               <AGENT_NAME type="data">
+                  <VALUE>Sharpston</VALUE>
+               </AGENT_NAME>
+               <TYPE>cdm:agent-textual</TYPE>
+               <TYPE>cdm:person</TYPE>
+               <TYPE>cdm:agent</TYPE>
+            </AGENT>
+         </EMBEDDED_NOTICE>
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/7063630e-817e-4bde-a978-1bdd89aa92bb</VALUE>
+            <IDENTIFIER>7063630e-817e-4bde-a978-1bdd89aa92bb</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/agent/Sharpston</VALUE>
+               <IDENTIFIER>Sharpston</IDENTIFIER>
+               <TYPE>agent</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_CREATED_BY_AGENT>
+      <CASE-LAW_ORIGINATES_IN_COUNTRY type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/country/FRA</VALUE>
+            <IDENTIFIER>FRA</IDENTIFIER>
+            <TYPE>country</TYPE>
+         </URI>
+         <OP-CODE>FRA</OP-CODE>
+         <IDENTIFIER>FRA</IDENTIFIER>
+         <PREFLABEL>France</PREFLABEL>
+         <ALTLABEL>French</ALTLABEL>
+         <ALTLABEL>French Republic</ALTLABEL>
+      </CASE-LAW_ORIGINATES_IN_COUNTRY>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/c5e74fa5-06e8-4b2d-a87e-fef9df62f433</VALUE>
+            <IDENTIFIER>c5e74fa5-06e8-4b2d-a87e-fef9df62f433</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2010%3A419</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2010:419</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62009CJ0343</VALUE>
+               <IDENTIFIER>62009CJ0343</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 46</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N60</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <IDENTIFIER type="data">
+         <VALUE>ecli:ECLI:EU:C:2019:800</VALUE>
+      </IDENTIFIER>
+      <WORK_HAS_RESOURCE-TYPE type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/resource-type/JUDG</VALUE>
+            <IDENTIFIER>JUDG</IDENTIFIER>
+            <TYPE>resource-type</TYPE>
+         </URI>
+         <OP-CODE>JUDG</OP-CODE>
+         <IDENTIFIER>JUDG</IDENTIFIER>
+         <PREFLABEL>Judgment</PREFLABEL>
+      </WORK_HAS_RESOURCE-TYPE>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0010</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0010</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.POR</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.POR</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.POR</VALUE>
+               <IDENTIFIER>62017CJ0616.POR</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0006</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0006</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.SLK</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.SLK</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.SLK</VALUE>
+               <IDENTIFIER>62017CJ0616.SLK</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <CASE-LAW_COMMENTED_BY_AGENT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/country/FIN</VALUE>
+            <IDENTIFIER>FIN</IDENTIFIER>
+            <TYPE>country</TYPE>
+         </URI>
+         <OP-CODE>FIN</OP-CODE>
+         <IDENTIFIER>FIN</IDENTIFIER>
+         <PREFLABEL>Finland</PREFLABEL>
+         <ALTLABEL>Republic of Finland</ALTLABEL>
+         <ALTLABEL>Finnish</ALTLABEL>
+      </CASE-LAW_COMMENTED_BY_AGENT>
+      <IS_ABOUT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11.15.04</VALUE>
+            <IDENTIFIER>4.11.15.04</IDENTIFIER>
+            <TYPE>fd_578</TYPE>
+         </URI>
+         <OP-CODE>4.11.15.04</OP-CODE>
+         <IDENTIFIER>4.11.15.04</IDENTIFIER>
+         <PREFLABEL>Plant protection products</PREFLABEL>
+      </IS_ABOUT>
+      <CASE-LAW_COMMENTED_BY_AGENT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/role-qualifier/EUINST</VALUE>
+            <IDENTIFIER>EUINST</IDENTIFIER>
+            <TYPE>role-qualifier</TYPE>
+         </URI>
+         <OP-CODE>EUINST</OP-CODE>
+         <IDENTIFIER>EUINST</IDENTIFIER>
+         <PREFLABEL>EU institutions and bodies</PREFLABEL>
+      </CASE-LAW_COMMENTED_BY_AGENT>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0020</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0020</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.ITA</VALUE>
+               <IDENTIFIER>62017CJ0616.ITA</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.ITA</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.ITA</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <WORK_CREATED_BY_AGENT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/corporate-body/CJ</VALUE>
+            <IDENTIFIER>CJ</IDENTIFIER>
+            <TYPE>corporate-body</TYPE>
+         </URI>
+         <OP-CODE>CJ</OP-CODE>
+         <IDENTIFIER>CJ</IDENTIFIER>
+         <PREFLABEL>Court of Justice</PREFLABEL>
+      </WORK_CREATED_BY_AGENT>
+      <CASE-LAW_NATIONAL-JUDGEMENT type="data">
+         <VALUE>
+      &lt;national_judgement&gt;
+        &lt;p&gt;*A9* Tribunal correctionnel de Foix, Chambre correctionnelle, Jugement du 12/10/2017 (1063110)&lt;/p&gt;
+      &lt;/national_judgement&gt;
+    </VALUE>
+      </CASE-LAW_NATIONAL-JUDGEMENT>
+      <IS_ABOUT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/case-law-subject-matter/RAPL</VALUE>
+            <IDENTIFIER>RAPL</IDENTIFIER>
+            <TYPE>case-law-subject-matter</TYPE>
+         </URI>
+         <OP-CODE>RAPL</OP-CODE>
+         <IDENTIFIER>RAPL</IDENTIFIER>
+         <PREFLABEL>Approximation of laws</PREFLABEL>
+      </IS_ABOUT>
+      <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW type="concept_level">
+         <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_4 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/1.01.02.11</VALUE>
+               <IDENTIFIER>1.01.02.11</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>1.01.02.11</OP-CODE>
+            <IDENTIFIER>1.01.02.11</IDENTIFIER>
+            <PREFLABEL>Precautionary principle</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_4>
+         <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_2 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/1.01</VALUE>
+               <IDENTIFIER>1.01</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>1.01</OP-CODE>
+            <IDENTIFIER>1.01</IDENTIFIER>
+            <PREFLABEL>Sources of EU law</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_2>
+         <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_3 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/1.01.02</VALUE>
+               <IDENTIFIER>1.01.02</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>1.01.02</OP-CODE>
+            <IDENTIFIER>1.01.02</IDENTIFIER>
+            <PREFLABEL>General principles of law</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_3>
+         <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/1</VALUE>
+               <IDENTIFIER>1</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>1</OP-CODE>
+            <IDENTIFIER>1</IDENTIFIER>
+            <PREFLABEL>The legal order of the European Union</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_1>
+      </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW>
+      <LASTMODIFICATIONDATE type="date">
+         <VALUE>2025-08-24T11:49:54.844+02:00</VALUE>
+         <YEAR>2025</YEAR>
+         <MONTH>08</MONTH>
+         <DAY>24</DAY>
+      </LASTMODIFICATIONDATE>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0017</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0017</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.HUN</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.HUN</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.HUN</VALUE>
+               <IDENTIFIER>62017CJ0616.HUN</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <VERSION type="data">
+         <VALUE>definitive</VALUE>
+      </VERSION>
+      <ECLI type="data">
+         <VALUE>ECLI:EU:C:2019:800</VALUE>
+      </ECLI>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0009</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0009</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.EST</VALUE>
+               <IDENTIFIER>62017CJ0616.EST</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.EST</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.EST</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <CASE-LAW_ARTICLE_JOURNAL_RELATED type="data">
+         <VALUE>5. Paulini, Sophia: Fact or fiction? : Case C-616/17 and the compatibility of the EU authorisation procedure for pesticides with the precautionary principle, European Journal of Risk Regulation 2020 nº 3 p. 481-497 (EN)</VALUE>
+      </CASE-LAW_ARTICLE_JOURNAL_RELATED>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/cb95d277-04bb-4452-a7aa-9064b8b6eddb</VALUE>
+            <IDENTIFIER>cb95d277-04bb-4452-a7aa-9064b8b6eddb</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/12008E191</VALUE>
+               <IDENTIFIER>12008E191</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/treaty/tfeu_2008/art_191/oj</VALUE>
+               <IDENTIFIER>treaty:tfeu_2008:art_191:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 41</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <CASE-LAW_COMMUNICATED_ON_BY_COMMUNICATION_CJEU type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/9f08eae0-1a57-11ea-8c1f-01aa75ed71a1</VALUE>
+            <IDENTIFIER>9f08eae0-1a57-11ea-8c1f-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CA0616</VALUE>
+               <IDENTIFIER>62017CA0616</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/oj/JOC_2019_413_R_0002</VALUE>
+               <IDENTIFIER>JOC_2019_413_R_0002</IDENTIFIER>
+               <TYPE>oj</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <TYPE_OF_LINK_TARGET>AJ</TYPE_OF_LINK_TARGET>
+         </ANNOTATION>
+      </CASE-LAW_COMMUNICATED_ON_BY_COMMUNICATION_CJEU>
+      <CASE-LAW_USES_PROCEDURE_LANGUAGE type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/language/FRA</VALUE>
+            <IDENTIFIER>FRA</IDENTIFIER>
+            <TYPE>language</TYPE>
+         </URI>
+         <OP-CODE>FRA</OP-CODE>
+         <IDENTIFIER>FRA</IDENTIFIER>
+         <PREFLABEL>French</PREFLABEL>
+      </CASE-LAW_USES_PROCEDURE_LANGUAGE>
+      <IS_ABOUT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/subject-matter/PHYT</VALUE>
+            <IDENTIFIER>PHYT</IDENTIFIER>
+            <TYPE>subject-matter</TYPE>
+         </URI>
+         <OP-CODE>PHYT</OP-CODE>
+         <IDENTIFIER>PHYT</IDENTIFIER>
+         <PREFLABEL>Plant health legislation</PREFLABEL>
+      </IS_ABOUT>
+      <CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER type="concept_level">
+         <CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/case-law-subject-matter/RAPL</VALUE>
+               <IDENTIFIER>RAPL</IDENTIFIER>
+               <TYPE>case-law-subject-matter</TYPE>
+            </URI>
+            <OP-CODE>RAPL</OP-CODE>
+            <IDENTIFIER>RAPL</IDENTIFIER>
+            <PREFLABEL>Approximation of laws</PREFLABEL>
+         </CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER_1>
+      </CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0021</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0021</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.LIT</VALUE>
+               <IDENTIFIER>62017CJ0616.LIT</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.LIT</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.LIT</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER type="concept_level">
+         <RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/subject-matter/AGRI</VALUE>
+               <IDENTIFIER>AGRI</IDENTIFIER>
+               <TYPE>subject-matter</TYPE>
+            </URI>
+            <OP-CODE>AGRI</OP-CODE>
+            <IDENTIFIER>AGRI</IDENTIFIER>
+            <PREFLABEL>Agriculture and Fisheries</PREFLABEL>
+         </RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER_1>
+      </RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/c20a6c84-9c3c-11e2-ab01-01aa75ed71a1</VALUE>
+            <IDENTIFIER>c20a6c84-9c3c-11e2-ab01-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/reg/2013/284/oj</VALUE>
+               <IDENTIFIER>reg:2013:284:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/32013R0284</VALUE>
+               <IDENTIFIER>32013R0284</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/oj/JOL_2013_093_R_0085_01</VALUE>
+               <IDENTIFIER>JOL_2013_093_R_0085_01</IDENTIFIER>
+               <TYPE>oj</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 87</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>NPT3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 73</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>NPT1.3</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 73</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>NPT1.2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/f75def86-c76d-11e6-a6db-01aa75ed71a1</VALUE>
+            <IDENTIFIER>f75def86-c76d-11e6-a6db-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62015CJ0444</VALUE>
+               <IDENTIFIER>62015CJ0444</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2016%3A978</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2016:978</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 50</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N46</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <CASE-LAW_IS_ABOUT_CONCEPT type="concept_level">
+         <CASE-LAW_IS_ABOUT_CONCEPT_2 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.23</VALUE>
+               <IDENTIFIER>4.23</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4.23</OP-CODE>
+            <IDENTIFIER>4.23</IDENTIFIER>
+            <PREFLABEL>Environment, sustainable development and climate</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_2>
+         <CASE-LAW_IS_ABOUT_CONCEPT_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4</VALUE>
+               <IDENTIFIER>4</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4</OP-CODE>
+            <IDENTIFIER>4</IDENTIFIER>
+            <PREFLABEL>Internal policy of the European Union</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_1>
+      </CASE-LAW_IS_ABOUT_CONCEPT>
+      <CASE-LAW_COMMENTED_BY_AGENT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/corporate-body/COM</VALUE>
+            <IDENTIFIER>COM</IDENTIFIER>
+            <TYPE>corporate-body</TYPE>
+         </URI>
+         <OP-CODE>COM</OP-CODE>
+         <IDENTIFIER>COM</IDENTIFIER>
+         <PREFLABEL>European Commission</PREFLABEL>
+         <ALTLABEL>Commission</ALTLABEL>
+         <ALTLABEL>EC</ALTLABEL>
+      </CASE-LAW_COMMENTED_BY_AGENT>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0004</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0004</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.SPA</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.SPA</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.SPA</VALUE>
+               <IDENTIFIER>62017CJ0616.SPA</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/c2514307-b9a4-4a7b-9f36-a9f3662df21b</VALUE>
+            <IDENTIFIER>c2514307-b9a4-4a7b-9f36-a9f3662df21b</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/dir/1991/414/oj</VALUE>
+               <IDENTIFIER>dir:1991:414:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/31991L0414</VALUE>
+               <IDENTIFIER>31991L0414</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/oj/JOL_1991_230_R_0001_003</VALUE>
+               <IDENTIFIER>JOL_1991_230_R_0001_003</IDENTIFIER>
+               <TYPE>oj</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 17</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N6</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/6eb92455-a4d3-11e5-b528-01aa75ed71a1</VALUE>
+            <IDENTIFIER>6eb92455-a4d3-11e5-b528-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2015%3A823</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2015:823</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62014CJ0157</VALUE>
+               <IDENTIFIER>62014CJ0157</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 43</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N82</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 43</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N81</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <CREATIONDATE type="date">
+         <VALUE>2019-10-01T11:30:10.260+02:00</VALUE>
+         <YEAR>2019</YEAR>
+         <MONTH>10</MONTH>
+         <DAY>01</DAY>
+      </CREATIONDATE>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/59f544eb-4bbf-4965-be02-d719cddffbf6</VALUE>
+            <IDENTIFIER>59f544eb-4bbf-4965-be02-d719cddffbf6</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/treaty/char_2007/art_35/oj</VALUE>
+               <IDENTIFIER>treaty:char_2007:art_35:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/12007P035</VALUE>
+               <IDENTIFIER>12007P035</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 42</FRAGMENT_CITING_SOURCE>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <IS_ABOUT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/fd_578/1.01.02.11</VALUE>
+            <IDENTIFIER>1.01.02.11</IDENTIFIER>
+            <TYPE>fd_578</TYPE>
+         </URI>
+         <OP-CODE>1.01.02.11</OP-CODE>
+         <IDENTIFIER>1.01.02.11</IDENTIFIER>
+         <PREFLABEL>Precautionary principle</PREFLABEL>
+      </IS_ABOUT>
+      <CASE-LAW_ORIGINATES_IN_COUNTRY_ROLE-QUALIFIER type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/country/FRA</VALUE>
+            <IDENTIFIER>FRA</IDENTIFIER>
+            <TYPE>country</TYPE>
+         </URI>
+         <OP-CODE>FRA</OP-CODE>
+         <IDENTIFIER>FRA</IDENTIFIER>
+         <PREFLABEL>France</PREFLABEL>
+         <ALTLABEL>French</ALTLABEL>
+         <ALTLABEL>French Republic</ALTLABEL>
+      </CASE-LAW_ORIGINATES_IN_COUNTRY_ROLE-QUALIFIER>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0011</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0011</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.CES</VALUE>
+               <IDENTIFIER>62017CJ0616.CES</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.CES</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.CES</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0002</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0002</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.HRV</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.HRV</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.HRV</VALUE>
+               <IDENTIFIER>62017CJ0616.HRV</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER type="concept_level">
+         <CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER_2 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/case-law-subject-matter/PHYT</VALUE>
+               <IDENTIFIER>PHYT</IDENTIFIER>
+               <TYPE>case-law-subject-matter</TYPE>
+            </URI>
+            <OP-CODE>PHYT</OP-CODE>
+            <IDENTIFIER>PHYT</IDENTIFIER>
+            <PREFLABEL>Plant health legislation</PREFLABEL>
+         </CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER_2>
+         <CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/case-law-subject-matter/AGRI</VALUE>
+               <IDENTIFIER>AGRI</IDENTIFIER>
+               <TYPE>case-law-subject-matter</TYPE>
+            </URI>
+            <OP-CODE>AGRI</OP-CODE>
+            <IDENTIFIER>AGRI</IDENTIFIER>
+            <PREFLABEL>Agriculture</PREFLABEL>
+         </CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER_1>
+      </CASE-LAW_IS-ABOUT_CASE-LAW-SUBJECT-MATTER>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/2eab6a5b-f943-484c-b9ae-fa9aaef8463c</VALUE>
+            <IDENTIFIER>2eab6a5b-f943-484c-b9ae-fa9aaef8463c</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2004%3A762</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2004:762</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62002CJ0041</VALUE>
+               <IDENTIFIER>62002CJ0041</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 41</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N45</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <RESOURCE_LEGAL_ID_CELEX type="data">
+         <VALUE>62017CJ0616</VALUE>
+      </RESOURCE_LEGAL_ID_CELEX>
+      <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW type="concept_level">
+         <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_4 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11.15.04</VALUE>
+               <IDENTIFIER>4.11.15.04</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4.11.15.04</OP-CODE>
+            <IDENTIFIER>4.11.15.04</IDENTIFIER>
+            <PREFLABEL>Plant protection products</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_4>
+         <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4</VALUE>
+               <IDENTIFIER>4</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4</OP-CODE>
+            <IDENTIFIER>4</IDENTIFIER>
+            <PREFLABEL>Internal policy of the European Union</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_1>
+         <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_3 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11.15</VALUE>
+               <IDENTIFIER>4.11.15</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4.11.15</OP-CODE>
+            <IDENTIFIER>4.11.15</IDENTIFIER>
+            <PREFLABEL>Chemicals</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_3>
+         <CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_2 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/fd_578/4.11</VALUE>
+               <IDENTIFIER>4.11</IDENTIFIER>
+               <TYPE>fd_578</TYPE>
+            </URI>
+            <OP-CODE>4.11</OP-CODE>
+            <IDENTIFIER>4.11</IDENTIFIER>
+            <PREFLABEL>Approximation of laws</PREFLABEL>
+         </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW_2>
+      </CASE-LAW_IS_ABOUT_CONCEPT_NEW_CASE-LAW>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/6c4439e7-d1e8-4b88-af3b-7435a75fc9e3</VALUE>
+            <IDENTIFIER>6c4439e7-d1e8-4b88-af3b-7435a75fc9e3</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62004CJ0154</VALUE>
+               <IDENTIFIER>62004CJ0154</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2005%3A449</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2005:449</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 41</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N68</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0014</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0014</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.MLT</VALUE>
+               <IDENTIFIER>62017CJ0616.MLT</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.MLT</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.MLT</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <WORK_DATE_DOCUMENT type="date">
+         <VALUE>2019-10-01</VALUE>
+         <YEAR>2019</YEAR>
+         <MONTH>10</MONTH>
+         <DAY>01</DAY>
+      </WORK_DATE_DOCUMENT>
+      <CASE-LAW_ARTICLE_JOURNAL_RELATED type="data">
+         <VALUE>1. Roset, Sébastien: Environnement. Crise du glyphosate, Europe 2019 Décembre Comm. nº 12 p.42-43 (FR)</VALUE>
+      </CASE-LAW_ARTICLE_JOURNAL_RELATED>
+      <PART_OF type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/13d4e02c-e42d-11e9-9c4e-01aa75ed71a1</VALUE>
+            <IDENTIFIER>13d4e02c-e42d-11e9-9c4e-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/numpub/201910C101201706160</VALUE>
+               <IDENTIFIER>201910C101201706160</IDENTIFIER>
+               <TYPE>numpub</TYPE>
+            </URI>
+         </SAMEAS>
+      </PART_OF>
+      <RESOURCE_LEGAL_USES_ORIGINALLY_LANGUAGE type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/language/FRA</VALUE>
+            <IDENTIFIER>FRA</IDENTIFIER>
+            <TYPE>language</TYPE>
+         </URI>
+         <OP-CODE>FRA</OP-CODE>
+         <IDENTIFIER>FRA</IDENTIFIER>
+         <PREFLABEL>French</PREFLABEL>
+      </RESOURCE_LEGAL_USES_ORIGINALLY_LANGUAGE>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0012</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0012</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.ENG</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.ENG</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.ENG</VALUE>
+               <IDENTIFIER>62017CJ0616.ENG</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <WORK_ID_DOCUMENT type="data">
+         <VALUE>celex:62017CJ0616</VALUE>
+      </WORK_ID_DOCUMENT>
+      <CREATED_BY type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/corporate-body/CJ</VALUE>
+            <IDENTIFIER>CJ</IDENTIFIER>
+            <TYPE>corporate-body</TYPE>
+         </URI>
+         <OP-CODE>CJ</OP-CODE>
+         <IDENTIFIER>CJ</IDENTIFIER>
+         <PREFLABEL>Court of Justice</PREFLABEL>
+      </CREATED_BY>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0007</VALUE>
+            <IDENTIFIER>1c5d848d-e42e-11e9-9c4e-01aa75ed71a1.0007</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0616.ELL</VALUE>
+               <IDENTIFIER>62017CJ0616.ELL</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2019%3A800.ELL</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2019:800.ELL</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <CASE-LAW_ARTICLE_JOURNAL_RELATED type="data">
+         <VALUE>4. Bailleux, Antoine: Don’t judge a case by its cover: the pesticides Regulation survives judicial scrutiny but is given new teeth: Blaise : Case C-616/17, Common Market Law Review 2020 p. 861-876 (EN)</VALUE>
+      </CASE-LAW_ARTICLE_JOURNAL_RELATED>
+      <CASE-LAW_DECLARES_VALID_RESOURCE_LEGAL type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1ad90f5a-4dfe-4ad2-adda-e290d0e23c8b</VALUE>
+            <IDENTIFIER>1ad90f5a-4dfe-4ad2-adda-e290d0e23c8b</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/32009R1107</VALUE>
+               <IDENTIFIER>32009R1107</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/reg/2009/1107/oj</VALUE>
+               <IDENTIFIER>reg:2009:1107:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/oj/JOL_2009_309_R_0001_01</VALUE>
+               <IDENTIFIER>JOL_2009_309_R_0001_01</IDENTIFIER>
+               <TYPE>oj</TYPE>
+            </URI>
+         </SAMEAS>
+      </CASE-LAW_DECLARES_VALID_RESOURCE_LEGAL>
+      <PART_OF type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/e227915b-44d4-11e9-a8ed-01aa75ed71a1.0002</VALUE>
+            <IDENTIFIER>e227915b-44d4-11e9-a8ed-01aa75ed71a1.0002</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/case-event/C-616%2F17.DELIV_JUDG_ORDER_2019-10-01</VALUE>
+               <IDENTIFIER>C-616/17.DELIV_JUDG_ORDER_2019-10-01</IDENTIFIER>
+               <TYPE>case-event</TYPE>
+            </URI>
+         </SAMEAS>
+      </PART_OF>
+      <IS_ABOUT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/case-law-subject-matter/PHYT</VALUE>
+            <IDENTIFIER>PHYT</IDENTIFIER>
+            <TYPE>case-law-subject-matter</TYPE>
+         </URI>
+         <OP-CODE>PHYT</OP-CODE>
+         <IDENTIFIER>PHYT</IDENTIFIER>
+         <PREFLABEL>Plant health legislation</PREFLABEL>
+      </IS_ABOUT>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/3de1a299-ee4d-11e8-b690-01aa75ed71a1</VALUE>
+            <IDENTIFIER>3de1a299-ee4d-11e8-b690-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2018%3A938</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2018:938</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62017CJ0151</VALUE>
+               <IDENTIFIER>62017CJ0151</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 43</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N38</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <CASE-LAW_COMMENTED_BY_AGENT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/country/GRC</VALUE>
+            <IDENTIFIER>GRC</IDENTIFIER>
+            <TYPE>country</TYPE>
+         </URI>
+         <OP-CODE>GRC</OP-CODE>
+         <IDENTIFIER>GRC</IDENTIFIER>
+         <PREFLABEL>Greece</PREFLABEL>
+         <ALTLABEL>Hellenic Republic</ALTLABEL>
+         <ALTLABEL>Kingdom of Greece</ALTLABEL>
+         <ALTLABEL>Greek</ALTLABEL>
+      </CASE-LAW_COMMENTED_BY_AGENT>
+      <CASE-LAW_DELIVERED_BY_JUDGE type="link">
+         <EMBEDDED_NOTICE>
+            <AGENT>
+               <AGENT_NAME type="data">
+                  <VALUE>Bay Larsen</VALUE>
+               </AGENT_NAME>
+               <TYPE>cdm:agent-textual</TYPE>
+               <TYPE>cdm:person</TYPE>
+               <TYPE>cdm:agent</TYPE>
+            </AGENT>
+         </EMBEDDED_NOTICE>
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/d165be7d-2a7b-4f9b-9088-89cddbd1f62b</VALUE>
+            <IDENTIFIER>d165be7d-2a7b-4f9b-9088-89cddbd1f62b</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/agent/Bay%20Larsen</VALUE>
+               <IDENTIFIER>Bay Larsen</IDENTIFIER>
+               <TYPE>agent</TYPE>
+            </URI>
+         </SAMEAS>
+      </CASE-LAW_DELIVERED_BY_JUDGE>
+      <ID_CELEX type="data">
+         <VALUE>62017CJ0616</VALUE>
+      </ID_CELEX>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/1d2724d1-632e-11e8-ab9c-01aa75ed71a1</VALUE>
+            <IDENTIFIER>1d2724d1-632e-11e8-ab9c-01aa75ed71a1</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/ecli/ECLI%3AEU%3AC%3A2018%3A335</VALUE>
+               <IDENTIFIER>ECLI:EU:C:2018:335</IDENTIFIER>
+               <TYPE>ecli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/62016CJ0426</VALUE>
+               <IDENTIFIER>62016CJ0426</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 48</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>N72</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <CASE-LAW_COMMENTED_BY_AGENT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/corporate-body/EP</VALUE>
+            <IDENTIFIER>EP</IDENTIFIER>
+            <TYPE>corporate-body</TYPE>
+         </URI>
+         <OP-CODE>EP</OP-CODE>
+         <IDENTIFIER>EP</IDENTIFIER>
+         <PREFLABEL>European Parliament</PREFLABEL>
+         <ALTLABEL>EP</ALTLABEL>
+      </CASE-LAW_COMMENTED_BY_AGENT>
+      <IS_ABOUT type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/subject-matter/AGRI</VALUE>
+            <IDENTIFIER>AGRI</IDENTIFIER>
+            <TYPE>subject-matter</TYPE>
+         </URI>
+         <OP-CODE>AGRI</OP-CODE>
+         <IDENTIFIER>AGRI</IDENTIFIER>
+         <PREFLABEL>Agriculture and Fisheries</PREFLABEL>
+      </IS_ABOUT>
+      <WORK_CITES_WORK type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/65bee8e7-6e37-49c9-a431-67083fe22157</VALUE>
+            <IDENTIFIER>65bee8e7-6e37-49c9-a431-67083fe22157</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/eli/dir/2003/4/oj</VALUE>
+               <IDENTIFIER>dir:2003:4:oj</IDENTIFIER>
+               <TYPE>eli</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/oj/JOL_2003_041_R_0026_01</VALUE>
+               <IDENTIFIER>JOL_2003_041_R_0026_01</IDENTIFIER>
+               <TYPE>oj</TYPE>
+            </URI>
+         </SAMEAS>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/32003L0004</VALUE>
+               <IDENTIFIER>32003L0004</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 3 107</FRAGMENT_CITING_SOURCE>
+            <FRAGMENT_CITED_TARGET>A04P2</FRAGMENT_CITED_TARGET>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+         <ANNOTATION>
+            <FRAGMENT_CITING_SOURCE>N 106</FRAGMENT_CITING_SOURCE>
+            <BUILD_INFO>reception-ID: PO-20250822-10076; environment: PROD; CERES: 4.29.4; IMMC2CDM: 3.2.3; workflow: CASELAW_METADATA_UPDATE; rules: caselaw-legacy-20250626-0; builddate: 2025-08-24T11:39:08.658;</BUILD_INFO>
+         </ANNOTATION>
+      </WORK_CITES_WORK>
+      <RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER type="concept_level">
+         <RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER_1 type="concept">
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/authority/subject-matter/PHYT</VALUE>
+               <IDENTIFIER>PHYT</IDENTIFIER>
+               <TYPE>subject-matter</TYPE>
+            </URI>
+            <OP-CODE>PHYT</OP-CODE>
+            <IDENTIFIER>PHYT</IDENTIFIER>
+            <PREFLABEL>Plant health legislation</PREFLABEL>
+         </RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER_1>
+      </RESOURCE_LEGAL_IS_ABOUT_SUBJECT-MATTER>
+      <TYPE>cdm:serial_work</TYPE>
+      <TYPE>cdm:evolutive_work</TYPE>
+      <TYPE>cdm:case-law</TYPE>
+      <TYPE>cdm:resource_legal</TYPE>
+      <TYPE>CJ</TYPE>
+      <TYPE>cdm:work</TYPE>
+      <TYPE>cdm:complex_work</TYPE>
+      <TYPE>cdm:judgement</TYPE>
+   </WORK>
+</NOTICE>

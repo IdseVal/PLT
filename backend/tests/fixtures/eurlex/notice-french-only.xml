@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand-written: a work published in French and German only, so the preferred language
+  (English) does not exist and the connector has to fall back to the procedural language.
+  Trimmed to the elements the language selection reads.
+-->
+<NOTICE decoding="eng" type="object">
+   <WORK>
+      <URI>
+         <VALUE>http://publications.europa.eu/resource/cellar/00000000-0000-0000-0000-000000000002</VALUE>
+         <IDENTIFIER>00000000-0000-0000-0000-000000000002</IDENTIFIER>
+         <TYPE>cellar</TYPE>
+      </URI>
+      <RESOURCE_LEGAL_ID_CELEX type="data">
+         <VALUE>61987CO0302</VALUE>
+      </RESOURCE_LEGAL_ID_CELEX>
+      <WORK_DATE_DOCUMENT type="data">
+         <VALUE>1987-06-11</VALUE>
+      </WORK_DATE_DOCUMENT>
+      <WORK_HAS_RESOURCE-TYPE type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/resource-type/ORDER</VALUE>
+            <IDENTIFIER>ORDER</IDENTIFIER>
+            <TYPE>resource-type</TYPE>
+         </URI>
+         <IDENTIFIER>ORDER</IDENTIFIER>
+         <PREFLABEL>Order</PREFLABEL>
+      </WORK_HAS_RESOURCE-TYPE>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/00000000-0000-0000-0000-000000000002.0001</VALUE>
+            <IDENTIFIER>00000000-0000-0000-0000-000000000002.0001</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/61987CO0302.FRA</VALUE>
+               <IDENTIFIER>61987CO0302.FRA</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <WORK_HAS_EXPRESSION type="link">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/cellar/00000000-0000-0000-0000-000000000002.0002</VALUE>
+            <IDENTIFIER>00000000-0000-0000-0000-000000000002.0002</IDENTIFIER>
+            <TYPE>cellar</TYPE>
+         </URI>
+         <SAMEAS>
+            <URI>
+               <VALUE>http://publications.europa.eu/resource/celex/61987CO0302.DEU</VALUE>
+               <IDENTIFIER>61987CO0302.DEU</IDENTIFIER>
+               <TYPE>celex</TYPE>
+            </URI>
+         </SAMEAS>
+      </WORK_HAS_EXPRESSION>
+      <CASE-LAW_USES_PROCEDURE_LANGUAGE type="concept">
+         <URI>
+            <VALUE>http://publications.europa.eu/resource/authority/language/FRA</VALUE>
+            <IDENTIFIER>FRA</IDENTIFIER>
+            <TYPE>language</TYPE>
+         </URI>
+         <IDENTIFIER>FRA</IDENTIFIER>
+         <PREFLABEL>French</PREFLABEL>
+      </CASE-LAW_USES_PROCEDURE_LANGUAGE>
+   </WORK>
+</NOTICE>

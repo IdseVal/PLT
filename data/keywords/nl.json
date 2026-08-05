@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0.0",
+  "jurisdiction": "NL",
+  "jurisdiction_name": "Netherlands",
+  "list_version": "1.2.0",
+  "updated": "2026-08-05",
+  "maintainer": "PLT content manager (Law group, WUR)",
+  "languages": ["nl"],
+  "notes": "Seed list for the Rechtspraak.nl connector. Dutch is a compounding language: many terms occur inside compounds (gewasbeschermingsmiddelenrichtlijn, bestrijdingsmiddelengebruik), so several stems use match=substring deliberately. Weight 3 = qualifies alone; weight 2 = strong; weight 1 = contextual only. Precision and recall to be reviewed against the first full ingestion run before this list is frozen. Revision 1.0.1 (issue #20): case_sensitive applies to a term and all of its aliases, so acronyms and prose words can never share a term. nl-ddt and nl-ctgb were splitting that rule and would have missed a sentence-initial 'Lindaan' or a lower-cased 'college voor de toelating'. Revision 1.0.2: the exception notes claimed these authority names are always capitalised so the exposure is theoretical. Measurement refuted that - the acronym is case-sensitive too, so efsa, Efsa, nvwa and echa all score 0. Notes now point at the README, which records the measured cost. No term, weight or threshold changed. Revision 1.1.0 (issue #55): scoring.review_band added, set to 2.5. It flags, and does not reject: a passing case scoring in [3, 5.5) is ingested and published as normal and additionally queued for a content manager. The number is this corpus own and deliberately not the EU one: in the first Rechtspraak dry run (10,011 documents, 38 passed) every clear false positive scored at or below 5.0 and none above it, so the band covers that population with a margin rather than being copied from a different corpus. No term, weight or threshold changed. Revision 1.2.0 (issue #57): the four term defects the first Rechtspraak dry run found become documented exceptions under core document 2.10, each narrowing how a term matches rather than removing it. nl-bestrijdingsmiddel, nl-boomkwekerij and nl-ctgb move to match=regex to disarm one pattern each - the forensic-toxicology enumeration, the bare 'kwekerij' inside 'hennepkwekerij', and 'CTB-laag' - and 'toelatingsbesluit' is split out of nl-toelating into nl-toelatingsbesluit carrying requires=[nl-gewasbeschermingsmiddel], the same instrument nl-drift already uses, so it can no longer qualify an immigration judgment alone. The split exists to keep that gate off nl-toelating's other aliases, which no evidence implicates. No term was removed and no weight, threshold or review band changed. What each exception excludes, why, and what it was measured to cost is in docs/jurisdictions/nl.md 5.4-5.7, and those figures are deliberately not restated here (issue #67).",
+  "scoring": {
+    "min_score": 3,
+    "review_band": 2.5,
+    "count_term_once": true,
+    "fields": {
+      "title": 1.5,
+      "abstract": 1.5,
+      "subject": 1.0,
+      "full_text": 1.0
+    }
+  },
+  "terms": [
+    { "id": "nl-pesticide", "term": "pesticide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["pesticiden"], "note": "substring also catches 'pesticidengebruik', 'pesticidenrichtlijn'" },
+    { "id": "nl-gewasbeschermingsmiddel", "term": "gewasbeschermingsmiddel", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["gewasbeschermingsmiddelen", "gewasbescherming"] },
+    { "id": "nl-bestrijdingsmiddel", "term": "(?<!drugs\\sen/of\\s)(?<!drugs\\sen\\s)(?<!drugs\\sof\\s)bestrijdingsmiddel", "lang": "nl", "category": "product_class", "weight": 3, "match": "regex", "note": "DOCUMENTED EXCEPTION (docs/jurisdictions/nl.md 5.4, issue #57). The word is right; the forensic-toxicology enumeration 'geneesmiddelen, drugs en/of bestrijdingsmiddelen' is not. The lookbehinds suppress that occurrence only, so a judgment naming a bestrijdingsmiddel anywhere else still scores 3 - unlike an exclusions veto, which would reject the document outright. The plural alias is gone: the expression already matches inside it, and an unguarded alias would reopen the hole." },
+    { "id": "nl-biocide", "term": "biocide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["biociden", "biocidenproduct"] },
+    { "id": "nl-landbouwgif", "term": "landbouwgif", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["landbouwgift"] },
+    { "id": "nl-herbicide", "term": "herbicide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["herbiciden", "onkruidbestrijdingsmiddel", "onkruidbestrijdingsmiddelen"] },
+    { "id": "nl-insecticide", "term": "insecticide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["insecticiden"] },
+    { "id": "nl-fungicide", "term": "fungicide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["fungiciden", "schimmelbestrijdingsmiddel"] },
+    { "id": "nl-acaricide", "term": "acaricide", "lang": "nl", "category": "product_class", "weight": 3, "match": "substring", "aliases": ["acariciden", "nematicide", "nematiciden", "rodenticide", "rodenticiden", "molluscicide"] },
+    { "id": "nl-werkzame-stof", "term": "werkzame stof", "lang": "nl", "category": "product_class", "weight": 2, "match": "phrase", "aliases": ["werkzame stoffen", "actieve stof", "actieve stoffen"] },
+    { "id": "nl-spuitmiddel", "term": "spuitmiddel", "lang": "nl", "category": "product_class", "weight": 2, "match": "substring", "aliases": ["spuitmiddelen", "chemische onkruidbestrijding"] },
+
+    { "id": "nl-glyfosaat", "term": "glyfosaat", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["glyphosaat", "glyfosaathoudend"] },
+    { "id": "nl-roundup", "term": "Roundup", "lang": "nl", "category": "brand", "weight": 3, "match": "word", "aliases": ["Round-up"] },
+    { "id": "nl-neonicotinoide", "term": "neonicotinoide", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["neonicotinoïde", "neonicotinoïden", "neonicotinoiden", "neonics"] },
+    { "id": "nl-imidacloprid", "term": "imidacloprid", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring" },
+    { "id": "nl-thiacloprid", "term": "thiacloprid", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["thiamethoxam", "clothianidine", "clothianidin"] },
+    { "id": "nl-chloorpyrifos", "term": "chloorpyrifos", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["chlorpyrifos", "chloorpyrifos-methyl"] },
+    { "id": "nl-fipronil", "term": "fipronil", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring" },
+    { "id": "nl-metam-natrium", "term": "metam-natrium", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["metam natrium", "metam-sodium"] },
+    { "id": "nl-chloorprofam", "term": "chloorprofam", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["chlorprofam", "CIPC"] },
+    { "id": "nl-mancozeb", "term": "mancozeb", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["maneb", "captan", "folpet"] },
+    { "id": "nl-prosulfocarb", "term": "prosulfocarb", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["asulam", "asulox", "metolachloor", "s-metolachloor"] },
+    { "id": "nl-bromadiolon", "term": "bromadiolon", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["difenacoum", "brodifacoum"] },
+    { "id": "nl-ddt", "term": "DDT", "lang": "nl", "category": "active_substance", "weight": 3, "match": "word", "case_sensitive": true, "note": "Acronym only. case_sensitive applies to a term AND all its aliases, so prose-word substances live in nl-organochloor instead." },
+    { "id": "nl-organochloor", "term": "lindaan", "lang": "nl", "category": "active_substance", "weight": 3, "match": "substring", "aliases": ["dieldrin", "aldrin", "paraquat", "atrazine", "atrazin", "endosulfan"], "note": "Withdrawn organochlorine and bipyridyl substances that still surface in soil-contamination and legacy-liability cases. Case-insensitive: these appear capitalised at the start of a sentence." },
+
+    { "id": "nl-wgb", "term": "Wet gewasbeschermingsmiddelen en biociden", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["Wgb", "Bestrijdingsmiddelenwet", "Besluit gewasbeschermingsmiddelen en biociden", "Regeling gewasbeschermingsmiddelen en biociden"] },
+    { "id": "nl-vo-1107-2009", "term": "Verordening (EG) nr. 1107/2009", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["1107/2009", "Gewasbeschermingsverordening"] },
+    { "id": "nl-vo-528-2012", "term": "Verordening (EU) nr. 528/2012", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["528/2012", "Biocidenverordening"] },
+    { "id": "nl-rl-2009-128", "term": "Richtlijn 2009/128/EG", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["2009/128/EG", "duurzaam gebruik van pesticiden", "richtlijn duurzaam gebruik"] },
+    { "id": "nl-vo-396-2005", "term": "Verordening (EG) nr. 396/2005", "lang": "nl", "category": "statute", "weight": 3, "match": "phrase", "aliases": ["396/2005", "residuverordening"] },
+    { "id": "nl-activiteitenbesluit-gewas", "term": "teeltvrije zone", "lang": "nl", "category": "statute", "weight": 2, "match": "phrase", "aliases": ["teeltvrije zones", "driftreducerende techniek", "driftreductie", "driftreducerend"] },
+
+    { "id": "nl-ctgb", "term": "(?<!\\w)Ctgb(?!\\w)", "lang": "nl", "category": "authority", "weight": 3, "match": "regex", "case_sensitive": true, "aliases": ["(?<!\\w)CTB(?!\\w)(?!-la(?:ag|gen))"], "note": "Acronyms only; the spelled-out name is nl-college-toelating, which must stay case-insensitive. DOCUMENTED EXCEPTION (docs/jurisdictions/nl.md 5.6, issue #57): the lookarounds are the word boundaries that match=word supplied, plus one negative lookahead that stops the alias matching 'CTB-laag', a cement-bound road base. The historical abbreviation is kept; a judgment calling the layer a bare 'CTB' would still match, and only the hyphenated form was measured." },
+    { "id": "nl-college-toelating", "term": "College voor de toelating van gewasbeschermingsmiddelen en biociden", "lang": "nl", "category": "authority", "weight": 3, "match": "phrase", "aliases": ["College voor de toelating van bestrijdingsmiddelen"], "note": "Case-insensitive: Dutch judgments routinely write 'het college voor de toelating van gewasbeschermingsmiddelen en biociden' in lower case mid-sentence." },
+    { "id": "nl-nvwa-gewas", "term": "NVWA", "lang": "nl", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["Nederlandse Voedsel- en Warenautoriteit"], "note": "Contextual: the NVWA appears across food and animal law. Only meaningful alongside a pesticide term. DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost. Revisit under issue #24." },
+    { "id": "nl-efsa", "term": "EFSA", "lang": "nl", "category": "authority", "weight": 1, "match": "word", "case_sensitive": true, "aliases": ["Europese Autoriteit voor voedselveiligheid", "ECHA", "RIVM"], "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost. Revisit under issue #24." },
+
+    { "id": "nl-toelating", "term": "toelating van gewasbeschermingsmiddelen", "lang": "nl", "category": "procedure", "weight": 3, "match": "phrase", "aliases": ["toelatingshouder", "toelatingsaanvraag", "herbeoordeling werkzame stof"], "note": "The bare 'toelatingsbesluit' moved to nl-toelatingsbesluit, which is gated; nothing else here changed. Splitting it keeps the gate off these three aliases, which no evidence has implicated." },
+    { "id": "nl-toelatingsbesluit", "term": "toelatingsbesluit", "lang": "nl", "category": "procedure", "weight": 3, "match": "phrase", "requires": ["nl-gewasbeschermingsmiddel"], "note": "DOCUMENTED EXCEPTION (docs/jurisdictions/nl.md 5.7, issue #57). Split out of nl-toelating, which it used to be an alias of, so that a gate could be put on it alone. 'Toelating' is admission in general and in Dutch administrative practice a toelatingsbesluit is overwhelmingly an immigration decision, so it no longer qualifies a document by itself: it needs a plant-protection word somewhere in the document, which the authority's own name - College voor de toelating van gewasbeschermingsmiddelen en biociden - already supplies. Same instrument as nl-drift. requires is an AND over one id (issue #24), so a biocide-only authorisation loses these three points and keeps its own weight-3 term." },
+    { "id": "nl-vrijstelling-art38", "term": "vrijstelling gewasbescherming", "lang": "nl", "category": "procedure", "weight": 2, "match": "phrase", "aliases": ["noodtoelating", "vrijstellingsbesluit", "artikel 53 verordening"] },
+    { "id": "nl-wederzijdse-erkenning", "term": "wederzijdse erkenning", "lang": "nl", "category": "procedure", "weight": 1, "match": "phrase", "note": "Contextual: also used in unrelated internal-market cases." },
+    { "id": "nl-etikettering-middel", "term": "wettelijk gebruiksvoorschrift", "lang": "nl", "category": "procedure", "weight": 3, "match": "phrase", "aliases": ["gebruiksvoorschrift en gebruiksaanwijzing", "WG/GA"] },
+
+    { "id": "nl-lelieteelt", "term": "lelieteelt", "lang": "nl", "category": "crop_or_practice", "weight": 1, "match": "substring", "aliases": ["lelievelden", "lelieveld", "lelieperceel"], "note": "Contextual: the Drenthe/Gelderland lily cases are a core NL line of pesticide litigation, but the word alone also appears in tenancy and zoning disputes." },
+    { "id": "nl-bollenteelt", "term": "bollenteelt", "lang": "nl", "category": "crop_or_practice", "weight": 1, "match": "substring", "aliases": ["bloembollenteelt", "bloembollen", "bollenveld", "bollenperceel"] },
+    { "id": "nl-boomkwekerij", "term": "boomkwekerij", "lang": "nl", "category": "crop_or_practice", "weight": 1, "match": "regex", "aliases": ["fruitteelt", "boomgaard", "akkerbouw", "glastuinbouw", "(?<!\\w)kwekerij"], "note": "DOCUMENTED EXCEPTION (docs/jurisdictions/nl.md 5.5, issue #57). regex rather than substring for one alias only: the bare 'kwekerij' now needs a word boundary on its left, so 'hennepkwekerij' no longer matches while 'kwekerij' and 'kwekerijen' still do. Every other pattern here is an unanchored expression and so keeps substring semantics." },
+    { "id": "nl-bespuiting", "term": "bespuiting", "lang": "nl", "category": "crop_or_practice", "weight": 2, "match": "substring", "aliases": ["bespuitingen", "gewasbespuiting", "veldspuit", "spuitapparatuur", "spuiten van gewassen"] },
+    { "id": "nl-spuitzone", "term": "spuitzone", "lang": "nl", "category": "crop_or_practice", "weight": 3, "match": "substring", "aliases": ["spuitzones", "spuitvrije zone", "spuitcirkel"] },
+    { "id": "nl-spuitdrift", "term": "spuitdrift", "lang": "nl", "category": "environment", "weight": 3, "match": "substring", "aliases": ["drift van gewasbeschermingsmiddelen", "afdrift"] },
+    { "id": "nl-drift", "term": "drift", "lang": "nl", "category": "environment", "weight": 1, "match": "word", "requires": ["nl-bespuiting"], "note": "Homonym trap: 'drift' also means anger/impulse in criminal judgments. Only counts alongside a spraying term." },
+    { "id": "nl-bufferzone", "term": "bufferzone", "lang": "nl", "category": "environment", "weight": 1, "match": "substring", "aliases": ["afstandsnorm", "minimale afstand tot", "50 meter zone"] },
+
+    { "id": "nl-omwonenden", "term": "omwonenden", "lang": "nl", "category": "exposure_or_harm", "weight": 1, "match": "substring", "aliases": ["omwonende"], "note": "Contextual: central to the Dutch residents-exposure line of cases, but generic in planning law." },
+    { "id": "nl-blootstelling", "term": "blootstelling", "lang": "nl", "category": "exposure_or_harm", "weight": 1, "match": "substring", "aliases": ["blootgesteld", "blootstellingsrisico"] },
+    { "id": "nl-gezondheidsschade-middel", "term": "gezondheidsschade door bestrijdingsmiddelen", "lang": "nl", "category": "exposure_or_harm", "weight": 3, "match": "phrase", "aliases": ["ziekte van Parkinson bestrijdingsmiddelen", "beroepsziekte gewasbescherming"] },
+    { "id": "nl-bijensterfte", "term": "bijensterfte", "lang": "nl", "category": "exposure_or_harm", "weight": 2, "match": "substring", "aliases": ["bijenvolken", "insectensterfte"] },
+    { "id": "nl-residu", "term": "residu", "lang": "nl", "category": "exposure_or_harm", "weight": 1, "match": "substring", "aliases": ["residuen", "residugehalte"] },
+    { "id": "nl-mrl", "term": "maximale residulimiet", "lang": "nl", "category": "exposure_or_harm", "weight": 3, "match": "phrase", "aliases": ["maximumresidugehalte", "residulimiet", "MRL"] },
+
+    { "id": "nl-normoverschrijding-water", "term": "normoverschrijding oppervlaktewater", "lang": "nl", "category": "environment", "weight": 2, "match": "phrase", "aliases": ["waterkwaliteitsnorm", "emissie naar oppervlaktewater"] },
+    { "id": "nl-krw", "term": "Kaderrichtlijn Water", "lang": "nl", "category": "environment", "weight": 1, "match": "phrase", "aliases": ["KRW", "grondwaterrichtlijn", "drinkwaterwinning"] },
+    { "id": "nl-natura2000-gewas", "term": "stikstof- en gewasbeschermingsdepositie", "lang": "nl", "category": "environment", "weight": 1, "match": "phrase", "aliases": ["depositie van gewasbeschermingsmiddelen"] },
+    { "id": "nl-bodemverontreiniging-middel", "term": "bodemverontreiniging bestrijdingsmiddelen", "lang": "nl", "category": "environment", "weight": 3, "match": "phrase" },
+
+    { "id": "nl-illegaal-middel", "term": "illegale gewasbeschermingsmiddelen", "lang": "nl", "category": "general", "weight": 3, "match": "phrase", "aliases": ["niet-toegelaten middel", "niet toegelaten gewasbeschermingsmiddel", "verboden bestrijdingsmiddel"] },
+    { "id": "nl-wed", "term": "Wet op de economische delicten", "lang": "nl", "category": "statute", "weight": 1, "match": "phrase", "aliases": ["WED"], "note": "Contextual: the route by which pesticide offences are prosecuted, but covers all economic offences." }
+  ],
+  "exclusions": [
+    { "pattern": "in een opwelling van drift", "match": "phrase", "reason": "Criminal-law idiom; 'drift' as emotion, not spray drift." }
+  ]
+}

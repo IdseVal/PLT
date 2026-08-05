@@ -1,0 +1,222 @@
+name: CI
+
+# Every check a reviewer would run by hand, run on the pull request instead.
+on:
+  pull_request:
+    branches: [dev]
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+# A new push to the same branch cancels the run it supersedes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Read-only by default; no job here needs to write to the repository.
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  backend:
+    name: Backend (ruff, mypy, pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The migration guard below needs the merge commit's first parent — the base branch
+          # as it stood when GitHub built the merge — and a shallow clone reports a commit as
+          # having no parents at all. The repository is a few megabytes; full history costs a
+          # second and nothing else here depends on the clone being shallow.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            backend/pyproject.toml
+            backend/constraints.txt
+
+      - name: Install
+        # -c constraints.txt pins the resolved versions, so a release published upstream
+        # cannot turn this job red on its own. Bump it in its own PR; see the file header.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c constraints.txt -e ".[dev]"
+
+      # Runs before the slower checks: a second head means no database can be created at all,
+      # so there is nothing to learn from the rest of the job until it is fixed.
+      - name: Migrations (one head, and a chain that runs both ways)
+        # Two branches that each add a revision are each a valid chain on their own, and the
+        # collision exists only in the merged tree — so this has to be judged on the merge,
+        # never on the branch (issue #79). Two things make that true rather than assumed:
+        #
+        #  1. On `pull_request`, actions/checkout resolves refs/pull/N/merge, so HEAD is
+        #     already this branch merged into the base. The step asserts that rather than
+        #     trusting it, and fails loudly if GitHub ever stops doing it.
+        #  2. GitHub does *not* rebuild that merge commit every time the base branch moves.
+        #     A run that was green against an older base says nothing about the merge that is
+        #     actually about to happen, and that is precisely how two `0004` revisions reached
+        #     `dev`: #77's only run predated #74's merge by six minutes. So any revision that
+        #     landed on the base afterwards is folded into the check as well.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_WORKSPACE"
+          landed="$RUNNER_TEMP/migrations-that-landed-on-the-base-branch-since"
+
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            checked_out="$(git -C "$repo" rev-parse HEAD)"
+            echo "checked out  $checked_out"
+            echo "branch tip   $PR_HEAD_SHA"
+            if [ "$checked_out" = "$PR_HEAD_SHA" ]; then
+              echo "::error::CI is running on the branch tip, not on a merge commit. A" \
+                   "migration collision is invisible on the branch; see this step's comment."
+              exit 1
+            fi
+            if [ "$(git -C "$repo" rev-list --parents -n 1 HEAD | wc -w)" -ne 3 ]; then
+              echo "::error::HEAD is not a two-parent merge of this branch into $BASE_REF."
+              exit 1
+            fi
+
+            base_merged="$(git -C "$repo" rev-parse HEAD^1)"
+            git -C "$repo" fetch --quiet --no-tags origin "$BASE_REF"
+            base_now="$(git -C "$repo" rev-parse FETCH_HEAD)"
+            echo "base merged  $base_merged"
+            echo "base now     $base_now"
+
+            mkdir -p "$landed"
+            added="$(git -C "$repo" diff --name-only --no-renames --diff-filter=A \
+                     "$base_merged" "$base_now" -- backend/migrations/versions)"
+            while IFS= read -r path; do
+              [ -n "$path" ] || continue
+              if [ -e "$repo/$path" ]; then
+                continue                      # already in the merge result, so not new to it
+              fi
+              git -C "$repo" show "$base_now:$path" > "$landed/$(basename "$path")"
+              echo "folding in   $path (landed on $BASE_REF after this merge was built)"
+            done <<< "$added"
+          fi
+
+          MIGRATION_GRAPH_EXTRA_DIRS="$landed" \
+            pytest tests/unit/test_migration_graph.py tests/unit/test_migrations.py -q
+
+      - name: Ruff (lint)
+        run: ruff check --output-format=github .
+
+      - name: Ruff (format)
+        run: ruff format --check .
+
+      - name: Mypy
+        run: mypy .
+
+      - name: Pytest
+        # Integration tests hit live endpoints and stay opt-in; CI runs the mocked suite.
+        run: pytest -m "not integration" --cov --cov-report=term-missing
+
+      - name: Application factory and health endpoint
+        run: |
+          python - <<'PY'
+          from plt.app import create_app
+
+          client = create_app().test_client()
+          response = client.get("/api/health")
+          assert response.status_code == 200, response.status_code
+          assert response.get_json()["status"] == "ok", response.data
+          print("GET /api/health ->", response.status_code, response.get_json())
+          PY
+
+  frontend:
+    name: Frontend (eslint, vitest, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Vitest
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  accessibility:
+    name: Frontend (axe, contrast, reflow)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    # A separate job, not extra steps on `frontend`, so the two run at the same time: this
+    # one is the slowest check in the workflow and would otherwise be added to the end of
+    # the longest existing one. It builds its own copy rather than taking an artifact from
+    # `frontend` — `npm run build` is under two seconds and an artifact round trip is longer
+    # than that, on top of making the two jobs sequential again.
+    #
+    # Not sharded across routes or widths either. The whole matrix takes well under a
+    # minute, and a shard's own checkout, install and build cost more than the work it would
+    # take off the others. Sharding becomes worth doing when the run passes a few minutes;
+    # `tests/a11y/run.mjs --only=` and `--width=` already split it for a local run.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # `frontend/puppeteer.config.cjs` turns the postinstall browser download off, so that
+      # every other `npm ci` in the project is unaffected by it. This is the one job that
+      # needs a browser, and it asks for it explicitly, behind a cache keyed on the lockfile
+      # — so a pull request that does not change dependencies does not re-download Chrome.
+      - name: Cache Chrome
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install Chrome
+        run: npx puppeteer browsers install chrome
+
+      - name: Build
+        run: npm run build
+
+      # axe-core over wcag2a/wcag2aa/wcag21a/wcag21aa/best-practice, colour contrast measured
+      # on rendered pixels, no horizontal overflow, and a visible focus indicator at every
+      # tab stop — every route, in every data state it can be in, at six widths from 320 px
+      # up. See `frontend/tests/a11y/run.mjs` for what each of those means and why contrast
+      # is enforced rather than reported while the palette is still a placeholder.
+      - name: Accessibility and responsive checks
+        run: npm run test:a11y
