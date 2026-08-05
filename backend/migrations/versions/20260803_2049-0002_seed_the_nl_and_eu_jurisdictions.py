@@ -87,8 +87,26 @@ def _rows() -> list[dict[str, Any]]:
 
 
 def upgrade() -> None:
-    """Insert the NL and EU jurisdiction rows."""
-    op.bulk_insert(jurisdiction, _rows())
+    """Insert the NL and EU jurisdiction rows that are not already there.
+
+    Only the missing ones, because this revision has to be re-appliable. ``downgrade`` keeps
+    a seeded jurisdiction that has cases attached (see below), so going forward again on a
+    populated database meets a row that is already present, and an unconditional insert dies
+    on the primary key.
+
+    Reading the present codes first and inserting the difference keeps this to ordinary
+    ``SELECT`` and ``INSERT``, which SQLite and PostgreSQL both accept unchanged. An
+    ``INSERT ... ON CONFLICT DO NOTHING`` would be shorter but is a dialect-specific
+    construct in SQLAlchemy, and this project's schema is portable by rule
+    (``docs/architecture.md`` section 3).
+    """
+    bind = op.get_bind()
+    present = set(
+        bind.scalars(sa.select(jurisdiction.c.code).where(jurisdiction.c.code.in_(SEEDED_CODES)))
+    )
+    missing = [row for row in _rows() if row["code"] not in present]
+    if missing:
+        op.bulk_insert(jurisdiction, missing)
 
 
 def downgrade() -> None:
