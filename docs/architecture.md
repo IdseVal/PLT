@@ -197,7 +197,12 @@ a deliberate minimum and adding to it is a decision, not a convenience:
   discarding it.
 - `jurisdiction.map_feature_id` is the identifier the frontend map resolves a jurisdiction
   against: the ISO 3166-1 alpha-2 code for a state (`NL`), and the sentinel `EU` for the
-  Union, which the map renders as the hoverable North Sea logo instead of a shape.
+  Union, which the map renders as the hoverable North Sea logo instead of a shape. It is
+  **`NOT NULL`**, because the map indexes its payload on it and a row without one is a
+  jurisdiction that can never be joined to a shape — drawn permanently as "no cases yet"
+  however many cases it holds, which is a silent coverage hole rather than a visible fault.
+  Adding a jurisdiction therefore means stating its feature id, and the client may rely on
+  the field being present.
 - The subject-matter classification a connector reads — the *rechtsgebied* for the
   Netherlands — has no column here and is stored as `case.source_metadata["subject"]`. It is
   a **scored** field of the filter chain nonetheless; see §4.2.
@@ -570,6 +575,15 @@ in its muted state rather than dropping the shape:
    "case_count": 12, "latest_decision_date": "2024-05-01" }]
 ```
 
+Only `latest_decision_date` may be null here. `code`, `name`, `map_feature_id` and
+`case_count` are always present and non-null — `map_feature_id` because §3 makes the column
+`NOT NULL`, so the statement is enforced rather than merely intended. A client may
+nonetheless resolve a jurisdiction whose `map_feature_id` is absent against its `code`,
+which §3 makes the same value for a state and for the Union: **a jurisdiction that named and
+counted itself is never discarded for failing this contract**, because dropping it loses a
+published case silently, and a whole payload failing it would otherwise be indistinguishable
+from an unreadable response.
+
 **`/api/filters`** — `jurisdictions: [{code, name}]`, `courts: [{id, name}]`,
 `topics: [{slug, label}]`, the string lists `law_domains`, `law_subfields`, `languages`,
 `sorts` and `export_formats`, `decision_date_range: {from, to}`, and the bounds the server
@@ -654,6 +668,14 @@ behalf, and each requires a JSON body, which an HTML form cannot send and a cros
   runtime third-party request.
 - **Search submits to `/cases?q=…`** — the home search bar does not render results in place.
 - All server data flows through `src/api/client.ts`. No component calls `fetch` directly.
+- **Server-supplied text is rendered through `src/utils/caseText.ts`, without exception.**
+  `cleanInlineText` for a single-line value, `cleanBlockText` / `toParagraphs` for a body of
+  text. React escapes markup; it does not remove control characters or bidirectional
+  overrides, which are invisible and can make a string read differently from what it
+  contains. The rule covers a jurisdiction name as much as a judgment title: a name is seeded
+  by migration today, but a jurisdiction taken from a source vocabulary would arrive exactly
+  as a court name does. Repo-authored strings — the fallback names in the generated geometry,
+  for instance — are not server data and need no cleaning.
 - Tailwind, with all colours and type defined once as theme tokens, never as ad-hoc hex
   values in components. Responsive; accessible (labelled controls, visible focus, contrast).
 - **Styling is placeholder until the Wageningen Law styling package arrives** — the project
