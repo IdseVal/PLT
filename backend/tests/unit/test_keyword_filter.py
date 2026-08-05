@@ -327,6 +327,105 @@ def test_an_exclusion_vetoes_a_document_that_would_otherwise_pass(
     assert "Criminal-law idiom" in result.reason
 
 
+# ----------------------------------------------------------------------------------------
+# The four documented exceptions of docs/jurisdictions/nl.md 5.4-5.7 (issue #57). Each one
+# fixes a reproduction from the June 2026 dry run, and each is paired with the recall it was
+# chosen to keep: an exception is a deliberate false negative (core document 2.7, 2.10), so a
+# test that only proved the false positive gone would be testing half of the decision.
+# ----------------------------------------------------------------------------------------
+
+
+def test_the_toxicology_boilerplate_no_longer_admits_a_homicide_judgment(
+    nl_filter: KeywordFilter,
+) -> None:
+    screen = (
+        "In het toxicologisch onderzoek werden geen aanwijzingen gevonden voor de "
+        "aanwezigheid van geneesmiddelen, drugs en/of bestrijdingsmiddelen."
+    )
+
+    result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} {screen}"))
+
+    assert not result.passed
+    assert result.score == 0.0
+
+
+def test_the_boilerplate_guard_suppresses_one_occurrence_and_not_the_term(
+    nl_filter: KeywordFilter,
+) -> None:
+    screen = (
+        "In het bloed werden geen aanwijzingen gevonden voor de aanwezigheid van "
+        "geneesmiddelen, drugs en/of bestrijdingsmiddelen."
+    )
+    elsewhere = "In de maaginhoud is het bestrijdingsmiddel parathion aangetroffen."
+
+    result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} {screen} {elsewhere}"))
+
+    assert result.passed, "the guard must disarm the enumeration, not the term"
+    assert matched(result) == {"nl-bestrijdingsmiddel"}
+    for plain in ("het gebruik van bestrijdingsmiddelen", "bestrijdingsmiddelengebruik"):
+        assert nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} {plain}")).passed
+
+
+def test_kwekerij_no_longer_matches_inside_hennepkwekerij(nl_filter: KeywordFilter) -> None:
+    hennep = nl_filter.evaluate(
+        Doc(full_text=f"{BOILERPLATE} In de loods is een hennepkwekerij aangetroffen.")
+    )
+    bare = nl_filter.evaluate(
+        Doc(full_text=f"{BOILERPLATE} Op het perceel wordt een kwekerij geëxploiteerd.")
+    )
+    compound = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} De boomkwekerijen aldaar."))
+
+    assert hennep.score == 0.0
+    assert matched(bare) == {"nl-boomkwekerij"}, "the bare word still carries its weight"
+    assert matched(compound) == {"nl-boomkwekerij"}, "and so does the compound it was named for"
+
+
+def test_ctb_no_longer_matches_cement_bound_road_base(nl_filter: KeywordFilter) -> None:
+    road_base = nl_filter.evaluate(
+        Doc(full_text=f"{BOILERPLATE} De aannemer heeft een CTB-laag aangebracht.")
+    )
+    historical = nl_filter.evaluate(
+        Doc(full_text=f"{BOILERPLATE} Het CTB heeft de toelating destijds verlengd.")
+    )
+    current = nl_filter.evaluate(
+        Doc(full_text=f"{BOILERPLATE} Het Ctgb heeft het middel toegelaten.")
+    )
+
+    assert not road_base.passed
+    assert road_base.score == 0.0
+    assert historical.passed, "the historical abbreviation is kept; only the collision is removed"
+    assert current.passed
+
+
+def test_toelatingsbesluit_alone_no_longer_qualifies_an_immigration_judgment(
+    nl_filter: KeywordFilter,
+) -> None:
+    immigration = nl_filter.evaluate(
+        Doc(full_text=f"{BOILERPLATE} Eiser komt op tegen het toelatingsbesluit van de minister.")
+    )
+    authorisation = nl_filter.evaluate(
+        Doc(
+            full_text=(
+                f"{BOILERPLATE} Het beroep richt zich tegen het toelatingsbesluit over de "
+                "toelating van gewasbeschermingsmiddelen."
+            )
+        )
+    )
+
+    assert not immigration.passed
+    assert immigration.score == 0.0
+    gated = {match.term_id for match in immigration.matches if match.gated}
+    assert gated == {"nl-toelatingsbesluit"}, "a disarmed homonym is reported, not dropped"
+    assert authorisation.passed
+    assert "nl-toelatingsbesluit" in matched(authorisation)
+
+
+def test_the_other_toelating_aliases_are_not_gated(nl_filter: KeywordFilter) -> None:
+    for alias in ("toelatingshouder", "toelatingsaanvraag", "herbeoordeling werkzame stof"):
+        result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} Het betreft de {alias}."))
+        assert result.passed, f"{alias} was never implicated and must keep qualifying alone"
+
+
 def test_weight_one_terms_never_qualify_alone(nl_filter: KeywordFilter) -> None:
     for contextual in ("lelieteelt", "omwonenden", "residu"):
         result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} Het betreft {contextual}."))
