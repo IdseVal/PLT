@@ -72,6 +72,46 @@ alembic revision --autogenerate -m "add case table"
 alembic upgrade head
 ```
 
+#### When two branches add a migration at the same time
+
+Two open pull requests that each add a revision both branch from the same head, so both
+number their file `000N` and both point `down_revision` at `000N-1`. Each is a valid chain on
+its own branch and each migrates cleanly there — and merged they are two heads, at which
+point `alembic upgrade head` refuses to run at all and **no fresh database can be created**.
+That is not a rare shape; it is what happens whenever two schema changes are open in the same
+window, and it is what put two `0004` revisions on `dev` (issue #79).
+
+CI's **Migrations** step fails this on the merge result and names the two files. Alembic's own
+account of the same state is `Multiple heads are present for given argument 'head'; 0004,
+0004`, from inside a very long traceback, and it names neither file. To see the check yourself,
+merge `dev` in and run:
+
+```bash
+cd backend
+pytest tests/unit/test_migration_graph.py tests/unit/test_migrations.py
+alembic heads          # the same thing alembic's way: exactly one revision, or it collided
+```
+
+To resolve a collision, **renumber the later migration and leave the earlier one alone**:
+
+1. Merge or rebase `dev` in, so both revisions are in your tree.
+2. Rename your file `..._000N_....py` to `..._000N+1_....py`.
+3. Inside it, set `revision = "000N+1"` and `down_revision = "000N"`.
+4. `alembic upgrade head`, `alembic downgrade base`, `alembic upgrade head` — all three, on a
+   throwaway database. A single head is not the same as a chain that runs both ways.
+
+**Never renumber the migration that is already on `dev`.** Its identifier is written into the
+`alembic_version` row of every database that has run it — a colleague's `plt.db`, staging,
+production — and changing it strands them on a revision that no longer exists. The unmerged
+one is the one nobody has applied yet, so it is the one that is free to move.
+
+Two things this guard cannot do for you. It sees a collision only when CI runs, so a pull
+request approved before a colliding migration merged is stale, and **re-running CI before
+merging is what makes the check binding** (the repository setting for this is *Require
+branches to be up to date before merging*). And "one head" is a statement about the graph,
+not about the schema: two migrations that both add a `court.type` column will chain happily
+and still fail on the second one, so read what else is open before you write the revision.
+
 ### CLI
 
 ```bash
@@ -143,6 +183,12 @@ npm run typecheck
 npm run test
 npm run build
 ```
+
+CI additionally runs the **Migrations** step ahead of those, because a broken revision chain
+means no database can be created and nothing else in the job is worth reading. It is the one
+check that is not equivalent to running the command locally: it judges your branch *merged
+into* `dev`, including any migration that landed there after your last push. See "When two
+branches add a migration at the same time" above.
 
 Tests are part of the deliverable, not an afterthought (`docs/architecture.md` §2.8):
 
