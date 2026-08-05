@@ -3,6 +3,10 @@
 These tests run Alembic for real against a throwaway SQLite file: upgrade to head,
 inspect the result, downgrade to base, and confirm that autogenerate finds nothing left to
 do — which is the check that the revisions and ``plt.db.models`` have not drifted apart.
+
+Repeatability is checked twice, because an empty database is the easy half of it. A rollback
+on a *populated* database leaves rows behind that a revision has to expect on the way back
+up, and that is the half a seed migration gets wrong.
 """
 
 from __future__ import annotations
@@ -17,9 +21,11 @@ from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from sqlalchemy import Enum, create_engine, inspect, text
+from sqlalchemy.orm import Session
 
 from plt.config import get_settings
 from plt.db.base import NAMING_CONVENTION, Base, include_object
+from plt.db.models import Case
 from tests.conftest import REPO_ROOT
 
 BACKEND = REPO_ROOT / "backend"
@@ -208,3 +214,54 @@ def test_upgrade_downgrade_upgrade_is_repeatable(alembic_config: Config) -> None
 
     assert tables == EXPECTED_TABLES
     assert count == 2
+
+
+def test_the_seed_is_repeatable_on_a_populated_database(alembic_config: Config) -> None:
+    """The case the test above cannot reach: a downgrade that had to retain a seed row.
+
+    ``0002.downgrade`` deliberately keeps a jurisdiction that has cases attached, so that
+    unwinding reference data never cascades away ingested data. Going forward again then
+    meets a row that is already there, which the test above never sees because it downgrades
+    an empty database to base and both rows go. Re-applying the seed has to insert only what
+    is missing.
+    """
+    command.upgrade(alembic_config, "head")
+    url = database_url(alembic_config)
+
+    engine = create_engine(url)
+    try:
+        with Session(engine) as session:
+            session.add(
+                Case(jurisdiction_code="NL", source_id="ECLI:NL:HR:2026:1", source_system="test")
+            )
+            session.commit()
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_config, "0001")
+
+    engine = create_engine(url)
+    try:
+        with engine.connect() as connection:
+            retained = connection.execute(text("SELECT code FROM jurisdiction")).scalars().all()
+    finally:
+        engine.dispose()
+    # The premise of the test: NL survived the downgrade because a case hangs off it.
+    assert list(retained) == ["NL"]
+
+    command.upgrade(alembic_config, "head")
+
+    engine = create_engine(url)
+    try:
+        with engine.connect() as connection:
+            codes = (
+                connection.execute(text("SELECT code FROM jurisdiction ORDER BY code"))
+                .scalars()
+                .all()
+            )
+            cases = connection.execute(text('SELECT COUNT(*) FROM "case"')).scalar_one()
+    finally:
+        engine.dispose()
+
+    assert list(codes) == ["EU", "NL"]
+    assert cases == 1
