@@ -41,6 +41,7 @@ academic research and civil-society use.
 | **Sidebar** | The 20 most recent cases, with a button through to a dedicated **All cases** page |
 | **All cases** | Full listing with the classification filters from §2.2 of the core document, pagination and download |
 | **Case detail** | Full text in the original language, abstract, classification metadata, and a deep link to the source |
+| **Email alerts** | A signup at the end of the home page's right-hand column: one email a week listing the newly found cases. No account and no login — an address is confirmed by a link before anything is sent to it, and every message carries a one-click way out |
 
 ### Behind the site
 
@@ -55,6 +56,10 @@ academic research and civil-society use.
    holds, keyed on the source identifier (ECLI / CELEX), so re-runs never create duplicates.
 4. **Weekly scan** — a scheduled job re-runs the pipeline for each jurisdiction, fetching only
    what has changed since the last successful checkpoint.
+5. **Notifications** — the scan tells an administrator which cases it flagged for review, and
+   a second scheduled job emails the subscriber list a digest of what the scan added. Both
+   send through the standard library; a development checkout writes messages to a log or a
+   file and cannot mail a real address.
 
 ## 3. Jurisdictions and data sources
 
@@ -91,7 +96,8 @@ responsibility, not a developer one.
 - **Frontend** — React + Tailwind CSS
 - **Backend** — Python + Flask
 - **Database** — SQL relational database (SQLite for development, PostgreSQL-compatible schema)
-- **Scheduling** — weekly automated pipeline run
+- **Scheduling** — weekly automated pipeline run, followed by the subscriber digest
+- **Email** — the Python standard library's `smtplib`; no third-party email service
 
 ## 6. Repository layout
 
