@@ -32,6 +32,12 @@ rather than the pipeline quietly stepping over it forever.
 **Per-document isolation.** Each document is processed inside a savepoint. One that cannot be
 fetched, parsed or persisted is rolled back on its own, logged with its identifier and
 counted; the rest of the batch is unaffected, and one malformed judgment never ends a run.
+
+**Auditability.** The counters are accumulated in place on the report the caller is handed,
+not assigned once the run is over, so a run that failed or was interrupted records what it
+had done by then. ``ingest_run`` exists to make a run readable afterwards, and a failed run
+is the one most likely to be read: an operator has to be able to tell a run that fetched
+eight hundred documents and then stalled from one that never started.
 """
 
 from __future__ import annotations
@@ -96,6 +102,11 @@ class IngestCounters:
     in exactly one of ``skipped_duplicate``, ``rejected``, ``inserted``, ``updated`` or
     ``errors``.
 
+    They count what the run *did*, which on a run that ended badly includes the batch that
+    was in flight and therefore rolled back. That is deliberate: the fetches happened and
+    cost the source the requests, and the checkpoint — not these counters — is the record of
+    what was committed.
+
     Attributes:
         discovered: Candidates ``discover`` yielded.
         fetched: Documents actually downloaded. The gap to ``discovered`` is the work
@@ -132,7 +143,8 @@ class IngestReport:
         status: Terminal state of the run.
         started_at: When the run began.
         finished_at: When it ended, or ``None`` while it is still going.
-        counters: The counts above.
+        counters: The counts above. The run accumulates into this object as it goes, so a
+            run that failed or was interrupted still reports what it managed.
         checkpoint_before: Position the run started from.
         checkpoint_after: Position it left behind; identical to ``checkpoint_before`` when
             the run failed.
@@ -303,6 +315,11 @@ class _Run:
     Holds the state a run accumulates — counters, the pending and committed checkpoint
     positions, whether a document has failed — so :func:`run_jurisdiction` stays a readable
     sequence of stages.
+
+    The counters are the caller's object rather than one of this class's own, and are
+    incremented in place. Handing them over at construction is what makes them survive a
+    failure: there is no assignment after the run for an exception to skip past, so a run
+    that fetched eight hundred documents and then died still says so (section 4.4).
     """
 
     def __init__(
@@ -311,6 +328,7 @@ class _Run:
         chain: FilterChain,
         session_factory: sessionmaker[Session],
         *,
+        counters: IngestCounters,
         dry_run: bool,
         batch_size: int,
         report: MatchReport | None,
@@ -322,6 +340,7 @@ class _Run:
             connector: The connector to run.
             chain: The filter chain to judge documents with.
             session_factory: Factory the per-batch sessions come from.
+            counters: Counters to accumulate into, owned by the caller's report.
             dry_run: Whether to leave the database untouched.
             batch_size: Documents per transaction.
             report: Match report to write, or ``None``.
@@ -334,7 +353,7 @@ class _Run:
         self._batch_size = batch_size
         self._report = report
         self._stop = stop
-        self.counters = IngestCounters()
+        self.counters = counters
         self._pending = Checkpoint(
             connector=connector.name, jurisdiction_code=connector.jurisdiction_code
         )
@@ -805,6 +824,7 @@ def run_jurisdiction(
                 source,
                 filters,
                 factory,
+                counters=report.counters,
                 dry_run=dry_run,
                 batch_size=size,
                 report=match_report,
@@ -817,10 +837,13 @@ def run_jurisdiction(
                 # Only reachable when no handler could be installed, e.g. off the main
                 # thread. session_scope has already rolled the batch in flight back.
                 stop.request("KeyboardInterrupt")
-            report.counters = run.counters
             report.status = _final_status(run.counters, stopped=stop.requested)
             report.checkpoint_after = run.committed_checkpoint
     except Exception as error:
+        # The counters need no rescuing here: the run incremented them on report.counters
+        # directly, which is the point of handing them over. Both assignments below are the
+        # verdict rather than the tally, and the checkpoint is deliberately pinned to where
+        # the run started — a failed run writes none (section 4.4).
         report.status = IngestStatus.FAILED
         report.error_message = f"{type(error).__name__}: {error}"[:_ERROR_MESSAGE_LIMIT]
         report.checkpoint_after = report.checkpoint_before
