@@ -65,6 +65,7 @@ REQUIRED_PATHS: tuple[str, ...] = (
     "data/keywords/schema.json",
     "docs/architecture.md",
     ".github/workflows/ci.yml",
+    ".github/workflows/weekly-ingest.yml",
 )
 
 #: Every module of the ``plt`` package; each must import cleanly.
