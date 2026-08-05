@@ -9,7 +9,19 @@ Two equivalent routes into the same commands, per ``docs/architecture.md`` secti
 ``plt ingest`` is that path. It is a thin shell around
 :func:`plt.pipeline.runner.run_jurisdiction`: parse the window, pick the jurisdictions, print
 the counts, and translate the outcome into an exit code the scheduler can act on — ``0`` for
-a run that completed, ``1`` for one that failed, ``130`` for one that was interrupted.
+a run that completed, ``1`` for one that failed, ``2`` for a usage error (click's own), ``3``
+for a run that completed only partly and was asked to say so, and ``130`` for one that was
+interrupted.
+
+**Why ``3`` exists.** A ``partial`` run is one where documents failed: the checkpoint stops
+advancing at the first failure, so the window stays open and the next run retries from there.
+That is the right behaviour for an operator watching the output, and it is 0 by default
+because the run did complete. It is the wrong answer for a weekly unattended job: a
+jurisdiction whose window has been frozen for a month reports green every Monday while the
+tracker quietly stops gaining cases, which is precisely the failure
+``docs/core-document.md`` section 2.7 says is the expensive one — nobody can audit an
+absence. ``--fail-on-partial`` makes that visible without changing the exit code any existing
+caller sees, and the scheduled workflow passes it.
 """
 
 from __future__ import annotations
@@ -37,6 +49,11 @@ log = get_logger(__name__)
 
 #: Exit code for a run stopped by ``Ctrl+C``; the shell convention of 128 + SIGINT.
 _EXIT_INTERRUPTED = 130
+
+#: Exit code for a run that completed with failed documents, under ``--fail-on-partial``.
+#: Not ``2``: click already spends that on a usage error, and a scheduler must be able to
+#: tell "your command line is wrong" from "the window did not advance".
+_EXIT_PARTIAL = 3
 
 
 def _parse_timestamp(
@@ -128,6 +145,12 @@ def plt_cli() -> None:
     default=None,
     help="Documents processed and committed per batch. Defaults to PLT_PIPELINE_BATCH_SIZE.",
 )
+@click.option(
+    "--fail-on-partial",
+    is_flag=True,
+    help="Exit 3 when a run completed but documents failed, so an unattended job goes red "
+    "instead of reporting success over a window that stopped advancing.",
+)
 def ingest(
     jurisdictions: tuple[str, ...],
     every_jurisdiction: bool,
@@ -136,6 +159,7 @@ def ingest(
     dry_run: bool,
     report_path: Path | None,
     batch_size: int | None,
+    fail_on_partial: bool,
 ) -> None:
     """Fetch, filter and store one or more jurisdictions' case law.
 
@@ -172,7 +196,7 @@ def ingest(
             # Do not start the next jurisdiction after Ctrl+C.
             break
 
-    _exit_for(reports)
+    _exit_for(reports, strict=fail_on_partial)
 
 
 @plt_cli.command(name="seed-vocabularies")
@@ -285,15 +309,21 @@ def _selected_jurisdictions(
     return tuple(code.strip().upper() for code in jurisdictions)
 
 
-def _exit_for(reports: list[IngestReport]) -> None:
+def _exit_for(reports: list[IngestReport], *, strict: bool = False) -> None:
     """Translate the runs' outcomes into an exit code.
+
+    The order is deliberate: a failure outranks an interruption, and an interruption outranks
+    a partial run, so the worst outcome of the batch is the one the scheduler sees.
 
     Args:
         reports: One report per jurisdiction that ran.
+        strict: Whether a ``partial`` run should exit non-zero. Off by default, which keeps
+            the documented ``0``/``1``/``130`` contract for interactive use; the weekly job
+            turns it on.
 
     Raises:
         click.exceptions.Exit: With 130 when a run was interrupted, so a scheduler can tell
-            a cancellation from a failure.
+            a cancellation from a failure; with 3 for a partial run under ``strict``.
         click.ClickException: If any run failed, which exits 1.
     """
     failed = [report for report in reports if report.status is IngestStatus.FAILED]
@@ -305,6 +335,18 @@ def _exit_for(reports: list[IngestReport]) -> None:
         raise click.ClickException(f"ingestion failed for {len(failed)} jurisdiction(s); {detail}")
     if any(report.status is IngestStatus.INTERRUPTED for report in reports):
         raise click.exceptions.Exit(_EXIT_INTERRUPTED)
+    partial = [report for report in reports if report.status is IngestStatus.PARTIAL]
+    if strict and partial:
+        detail = ", ".join(
+            f"{report.jurisdiction_code} ({report.counters.errors} document(s))"
+            for report in partial
+        )
+        click.echo(
+            f"partial: {detail}. The checkpoint stopped at the first failed document, so the "
+            f"window will be retried rather than skipped.",
+            err=True,
+        )
+        raise click.exceptions.Exit(_EXIT_PARTIAL)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -314,8 +356,9 @@ def main(argv: list[str] | None = None) -> int:
         argv: Argument vector, excluding the program name. Defaults to ``sys.argv[1:]``.
 
     Returns:
-        A process exit code: ``0`` on success, ``130`` when interrupted with Ctrl+C,
-        ``1`` on an unhandled failure.
+        A process exit code: ``0`` on success, ``1`` on an unhandled failure, ``2`` on a
+        usage error, ``3`` for a partial run under ``--fail-on-partial``, and ``130`` when
+        interrupted with Ctrl+C.
     """
     try:
         result = plt_cli.main(args=argv, standalone_mode=False)

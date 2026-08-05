@@ -163,6 +163,73 @@ def test_a_failed_run_exits_1(cli_env: sessionmaker[Session]) -> None:
     assert main(["ingest", "-j", "NL"]) == 1
 
 
+class Flaky(FakeConnector):
+    """A connector whose source refuses to serve one of its documents."""
+
+    name = "cli-flaky"
+
+    def __init__(self, settings: Settings | None = None) -> None:
+        """Fail on the second document, and serve the rest."""
+        super().__init__(settings, docs=NL_DOCS, fail_fetch={NL_DOCS[1].source_id})
+
+
+def test_a_partial_run_exits_0_by_default(cli_env: sessionmaker[Session]) -> None:
+    """The documented contract for interactive use: the run completed, so the code is 0."""
+    del cli_env
+    registry.reset_registry(Flaky)
+
+    assert main(["ingest", "-j", "NL"]) == 0
+
+
+def test_a_partial_run_exits_3_when_asked_to_fail(
+    cli_env: sessionmaker[Session], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """What the weekly job runs: a frozen window has to be visible, not reported as success."""
+    del cli_env
+    registry.reset_registry(Flaky)
+
+    assert main(["ingest", "-j", "NL", "--fail-on-partial"]) == 3
+
+    captured = capsys.readouterr()
+    assert "NL/cli-flaky: partial" in captured.out
+    assert "partial: NL" in captured.err
+
+
+def test_a_successful_run_still_exits_0_when_asked_to_fail_on_partial(
+    cli_env: sessionmaker[Session],
+) -> None:
+    del cli_env
+
+    assert main(["ingest", "-j", "NL", "--fail-on-partial"]) == 0
+
+
+def test_a_failure_outranks_a_partial_run(cli_env: sessionmaker[Session]) -> None:
+    """Two jurisdictions, one broken and one flaky: the scheduler is told about the failure."""
+    with cli_env() as session:
+        session.add(
+            Jurisdiction(code="EU", name="European Union", type=JurisdictionType.SUPRANATIONAL)
+        )
+        session.commit()
+
+    class Broken(FakeConnector):
+        """An EU connector whose source is down."""
+
+        jurisdiction_code = "EU"
+        name = "cli-broken-eu"
+
+        def __init__(self, settings: Settings | None = None) -> None:
+            """Fail at discovery."""
+            super().__init__(
+                settings,
+                docs=NL_DOCS,
+                raise_on_discover=SourceUnavailableError("cellar.publications.europa.eu is down"),
+            )
+
+    registry.reset_registry(Flaky, Broken)
+
+    assert main(["ingest", "-j", "NL", "-j", "EU", "--fail-on-partial"]) == 1
+
+
 def test_naming_no_jurisdiction_is_a_usage_error(cli_env: sessionmaker[Session]) -> None:
     del cli_env
 
