@@ -11,6 +11,7 @@ process, rather than by instantiating :class:`Settings` directly.
 
 from __future__ import annotations
 
+import json
 import re
 from enum import StrEnum
 from functools import lru_cache
@@ -18,7 +19,7 @@ from pathlib import Path
 from typing import Annotated, Final
 
 from pydantic import Field, SecretStr, field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 __all__ = [
     "AppEnv",
@@ -36,6 +37,40 @@ _PLACEHOLDER_SECRET_KEY: Final[str] = "change-me-in-production"  # noqa: S105
 
 #: Shape of a controlled-vocabulary code that may be interpolated into a SPARQL URI.
 _VOCABULARY_CODE: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9_]{1,32}")
+
+#: A list-of-strings setting that reaches its validators as the raw configured string.
+#:
+#: pydantic-settings JSON-decodes a complex-typed value *inside* the environment source,
+#: before any field validator runs, so without :class:`~pydantic_settings.NoDecode` the
+#: comma-separated form ``.env.example`` documents raises ``SettingsError`` at load time and
+#: the ``mode="before"`` validators below never see it. With it, both documented forms — a
+#: comma-separated string and a JSON array — are parsed by :func:`_parse_string_list`.
+_StringList = Annotated[list[str], NoDecode]
+
+
+def _parse_string_list(value: object) -> object:
+    """Parse a configured list-of-strings setting.
+
+    Args:
+        value: The value as configured. A string is parsed; anything else — a list supplied
+            directly to the constructor, or a default — is returned untouched.
+
+    Returns:
+        The parsed list, or ``value`` unchanged when it is not a string.
+
+    Raises:
+        ValueError: If the value opens like a JSON array but does not parse as one.
+    """
+    if not isinstance(value, str):
+        return value
+    text = value.strip()
+    if text.startswith("["):
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as error:
+            message = f"expected a comma-separated list or a JSON array, got {value!r}"
+            raise ValueError(message) from error
+    return [item.strip() for item in text.split(",") if item.strip()]
 
 
 class AppEnv(StrEnum):
@@ -127,7 +162,7 @@ class Settings(BaseSettings):
         default="/api",
         description="Base path every API blueprint is mounted under.",
     )
-    cors_allowed_origins: list[str] = Field(
+    cors_allowed_origins: _StringList = Field(
         default_factory=lambda: ["http://localhost:5173"],
         description="Comma-separated list of origins allowed to call the API.",
     )
@@ -285,7 +320,7 @@ class Settings(BaseSettings):
             "the cap is processed anyway and logged, rather than splitting forever."
         ),
     )
-    eurlex_languages: list[str] = Field(
+    eurlex_languages: _StringList = Field(
         default_factory=lambda: ["eng"],
         description=(
             "Manifestation languages to retrieve per case, in order of preference, as "
@@ -293,7 +328,7 @@ class Settings(BaseSettings):
             "language. Each retrieved language becomes its own case_document row."
         ),
     )
-    eurlex_resource_types: list[str] = Field(
+    eurlex_resource_types: _StringList = Field(
         default_factory=lambda: ["JUDG", "ORDER", "OPIN_AG", "JUDG_EXTRACT"],
         description=(
             "CDM resource-type codes discovery enumerates: the decisions themselves. "
@@ -335,17 +370,13 @@ class Settings(BaseSettings):
     @classmethod
     def _split_origins(cls, value: object) -> object:
         """Accept a comma-separated string as well as a JSON list for CORS origins."""
-        if isinstance(value, str) and not value.strip().startswith("["):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+        return _parse_string_list(value)
 
     @field_validator("eurlex_languages", "eurlex_resource_types", mode="before")
     @classmethod
     def _split_codes(cls, value: object) -> object:
         """Accept a comma-separated string as well as a JSON list for the CELLAR code lists."""
-        if isinstance(value, str) and not value.strip().startswith("["):
-            return [code.strip() for code in value.split(",") if code.strip()]
-        return value
+        return _parse_string_list(value)
 
     @field_validator("eurlex_languages", "eurlex_resource_types")
     @classmethod
