@@ -295,7 +295,19 @@ forward into the startup phase.
 | Luxembourg | Unified | Justice Portal Luxembourg | https://justice.public.lu |
 | Malta | Unified | Judiciary of Malta | https://judiciary.mt |
 | Netherlands | Administrative | Council of State (Raad van State) | https://www.raadvanstate.nl |
+| Netherlands | Administrative (economic) | Trade and Industry Appeals Tribunal (College van Beroep voor het bedrijfsleven, CBb) | https://www.rechtspraak.nl/Organisatie-en-contact/Organisatie/College-van-Beroep-voor-het-bedrijfsleven |
 | Netherlands | Civil/Criminal | Supreme Court (Hoge Raad) | https://www.hogeraad.nl |
+| Netherlands | Unified | Rechtspraak.nl open data portal — all instances, including first instance | https://uitspraken.rechtspraak.nl |
+
+> **Netherlands rows corrected 5 August 2026.** The **CBb** was absent while it is the statutory
+> appeal forum for Ctgb authorisation decisions — that is, the court where the highest-value Dutch
+> pesticide cases are actually decided. It surfaced from the jurisdiction methodology work (§2.9),
+> which is precisely the failure mode §2.9 exists to catch: an annex listing apex courts only looks
+> complete while omitting the forum that matters most.
+>
+> The portal row is added because `data.rechtspraak.nl` is a **unified source covering every
+> instance**, including rechtbanken and gerechtshoven. Most pesticide litigation is first-instance,
+> so the two apex rows alone materially understate what the Netherlands connector reads.
 | Poland | Administrative | Supreme Administrative Court (NSA) | https://www.nsa.gov.pl |
 | Poland | Civil/Criminal | Supreme Court | https://www.sn.pl |
 | Portugal | Administrative | Supreme Administrative Court | https://www.stap.pt |
