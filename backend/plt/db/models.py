@@ -849,13 +849,43 @@ class Subscriber(Base):
     address or a single seed, and the subscription endpoints answer identically whether or not
     a row exists — an endpoint that behaved differently for a known address would be an
     address-checking oracle for anyone with a word list.
+
+    **On unsubscribe the address is replaced by a keyed digest** (core document section 2.12).
+    ``email`` becomes null and ``email_digest`` holds
+    ``HMAC-SHA256(pepper, normalised_address)`` under a key that lives outside the database,
+    so the row keeps the dates and the counter this project reports on while the address
+    itself is gone. That is **pseudonymisation, not anonymisation**: the digest is
+    deterministic so a returning address stays recognisable, and determinism is what makes it
+    reversible to anyone holding the pepper. A subject access request still reaches these
+    rows, and storage limitation still applies to them.
     """
 
     __tablename__ = "subscriber"
+    __table_args__ = (
+        # The two states a row may be in, and nothing between them. Holding the address *and*
+        # its digest would mean the pseudonymisation had achieved nothing, and a row with no
+        # address that is not unsubscribed would be one the digest send could never reach.
+        CheckConstraint(
+            "email IS NULL OR email_digest IS NULL",
+            name="address_or_digest_not_both",
+        ),
+        CheckConstraint(
+            "email IS NOT NULL OR status = 'unsubscribed'",
+            name="address_present_unless_unsubscribed",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    #: The address, normalised to lower case so one person cannot hold two rows.
-    email: Mapped[str] = mapped_column(String(_EMAIL_LEN), nullable=False, unique=True)
+    #: The address, normalised to lower case so one person cannot hold two rows. **Null once
+    #: the subscription has ended**: unsubscribing replaces it with ``email_digest``.
+    email: Mapped[str | None] = mapped_column(String(_EMAIL_LEN), unique=True)
+    #: The keyed digest that stands in for the address after an unsubscribe, and null while
+    #: the address itself is held. It is what lets a withdrawal be *durable*: an address that
+    #: comes back is recognised, so a third party retyping it into the signup form cannot turn
+    #: a withdrawn consent into a fresh confirmation email. Null again once
+    #: ``PLT_SUBSCRIBER_RETENTION_DAYS`` has passed, if a horizon is configured, leaving a row
+    #: that is only dates and a counter.
+    email_digest: Mapped[str | None] = mapped_column(String(_SHORT_LEN), unique=True)
     status: Mapped[SubscriberStatus] = mapped_column(
         portable_enum(SubscriberStatus, "subscriber_status"),
         nullable=False,
@@ -885,6 +915,13 @@ class Subscriber(Base):
     #: resumable: a re-run skips the recipients already served. Not a record of delivery, and
     #: not a record of anything the reader did.
     last_digest_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+    #: How many digests were **sent** to this row. The one statistic that could not be
+    #: recovered from the dates once the address is gone, and the reason it is a column rather
+    #: than a derivation. It is not a delivery record and not an open or click count: the
+    #: tracker knows what it handed to the mail backend and nothing about what happened next.
+    digest_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
 
     @property
     def is_subscribed(self) -> bool:
