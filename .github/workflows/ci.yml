@@ -102,3 +102,56 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  accessibility:
+    name: Frontend (axe, contrast, reflow)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    # A separate job, not extra steps on `frontend`, so the two run at the same time: this
+    # one is the slowest check in the workflow and would otherwise be added to the end of
+    # the longest existing one. It builds its own copy rather than taking an artifact from
+    # `frontend` — `npm run build` is under two seconds and an artifact round trip is longer
+    # than that, on top of making the two jobs sequential again.
+    #
+    # Not sharded across routes or widths either. The whole matrix takes well under a
+    # minute, and a shard's own checkout, install and build cost more than the work it would
+    # take off the others. Sharding becomes worth doing when the run passes a few minutes;
+    # `tests/a11y/run.mjs --only=` and `--width=` already split it for a local run.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # `frontend/puppeteer.config.cjs` turns the postinstall browser download off, so that
+      # every other `npm ci` in the project is unaffected by it. This is the one job that
+      # needs a browser, and it asks for it explicitly, behind a cache keyed on the lockfile
+      # — so a pull request that does not change dependencies does not re-download Chrome.
+      - name: Cache Chrome
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install Chrome
+        run: npx puppeteer browsers install chrome
+
+      - name: Build
+        run: npm run build
+
+      # axe-core over wcag2a/wcag2aa/wcag21a/wcag21aa/best-practice, colour contrast measured
+      # on rendered pixels, no horizontal overflow, and a visible focus indicator at every
+      # tab stop — every route, in every data state it can be in, at six widths from 320 px
+      # up. See `frontend/tests/a11y/run.mjs` for what each of those means and why contrast
+      # is enforced rather than reported while the palette is still a placeholder.
+      - name: Accessibility and responsive checks
+        run: npm run test:a11y
