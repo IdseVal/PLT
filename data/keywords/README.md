@@ -178,4 +178,12 @@ Do not split these four without reading #24 first.
 
 These lists are **data curated by the content manager**, not code. Every ingestion run
 records which term ids matched each case, so precision and recall can be reviewed and the
-lists tuned. Bump `list_version` on every change and note the reasoning in `notes`.
+lists tuned.
+
+**Bump `list_version` on every change that can alter a score** — a term, an alias, a weight,
+a match mode, a threshold, a band. Note the reasoning in `notes`.
+
+**Do not bump it for a change that cannot** — a corrected comment, a rewritten note, a typo in
+prose. `keyword_match` records the version that produced each match, so two versions with
+identical scoring behaviour make that record ambiguous: a reader comparing runs would see a
+version change and look for a behavioural difference that does not exist.
