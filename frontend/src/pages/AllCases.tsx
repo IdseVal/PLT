@@ -149,7 +149,7 @@ export default function AllCases(): JSX.Element {
         `styles/index.css` then wraps the word rather than letting it overflow.
       */}
       <div className="grid gap-8 lg:grid-cols-4">
-        <div className="lg:col-span-1">
+        <div className="min-w-0 lg:col-span-1">
           <CaseFilters
             filters={filters}
             facets={facets.data}
@@ -161,7 +161,7 @@ export default function AllCases(): JSX.Element {
           />
         </div>
 
-        <div className="lg:col-span-3">
+        <div className="min-w-0 lg:col-span-3">
           <div className="border-plt-border flex flex-wrap items-end justify-between gap-4 border-b pb-4">
             <p
               ref={summaryRef}
@@ -179,7 +179,7 @@ export default function AllCases(): JSX.Element {
 
             <div className="flex flex-wrap items-end gap-4">
               <div className="space-y-1">
-                <label className="text-plt-muted block text-sm" htmlFor="cases-sort-typo">
+                <label className="text-plt-muted block text-sm" htmlFor="cases-sort">
                   Sort by
                 </label>
                 <select

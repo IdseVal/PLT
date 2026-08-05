@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom'
 import { FOOTER_DATABASE_LINKS, SITE_MENU } from '@/content/navigation'
 
 /** Shared classes for links in the footer band. */
-const FOOTER_LINK = 'text-plt-muted focus-on-dark rounded-sm underline-offset-4 hover:underline'
+const FOOTER_LINK = 'text-plt-panel focus-on-dark rounded-sm underline-offset-4 hover:underline'
 
 /**
  * A link inside a sentence, rather than in a list. It is underlined at rest: a link in a
