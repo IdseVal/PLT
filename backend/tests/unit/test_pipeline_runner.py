@@ -392,6 +392,83 @@ def test_the_run_row_carries_accurate_counts(harness: Harness) -> None:
     assert report.counters.rejected == 1
 
 
+def test_a_failed_run_records_the_counters_it_accumulated(harness: Harness) -> None:
+    """The failure is injected midway, so the counters have something to lose.
+
+    A run that fetched documents and then died must not be indistinguishable from one that
+    never got off the ground: the failed runs are precisely the ones an investigator reads
+    ``ingest_run`` for.
+    """
+    docs = documents(4)
+    connector = FakeConnector(
+        docs=docs,
+        on_fetch=lambda source_id: _fail_source(source_id, docs[2].source_id),
+    )
+
+    report = harness.run(connector, batch_size=2)
+
+    assert report.status is IngestStatus.FAILED
+    assert report.error_message is not None
+    assert report.counters.discovered == 4
+    assert report.counters.fetched == 2
+    assert report.counters.matched == 2
+    assert report.counters.inserted == 2
+
+    with harness.session() as session:
+        run = session.scalars(select(IngestRun)).one()
+    assert run.status is IngestStatus.FAILED
+    assert run.error_message is not None
+    assert run.fetched_count == 2
+    assert run.matched_count == 2
+    assert run.inserted_count == 2
+    assert run.updated_count == 0
+    assert run.skipped_duplicate_count == 0
+    assert run.error_count == 0
+    # The verdict is still a failure, and the checkpoint still did not move.
+    assert run.checkpoint_after == run.checkpoint_before
+
+
+def test_a_failed_run_records_the_documents_that_failed_before_it(harness: Harness) -> None:
+    """Per-document errors counted before the fatal one survive it too."""
+    docs = documents(4)
+    connector = FakeConnector(
+        docs=docs,
+        fail_fetch=frozenset({docs[0].source_id}),
+        on_fetch=lambda source_id: _fail_source(source_id, docs[3].source_id),
+    )
+
+    report = harness.run(connector, batch_size=2)
+
+    assert report.status is IngestStatus.FAILED
+    assert report.counters.errors == 1
+
+    with harness.session() as session:
+        run = session.scalars(select(IngestRun)).one()
+    assert run.error_count == 1
+    assert run.fetched_count == 2
+
+
+def test_an_interrupted_run_records_the_counters_it_accumulated(harness: Harness) -> None:
+    """The signal path has to carry the counters too (core document 2.6)."""
+    docs = documents(6)
+
+    def interrupt(source_id: str) -> None:
+        if source_id == docs[2].source_id:
+            signal.raise_signal(signal.SIGINT)
+
+    report = harness.run(FakeConnector(docs=docs, on_fetch=interrupt), batch_size=2)
+
+    assert report.status is IngestStatus.INTERRUPTED
+    assert report.counters.fetched == 3
+    assert report.counters.inserted == 3
+
+    with harness.session() as session:
+        run = session.scalars(select(IngestRun)).one()
+    assert run.status is IngestStatus.INTERRUPTED
+    assert run.fetched_count == 3
+    assert run.inserted_count == 3
+
+
 def test_a_second_run_records_the_checkpoint_it_started_from(harness: Harness) -> None:
     docs = documents(2)
     harness.run(FakeConnector(docs=docs))
