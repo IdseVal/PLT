@@ -132,14 +132,17 @@ def test_the_file_backend_writes_one_readable_message(mail_settings: Settings) -
     assert "One new case." in parsed.get_content()
 
 
-def test_the_file_backend_cannot_be_walked_out_of_its_directory(mail_settings: Settings) -> None:
-    # The recipient is part of the filename, and a recipient is client input.
+def test_the_filename_carries_no_address_and_no_path(mail_settings: Settings) -> None:
+    # Two properties at once: the path is logged, so it must not name a subscriber, and a
+    # recipient is client input, so it must not be able to walk out of the outbox.
     with FileMailer(mail_settings) as mailer:
-        mailer.send(Message(to="a/../../b@example.org", subject="s", body="b"))
+        mailer.send(Message(to="a/../../reader@example.org", subject="s", body="b"))
 
     written = list(mail_settings.mail_outbox_dir.glob("*.eml"))
     assert len(written) == 1
     assert written[0].parent == mail_settings.mail_outbox_dir
+    assert "reader" not in written[0].name
+    assert "@" not in written[0].name
 
 
 def test_the_console_backend_touches_no_file(tmp_path: Path) -> None:

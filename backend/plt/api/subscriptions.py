@@ -29,6 +29,12 @@ requests arrive, and validation that refuses anything that is not an ordinary ad
 posts the token. A mailbox provider's link scanner following the URL therefore cannot
 unsubscribe anybody by looking at it, while ``List-Unsubscribe-Post`` still lets a mail client
 do it in one click.
+
+**No CSRF token, and none is needed.** These routes carry no ambient authority: there is no
+session, no cookie and no credential a browser could attach on a caller's behalf, so a
+cross-site request achieves nothing an attacker could not achieve by calling the endpoint
+directly. Each also requires a JSON body, which a cross-origin ``fetch`` can only send after a
+preflight the configured CORS policy refuses, and which an HTML form cannot send at all.
 """
 
 from __future__ import annotations
@@ -58,10 +64,13 @@ log = get_logger(__name__)
 subscriptions_bp = Blueprint("subscriptions", __name__)
 
 #: The one answer both mail-sending routes give. It describes what the *caller* should do and
-#: says nothing about what the server found, which is what keeps it from being an oracle.
+#: says nothing about what the server found, which is what keeps it from being an oracle. It
+#: also states the double opt-in accurately rather than reassuringly: a submitted address is
+#: recorded so the confirmation can be checked, and it is simply never sent a digest until
+#: the link is used.
 _ACCEPTED = (
     "If that address needs an email from us, one is on its way. Open the link in it to "
-    "finish; nothing is stored against you until you do."
+    "finish: no digest is ever sent to an address that has not confirmed."
 )
 
 

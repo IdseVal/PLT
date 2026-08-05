@@ -605,7 +605,15 @@ that mail an address a caller supplied, and `PLT_RATE_LIMIT_SUBSCRIPTION_TOKEN` 
 `30 per hour`) on confirm and unsubscribe. **The per-client limit is not the whole defence**:
 `PLT_SUBSCRIPTION_NOTICE_INTERVAL_SECONDS` caps how often any one *address* can be written
 to, whatever the source of the requests, which is what makes the form useless as a way of
-bombarding a third party. No subscriber address is ever logged, at any level.
+bombarding a third party.
+
+**No subscriber address is logged**, at any level, and neither is a token: the routes log an
+outcome and an internal id. The `console` mail backend is the one deliberate exception — it
+renders whole messages to the log so a developer can follow a confirmation link locally, and
+it is refused in production for exactly that reason (§8). The subscription routes need no
+CSRF token: they carry no session, cookie or credential a browser would attach on a caller's
+behalf, and each requires a JSON body, which an HTML form cannot send and a cross-origin
+`fetch` can only send after a preflight the CORS policy refuses.
 
 ---
 

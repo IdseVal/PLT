@@ -25,6 +25,7 @@ digest because it never learns it.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import smtplib
 import ssl
@@ -60,9 +61,10 @@ log = get_logger(__name__)
 #: append headers of its own, so it is rejected outright.
 _HEADER_BREAK: Final[re.Pattern[str]] = re.compile(r"[\r\n]")
 
-#: Characters kept in the filename the file backend writes, so an address cannot escape the
-#: outbox directory or collide with a path separator.
-_FILENAME_UNSAFE: Final[re.Pattern[str]] = re.compile(r"[^A-Za-z0-9._-]")
+#: Characters of a recipient digest that go into a file backend's filename. Eight hex
+#: characters distinguish one recipient's messages from another's in a local outbox without
+#: putting an address into a path — and therefore into the log line that names it.
+_FILENAME_DIGEST_LENGTH: Final[int] = 8
 
 #: Domain the ``Message-ID`` is generated under when the From address carries none.
 _FALLBACK_DOMAIN: Final[str] = "plt.invalid"
@@ -232,6 +234,10 @@ class FileMailer(_BaseMailer):
     Also a local backend: it opens no socket. It exists for the flows that are easier to check
     by reading the message a subscriber would receive than by reading a log line, and for a
     deployment whose relay collects files from a spool directory.
+
+    The filename carries a timestamp and a digest of the recipient, never the recipient: the
+    path is logged, and an address does not belong in a log. The message inside names its
+    recipient, of course — it is a message to them.
     """
 
     def send(self, message: Message) -> None:
@@ -246,9 +252,10 @@ class FileMailer(_BaseMailer):
         rendered = render_message(message, self._settings)
         directory = self._settings.mail_outbox_dir
         stamp = utcnow().strftime("%Y%m%dT%H%M%S%f")
-        # The recipient is part of the filename so a local check can find its message, but it
-        # goes through the same character filter as any other untrusted path component.
-        recipient = _FILENAME_UNSAFE.sub("_", message.to)[:64]
+        # A digest of the recipient rather than the recipient: the filename ends up in the log
+        # line below, and an address does not belong in a log (rule 2.7). It also settles the
+        # path-traversal question outright — a hex digest has no separators to escape with.
+        recipient = hashlib.sha256(message.to.encode("utf-8")).hexdigest()[:_FILENAME_DIGEST_LENGTH]
         path = Path(directory) / f"{stamp}-{recipient}.eml"
         try:
             directory.mkdir(parents=True, exist_ok=True)

@@ -158,9 +158,10 @@ def _footer(seed: str, settings: Settings) -> str:
         f"needs no password:\n"
         f"  {unsubscribe_url(seed, settings)}\n"
         f"\n"
-        f"The tracker stores your email address and the date you confirmed it, and\n"
-        f"nothing else. It is used to send this alert and for no other purpose, it is\n"
-        f"never passed on, and nothing in this message reports whether you opened it.\n"
+        f"The tracker stores your email address, whether it is confirmed, and the dates\n"
+        f"those things happened. Nothing else: no name, and no record of whether you\n"
+        f"open this message or follow a link in it. Your address is used to send this\n"
+        f"alert and for no other purpose, and it is never passed on.\n"
         f"  {settings.site_url('/')}"
     )
 

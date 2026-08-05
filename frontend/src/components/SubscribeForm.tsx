@@ -161,8 +161,9 @@ export default function SubscribeForm(): JSX.Element {
       )}
 
       <p className="text-plt-muted text-xs leading-relaxed">
-        We store your address and the date you confirmed it, and nothing else. It is never
-        passed on, and every email carries a one-click link to stop them. You can also{' '}
+        We store your address, whether it is confirmed, and the dates those things happened —
+        no name, and no record of whether you open an email. It is never passed on, and every
+        email carries a one-click link to stop them. You can also{' '}
         <Link className="text-plt-accent-strong rounded-sm underline underline-offset-4" to="/unsubscribe">
           unsubscribe here
         </Link>
