@@ -219,6 +219,88 @@ precision but cannot explain an individual verdict, or cannot be re-run to the s
 does not qualify for this pipeline as it stands. If such a stage is ever wanted, the
 requirement above has to be revisited deliberately, not worked around.
 
+### 2.9 Onboarding a jurisdiction: the jurisdiction methodology document
+
+> *Added 5 August 2026. Decision by the project owner, prompted by issues #39 and #57.*
+
+Every jurisdiction added to the database gets its own **methodology document** at
+`docs/jurisdictions/<code>.md`, written *before* its connector. It is a precondition for
+onboarding, alongside the keyword list required by §2.5.
+
+Each document records:
+
+1. **Where the litigation actually is.** Which courts and instances hear pesticide cases in
+   that jurisdiction, and why. Annex 2 lists apex courts almost exclusively, and most
+   pesticide litigation never reaches one — spray-drift disputes, authorisation challenges
+   and residue prosecutions are largely first-instance and often specialised. Sweden's Land
+   and Environment Courts are the worked example (§Annex 2). Getting this wrong does not
+   produce a visible error; it produces a jurisdiction that looks covered and is not.
+2. **How to reach it.** The endpoints, their parameters, their quirks and their limits,
+   each **verified against the live service** with the date of verification. Annex 2a is the
+   summary; the jurisdiction document is where the detail belongs.
+3. **The keyword list**, and the reasoning behind its jurisdiction-specific terms.
+4. **Documented exceptions** — see §2.10.
+5. **Known limitations**, including anything the source does not expose.
+
+### 2.10 One method, explicit exceptions
+
+> *Added 5 August 2026.*
+
+The selection method is **the same for every jurisdiction**: fetch, filter, rank, with the
+recall-first policy of §2.7. Jurisdictions differ only in their *inputs* — the endpoints and
+the keyword list — not in how selection works.
+
+Where a jurisdiction genuinely needs more, it is added as an **explicit, documented
+exception** in that jurisdiction's methodology document, never as an undocumented adjustment
+to shared code. The Dutch list supplies the motivating cases (#57): the forensic-toxicology
+boilerplate *"geen aanwijzingen … geneesmiddelen, drugs en/of bestrijdingsmiddelen"* admits
+homicide judgments, and `kwekerij` matches `hennepkwekerij`. These are linguistic accidents
+of one language, not facts about pesticide litigation, and they do not belong in shared
+logic.
+
+Every exception must state **what it excludes, why, and what it costs**. Because an exclusion
+is a deliberate false negative — the error §2.7 says this project does not accept — the
+justification carries a higher burden than an inclusion. An exception that cannot be
+explained on the Methodology page (§2.8) does not qualify.
+
+### 2.11 Quarantine: bounding a permanently failing document
+
+> *Added 5 August 2026. Decision by the project owner, resolving issue #35.*
+
+A document that fails repeatedly must not stall its jurisdiction's window for ever. The rule:
+**after N consecutive runs in which the same `source_id` fails, the pipeline advances past it
+and records the fact durably.**
+
+- **N is configuration, not a constant.** The default is **3** — with weekly runs, roughly
+  three weeks of transient upstream trouble is tolerated before the window is allowed to move
+  on, which is long enough to absorb an outage and short enough not to lose a quarter.
+- **The record is a durable, queryable quarantine**, not a log line: jurisdiction, source id,
+  first and last failure, attempt count, last error, and whether it has since been resolved.
+- **Quarantine must be visible.** A quarantined document is a potential missing case, which
+  is precisely the error §2.7 refuses. It is therefore surfaced for review in the same way a
+  borderline case is (§2.7), not buried in operational telemetry. Silently skipping is the
+  one behaviour this rule exists to prevent — advancing past a document is acceptable only
+  because a human or agent will see that it happened.
+- A quarantined document is **retried on later runs** rather than abandoned; quarantine
+  releases the window, it does not close the case.
+- **A quarantined document's continued failure does not count toward run status.** Once the
+  pipeline has advanced past it, the run has done everything available to it, and a run that
+  processed its whole window successfully is a **success** even while a quarantined document
+  keeps failing in the background. Otherwise every run after the first quarantine reports
+  `partial` for ever, `/api/health` freezes permanently for that jurisdiction, and the alarm
+  that §2.11 exists to raise becomes the one nobody reads.
+
+  The two questions are separate and get separate signals:
+
+  | Question | Signal |
+  | --- | --- |
+  | Did this run work? | run status, and the scheduled job's exit code |
+  | What are we persistently unable to fetch? | the quarantine record, surfaced for review |
+
+  Conflating them is what makes an unattended weekly job untrustworthy: an alarm that is
+  always on carries no information, and an alarm that never fires carries none either. Run
+  status must be able to return to green while quarantine keeps its own count.
+
 ---
 
 ## 3. Design and layout
