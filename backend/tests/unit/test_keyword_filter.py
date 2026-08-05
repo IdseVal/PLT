@@ -350,6 +350,24 @@ def test_an_exception_nothing_needs_is_rejected_so_the_set_cannot_rot(tmp_path: 
         load_keyword_list(write_list(tmp_path, document))
 
 
+def test_an_exception_on_a_regex_term_is_rejected_as_well(tmp_path: Path) -> None:
+    document = make_list(
+        [
+            term(
+                "nl-ctgb",
+                r"(?<!\w)Ctgb(?!\w)",
+                2,
+                match="regex",
+                case_sensitive=True,
+                case_sensitive_exception=True,
+            )
+        ]
+    )
+
+    with pytest.raises(KeywordListValidationError, match=r"nl-ctgb.*regular expression"):
+        load_keyword_list(write_list(tmp_path, document))
+
+
 def test_a_substring_literal_at_the_floor_is_accepted(tmp_path: Path) -> None:
     document = make_list([term("nl-residu", "residu", 2, match="substring")])
 

@@ -831,6 +831,12 @@ def _check_case_sensitivity(term: KeywordTerm) -> None:
             raise KeywordListValidationError(message)
         return
     if term.match == "regex":
+        if term.case_sensitive_exception:
+            message = (
+                f"term {term.term_id!r}: declares case_sensitive_exception but is matched as "
+                "a regular expression, which the acronym rule does not reach"
+            )
+            raise KeywordListValidationError(message)
         return
     offenders = [literal for literal in term.patterns if not _is_acronym_shaped(literal)]
     if not offenders:
