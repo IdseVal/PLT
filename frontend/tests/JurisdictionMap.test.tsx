@@ -221,7 +221,8 @@ describe('a payload that breaks its own contract', () => {
     stubJson([stat('NL', 'Nether\u0007lands\u202Egnidaelsim\u202C', 3)])
     const user = renderMap()
 
-    const netherlands = await jurisdiction(/^Netherlands: 3 cases$/)
+    // The accessible name holds the letters the API sent and none of what it hid.
+    const netherlands = await jurisdiction(/^Netherlandsgnidaelsim: 3 cases$/)
     expect(netherlands.getAttribute('aria-label')).toBe('Netherlandsgnidaelsim: 3 cases')
 
     await user.hover(netherlands)
