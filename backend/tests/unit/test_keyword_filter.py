@@ -361,7 +361,9 @@ def test_the_boilerplate_guard_suppresses_one_occurrence_and_not_the_term(
     result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} {screen} {elsewhere}"))
 
     assert result.passed, "the guard must disarm the enumeration, not the term"
-    assert matched(result) == {"nl-bestrijdingsmiddel"}
+    # Asserted by membership, not equality: the sentence also names a substance, and which
+    # substances the curated list carries is the content manager's to change.
+    assert "nl-bestrijdingsmiddel" in matched(result)
     for plain in ("het gebruik van bestrijdingsmiddelen", "bestrijdingsmiddelengebruik"):
         assert nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} {plain}")).passed
 
