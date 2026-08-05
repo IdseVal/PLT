@@ -26,6 +26,7 @@ caller sees, and the scheduled workflow passes it.
 
 from __future__ import annotations
 
+import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -39,7 +40,7 @@ from plt.db.models import IngestStatus
 from plt.db.session import get_session_factory, session_scope
 from plt.pipeline.base import PipelineError
 from plt.pipeline.persistence import resolve_court
-from plt.pipeline.registry import available_jurisdictions, connector_for
+from plt.pipeline.registry import available_jurisdictions, connector_classes, connector_for
 from plt.pipeline.runner import IngestReport, run_jurisdiction
 from plt.utils.logging import configure_logging, get_logger
 
@@ -197,6 +198,40 @@ def ingest(
             break
 
     _exit_for(reports, strict=fail_on_partial)
+
+
+@plt_cli.command(name="jurisdictions")
+@click.option(
+    "--json",
+    "as_json",
+    is_flag=True,
+    help="Emit a JSON array of codes, which is what the weekly workflow builds its matrix from.",
+)
+def jurisdictions(as_json: bool) -> None:
+    """List the jurisdictions ``plt ingest --all`` would run.
+
+    The list comes from the connector registry, so onboarding a jurisdiction stays one
+    connector plus one keyword list (``docs/architecture.md`` section 4) and no scheduler,
+    crontab or workflow file has to be edited to include it.
+
+    Raises:
+        click.ClickException: If no connector is registered. A caller building a schedule
+            from an empty list would silently ingest nothing, so this is reported rather
+            than printed as an empty result.
+    """
+    registered = connector_classes()
+    if not registered:
+        message = (
+            "no connectors are registered; add one under plt.pipeline.connectors together "
+            "with its keyword list under data/keywords/"
+        )
+        raise click.ClickException(message)
+    codes = sorted(registered)
+    if as_json:
+        click.echo(json.dumps(codes))
+        return
+    for code in codes:
+        click.echo(f"{code}\t{registered[code].name}")
 
 
 @plt_cli.command(name="seed-vocabularies")
