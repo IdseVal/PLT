@@ -928,8 +928,11 @@ class RechtspraakConnector(SourceConnector):
         while cursor <= stop:
             window = Window(cursor, min(cursor + width, stop))
             total, entries = self._search(window, page_size)
+            # Short of what the feed counted, rather than short of the page: the two are the
+            # same thing whenever the endpoint is behaving, and where they differ it is the
+            # count that says whether anything was left behind.
             if total is None or total > len(entries):
-                window, total, entries = self._fit(window, total, page_size, floor)
+                window, total, entries = self._fit(window, total, entries, page_size, floor)
             yield window, entries
             width = self._next_width(max(window.width, floor), total, page_size, floor, ceiling)
             cursor = window.stop + _TICK
@@ -938,6 +941,7 @@ class RechtspraakConnector(SourceConnector):
         self,
         window: Window,
         total: int | None,
+        entries: list[Entry],
         page_size: int,
         floor: timedelta,
     ) -> tuple[Window, int | None, list[Entry]]:
@@ -948,6 +952,8 @@ class RechtspraakConnector(SourceConnector):
             total: What the feed said the window holds, or ``None`` when it said nothing a
                 number could be read out of — in which case the window cannot be measured and
                 so cannot be narrowed to fit, and is paged instead.
+            entries: What the first read of the window returned, which is the answer already
+                when there turns out to be nothing to narrow.
             page_size: Entries one request returns.
             floor: Narrowest the window may become.
 
@@ -957,6 +963,23 @@ class RechtspraakConnector(SourceConnector):
         Raises:
             SourceUnavailableError: If the feed cannot be read at all.
         """
+        if total is not None and total <= page_size:
+            # Fewer entries than the feed's own count, in a window it says fits in one
+            # request. Nothing here can fix that, and asking again would only ask the same
+            # question — but a corpus short of what its source counted should say so.
+            log.warning(
+                "the feed answered a window with fewer entries than it counted; the walk "
+                "returns what arrived",
+                extra={
+                    "context": {
+                        "connector": self.name,
+                        "window": window.cursor(0),
+                        "counted": total,
+                        "returned": len(entries),
+                    }
+                },
+            )
+            return window, total, entries
         while total is not None and total > page_size and window.width > floor:
             window = window.halved(floor)
             total = self._count(window)

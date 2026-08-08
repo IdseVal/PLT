@@ -729,6 +729,29 @@ def test_a_feed_that_states_no_total_is_paged_and_said_so(
     assert "the feed stated no total for a window" in caplog.text
 
 
+def test_a_window_answered_with_fewer_entries_than_it_counted_says_so(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The count is the oracle, so the walk has to notice when it does not meet it.
+
+    A window the feed says holds five, answered with two, in a request that could have
+    carried ten. Narrowing cannot help and re-asking would only ask the same question — but a
+    corpus three cases short of what its source counted is exactly the thing that went
+    unnoticed for days in the EU store, so it is said out loud rather than swallowed.
+    """
+    corpus = entries_at(datetime(2026, 6, 1, 9, tzinfo=UTC), 2)
+    endpoint = Endpoint(pages=[feed_of(5, corpus), feed_of(0, [])])
+    connector = build(endpoint, rechtspraak_page_size=10, rechtspraak_window_days=1)
+    try:
+        with caplog.at_level("WARNING"):
+            found = list(connector.discover(WINDOW_START, WINDOW_END))
+    finally:
+        connector.close()
+
+    assert [candidate.source_id for candidate in found] == [entry.ecli for entry in corpus]
+    assert "fewer entries than it counted" in caplog.text
+
+
 def test_a_broken_feed_ends_the_run_rather_than_one_document() -> None:
     endpoint = Endpoint(pages=[b"<feed><entry>"])
     connector = build(endpoint)
