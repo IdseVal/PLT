@@ -562,7 +562,10 @@ class EurLexConnector(SourceConnector):
         result cap, and each slice is paged through on the CELEX number. Peak memory is one
         slice's candidates, whatever the size of the whole window: a slice is halved until it
         holds fewer than ``eurlex_max_results`` cases, so that setting bounds this as well as
-        the query.
+        the query. The one slice it does not bound is a slice already at
+        ``eurlex_min_window_seconds`` that still reaches the cap, which :meth:`_windows`
+        processes as it stands and warns about — the warning is now about memory as well as
+        about reachability.
 
         Args:
             since: Inclusive lower bound. ``None`` means no lower bound, which walks the
@@ -615,6 +618,13 @@ class EurLexConnector(SourceConnector):
         minutes will not help a source that genuinely holds that many results in one hour,
         and silently dropping the window would be worse.
 
+        What ``eurlex_max_results`` costs has moved since pages were taken by key rather than
+        by offset. It used to be reachability: a page at offset 10,000 was past what one
+        search would return, so a window over the cap had a tail nothing could reach. A
+        keyset page asks for ``pipeline_page_size`` rows however deep into the window it is,
+        so an oversized window is now enumerated in full and the cap bounds what
+        :meth:`_candidates` holds in memory instead.
+
         Args:
             start: Inclusive lower bound of the walk.
             stop: Exclusive upper bound.
@@ -636,8 +646,9 @@ class EurLexConnector(SourceConnector):
             if count >= cap:
                 log.warning(
                     "a window at the narrowest configured width still reaches the result cap; "
-                    "processing it anyway, so results beyond the cap stay unreachable until "
-                    "PLT_EURLEX_MIN_WINDOW_SECONDS is lowered",
+                    "enumerating it whole, which holds more of it in memory at once than "
+                    "PLT_EURLEX_MAX_RESULTS asks for. Lower PLT_EURLEX_MIN_WINDOW_SECONDS to "
+                    "let it be split further",
                     extra={"context": {"window": window.cursor(0), "cases": count, "cap": cap}},
                 )
             elif count:
