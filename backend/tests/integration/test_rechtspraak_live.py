@@ -22,9 +22,10 @@ single second holding more than one request returns, and it is the only thing th
 us whether the ordering *is* in fact stable today — a fact about Rechtspraak's implementation
 rather than a promise it makes, and one worth knowing the day it stops being true.
 
-The whole module fetches a handful of documents and reads about a dozen small feed pages, all
-at the configured request rate. It is meant to stay that size: proving a point about paging by
-hammering a court is its own defect.
+The whole module fetches a handful of documents and reads a few dozen small feed pages, all at
+the configured request rate. It is meant to stay that size: proving a point about paging by
+hammering a court is its own defect, which is why the narrowed walk is given a window size
+large enough to split two or three times rather than twenty.
 """
 
 from __future__ import annotations
@@ -56,12 +57,19 @@ pytestmark = pytest.mark.integration
 WINDOW_END = datetime(2026, 6, 1, 12, 0, tzinfo=UTC)
 WINDOW_START = WINDOW_END - timedelta(hours=2)
 
-#: Page size the paging-integrity walk uses. Chosen against the windows below rather than for
-#: roundness: at 11, a page boundary falls *between* two entries sharing an ``updated``
-#: timestamp in the first window (positions 10/11 and 43/44 as measured on 8 August 2026),
-#: which is the only arrangement under which ``sort=ASC`` over a non-unique key can drop or
-#: repeat a row. It still keeps each window to five or six requests.
+#: Page size the paged walk uses. Chosen against the windows below rather than for roundness:
+#: at 11, a page boundary falls *between* two entries sharing an ``updated`` timestamp in the
+#: first window (positions 10/11 and 43/44 as measured on 8 August 2026), which is the only
+#: arrangement under which ``sort=ASC`` over a non-unique key can drop or repeat a row. It
+#: still keeps each window to five or six requests.
 PAGING_PAGE_SIZE: Final = 11
+
+#: Window size the narrowed walk fits its windows inside. Larger than ``PAGING_PAGE_SIZE``
+#: because narrowing spends a request per split and the point is not to spend twenty of them
+#: on a court: at 25 against windows of 53 and 57 entries, the walk has to split — a size the
+#: window already fitted inside would test nothing — and each window costs six or seven
+#: requests rather than thirty.
+NARROWING_PAGE_SIZE: Final = 25
 
 #: Windows the paging-integrity walk covers. Both are two hours wide and both hold at least
 #: one shared ``updated`` timestamp — the precondition the test exists for; a window of
@@ -159,6 +167,7 @@ def assert_whole(
     since: datetime,
     until: datetime,
     walked: str,
+    page_size: int,
 ) -> None:
     """Assert a walk returned the window: nothing lost, nothing twice, and a tie in it.
 
@@ -168,17 +177,13 @@ def assert_whole(
         since: Inclusive lower bound of the window.
         until: Upper bound of the window.
         walked: How the window was walked, for the failure message.
+        page_size: What one request was allowed to return, for the failure message.
 
     Raises:
         AssertionError: If the window no longer holds a tie — in which case the check has
             gone vacuous and says so rather than passing — or if the walk lost or repeated
             an ECLI.
     """
-    assert expected > PAGING_PAGE_SIZE, (
-        f"the window {since:%Y-%m-%dT%H:%M} to {until:%Y-%m-%dT%H:%M} now holds {expected} "
-        f"ECLIs, which is one page at a size of {PAGING_PAGE_SIZE}; it no longer tests paging "
-        f"and needs re-picking"
-    )
     shared = [moment for moment, seen in Counter(c.modified_at for c in found).items() if seen > 1]
     assert shared, (
         f"no two entries in {since:%Y-%m-%dT%H:%M} to {until:%Y-%m-%dT%H:%M} share an updated "
@@ -193,7 +198,7 @@ def assert_whole(
     # rather than whichever half of it pytest reached first.
     assert not lost and not duplicated, (
         f"the {walked} walk of {since:%Y-%m-%dT%H:%M} to {until:%Y-%m-%dT%H:%M} at page size "
-        f"{PAGING_PAGE_SIZE} returned {len(identifiers)} entries holding {len(distinct)} "
+        f"{page_size} returned {len(identifiers)} entries holding {len(distinct)} "
         f"distinct ECLIs, against {expected} the feed counts in the same window: {lost} lost "
         f"({lost / expected:.1%}), {len(duplicated)} returned more than once {duplicated[:5]}"
     )
@@ -227,7 +232,7 @@ def test_a_narrowed_walk_yields_every_ecli_the_feed_counts(
         since: Inclusive lower bound of the window.
         until: Upper bound of the window.
     """
-    settings: Settings = build_settings(rechtspraak_page_size=PAGING_PAGE_SIZE)
+    settings: Settings = build_settings(rechtspraak_page_size=NARROWING_PAGE_SIZE)
     connector = RechtspraakConnector(settings)
     try:
         expected = reported_total(connector, since, until)
@@ -235,7 +240,12 @@ def test_a_narrowed_walk_yields_every_ecli_the_feed_counts(
     finally:
         connector.close()
 
-    assert_whole(found, expected, since, until, "narrowed")
+    assert expected > NARROWING_PAGE_SIZE, (
+        f"the window {since:%Y-%m-%dT%H:%M} to {until:%Y-%m-%dT%H:%M} now holds {expected} "
+        f"ECLIs and fits in one request at a size of {NARROWING_PAGE_SIZE}, so the walk no "
+        f"longer splits anything and this checks nothing; pick a wider window"
+    )
+    assert_whole(found, expected, since, until, "narrowed", NARROWING_PAGE_SIZE)
 
 
 @pytest.mark.skipif(
@@ -275,7 +285,7 @@ def test_paging_one_window_by_offset_still_holds_its_order(
     finally:
         connector.close()
 
-    assert_whole(found, expected, since, until, "paged")
+    assert_whole(found, expected, since, until, "paged", PAGING_PAGE_SIZE)
 
 
 def test_a_live_document_normalises_into_the_schema(live: RechtspraakConnector) -> None:
