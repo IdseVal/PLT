@@ -151,7 +151,7 @@ class Endpoint:
     ``max`` applied to the result, and the window's own total stated in the subtitle. That
     matters more here than anywhere else in the suite: a fake that replays a fixed list of
     pages has no ordering of its own to be unstable, and a fake that sorts stably is why
-    nothing caught the EU connector losing a sixth of its corpus (issue #101).
+    nothing caught the EU connector losing a sixth of its corpus.
 
     ``unstable_ties`` is therefore available and is the point of several tests below. The live
     feed sorts on a timestamp that is not unique and says nothing about how it breaks a tie;

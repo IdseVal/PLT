@@ -823,7 +823,7 @@ class RechtspraakConnector(SourceConnector):
         where two entries share a timestamp their relative order is the endpoint's to choose.
         Choose differently on either side of a page boundary and one entry comes back twice
         while another never comes back at all — the defect that cost the EU corpus a sixth of
-        its cases, reported as ``success`` with zero failures throughout (issue #99). CELLAR
+        its cases, reported as ``success`` with zero failures throughout. CELLAR
         could be re-paged by CELEX number; this feed offers ``from`` and ``max`` and nothing
         to page *after*, so there is no key to page by and the only cure is not to page.
 
