@@ -435,7 +435,12 @@ class Settings(BaseSettings):
     )
     pipeline_page_size: Annotated[int, Field(ge=1, le=1000)] = Field(
         default=100,
-        description="Result-page size requested from source endpoints during discovery.",
+        description=(
+            "Result-page size requested from source endpoints during discovery. Read by the "
+            "EU connector, which pages CELLAR by the CELEX number. The Dutch connector has "
+            "its own rechtspraak_page_size, because there the number decides how large a "
+            "window may be rather than how a window is paged."
+        ),
     )
     pipeline_report_dir: Path = Field(
         default=_REPO_ROOT / "reports",
