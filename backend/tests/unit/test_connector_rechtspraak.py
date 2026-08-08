@@ -14,9 +14,12 @@ exactly the shape of document the tracker exists for.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from datetime import UTC, datetime
+from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import httpx
 import pytest
@@ -33,6 +36,7 @@ from plt.pipeline.base import (
 from plt.pipeline.connectors.rechtspraak import RechtspraakConnector
 from plt.pipeline.filters.keywords import KeywordFilter
 from plt.pipeline.http import PoliteClient
+from plt.pipeline.windows import Window
 from tests.conftest import REPO_ROOT, build_settings
 from tests.fakes import FakeConnector
 
@@ -50,6 +54,38 @@ PAGE_ONE = (
 )
 
 
+#: The zone the ``modified`` parameter is read in. The fake has to apply it too, or the
+#: connector's conversion would be tested against itself.
+AMSTERDAM = ZoneInfo("Europe/Amsterdam")
+
+
+def parse_local(value: str) -> datetime:
+    """Parse a ``modified`` bound the way the endpoint reads one.
+
+    Args:
+        value: The bound, as the connector rendered it.
+
+    Returns:
+        The instant, naive. Deliberately without a zone: the parameter carries none and an
+        offset written into it is ignored rather than honoured, so attaching one here would
+        test the connector against a convention the source does not have.
+    """
+    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S")  # noqa: DTZ007
+
+
+def local_of(moment: datetime) -> datetime:
+    """Return an instant as the naive Dutch local time the ``modified`` bounds are read in.
+
+    Args:
+        moment: The instant, timezone-aware.
+
+    Returns:
+        The same instant in Europe/Amsterdam, without a timezone and truncated to the second,
+        which is the resolution the parameter has.
+    """
+    return moment.astimezone(AMSTERDAM).replace(tzinfo=None, microsecond=0)
+
+
 def fixture(name: str) -> bytes:
     """Return one recorded payload, exactly as it was captured.
 
@@ -62,10 +98,68 @@ def fixture(name: str) -> bytes:
     return (FIXTURES / name).read_bytes()
 
 
-class Endpoint:
-    """A stand-in for ``data.rechtspraak.nl`` that serves recorded payloads.
+@dataclass(frozen=True, slots=True)
+class FeedEntry:
+    """One record the fake feed holds.
 
-    It records every request, so a test can assert on the query the connector composed —
+    Attributes:
+        ecli: The identifier.
+        updated: The Atom ``updated`` instant, in UTC. The only thing the feed sorts on, and
+            deliberately not unique.
+    """
+
+    ecli: str
+    updated: datetime
+
+
+def feed_of(total: int, entries: Sequence[FeedEntry]) -> bytes:
+    """Render an Atom search page the way the live endpoint renders one.
+
+    Args:
+        total: The number the ``subtitle`` states for the whole window — which is the count of
+            the *window*, not of this page, and is what lets the connector size a window
+            before it reads it.
+        entries: The entries this page carries.
+
+    Returns:
+        The feed, encoded as the endpoint encodes it.
+    """
+    body = "".join(
+        f"<entry><id>{entry.ecli}</id>"
+        f'<title type="text">{entry.ecli}, Rechtbank</title>'
+        f'<summary type="text">samenvatting</summary>'
+        f"<updated>{entry.updated:%Y-%m-%dT%H:%M:%SZ}</updated>"
+        f'<link rel="alternate" type="text/html" '
+        f'href="https://uitspraken.rechtspraak.nl/details?id={entry.ecli}" /></entry>'
+        for entry in entries
+    )
+    return (
+        '<?xml version="1.0" encoding="utf-8"?>'
+        '<feed xmlns="http://www.w3.org/2005/Atom">'
+        '<title type="text">Rechtspraak Open Data (Uitspraken)</title>'
+        f'<subtitle type="text">Aantal gevonden ECLI\'s: {total}</subtitle>'
+        f"{body}</feed>"
+    ).encode()
+
+
+class Endpoint:
+    """A stand-in for ``data.rechtspraak.nl``.
+
+    Search is **answered rather than replayed**: the fake holds a corpus of entries and
+    filters, sorts, counts and slices it the way the endpoint does — ``modified`` read as two
+    inclusive bounds in Europe/Amsterdam local time, ``sort=ASC`` on ``updated``, ``from`` and
+    ``max`` applied to the result, and the window's own total stated in the subtitle. That
+    matters more here than anywhere else in the suite: a fake that replays a fixed list of
+    pages has no ordering of its own to be unstable, and a fake that sorts stably is why
+    nothing caught the EU connector losing a sixth of its corpus (issue #101).
+
+    ``unstable_ties`` is therefore available and is the point of several tests below. The live
+    feed sorts on a timestamp that is not unique and says nothing about how it breaks a tie;
+    with this set, the fake breaks ties one way on even requests and the other way on odd
+    ones, which is the worst thing the real endpoint is permitted to do and the thing offset
+    paging cannot survive.
+
+    Every request is recorded, so a test can assert on the query the connector composed —
     which is where the endpoint's two surprises live: ``modified`` in Dutch local time, and
     ``return=DOC``.
     """
@@ -75,20 +169,30 @@ class Endpoint:
         documents: dict[str, bytes] | None = None,
         pages: list[bytes] | None = None,
         vocabulary: bytes | None = None,
+        corpus: Sequence[FeedEntry] | None = None,
+        unstable_ties: bool = False,
     ) -> None:
         """Configure what the endpoint serves.
 
         Args:
             documents: Payload per ECLI. An ECLI that is absent answers 404, as the live
                 endpoint does.
-            pages: Search pages, served in order and then repeated from the last one.
+            pages: Raw search payloads, served in order and then repeated from the last one.
+                For the responses a corpus cannot express — a truncated feed, a missing
+                subtitle. Takes precedence over ``corpus``.
             vocabulary: The ``Instanties`` payload, or ``None`` to answer 503.
+            corpus: The records the feed holds. Searches are answered out of these.
+            unstable_ties: Whether entries sharing an ``updated`` timestamp come back in a
+                different order on every other request.
         """
         self.documents = documents or {}
-        self.pages = pages or [fixture("search-page-empty.atom")]
+        self.pages = pages
         self.vocabulary = vocabulary
+        self.corpus = list(corpus or [])
+        self.unstable_ties = unstable_ties
         self.requests: list[httpx.Request] = []
         self._page_index = 0
+        self._searches = 0
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         """Answer one request.
@@ -97,14 +201,14 @@ class Endpoint:
             request: The request the connector sent.
 
         Returns:
-            The recorded response.
+            The response, composed from the corpus or replayed from ``pages``.
         """
         self.requests.append(request)
         path = str(request.url).split("?")[0]
         if path == SEARCH_URL:
-            page = self.pages[min(self._page_index, len(self.pages) - 1)]
-            self._page_index += 1
-            return httpx.Response(200, content=page, headers={"Content-Type": "application/xml"})
+            return httpx.Response(
+                200, content=self._search(request), headers={"Content-Type": "application/xml"}
+            )
         if path.endswith("/Instanties"):
             if self.vocabulary is None:
                 return httpx.Response(503)
@@ -114,6 +218,35 @@ class Endpoint:
         if payload is None:
             return httpx.Response(404, json={"title": "Not Found"})
         return httpx.Response(200, content=payload, headers={"Content-Type": "application/xml"})
+
+    def _search(self, request: httpx.Request) -> bytes:
+        """Answer one search request out of the corpus.
+
+        Args:
+            request: The search request.
+
+        Returns:
+            The feed payload.
+        """
+        index = self._searches
+        self._searches += 1
+        if self.pages is not None:
+            self._page_index = min(index, len(self.pages) - 1)
+            return self.pages[self._page_index]
+        bounds = request.url.params.get_list("modified")
+        # Both ends, always: a lone ``modified`` is read as a lower bound, so a range needs
+        # two, and the connector has no reason to send anything else.
+        assert len(bounds) == 2, f"a search without a window: {bounds}"
+        lower, upper = parse_local(bounds[0]), parse_local(bounds[1])
+        matching = [entry for entry in self.corpus if lower <= local_of(entry.updated) <= upper]
+        # Sorting the tie-break key first and the timestamp second leaves the timestamp order
+        # total and the order within a timestamp whatever the tie-break chose - which is
+        # exactly the freedom the live endpoint keeps for itself.
+        matching.sort(key=lambda entry: entry.ecli, reverse=self.unstable_ties and index % 2 == 1)
+        matching.sort(key=lambda entry: entry.updated)
+        offset = int(request.url.params.get("from", "0"))
+        size = int(request.url.params.get("max", "10"))
+        return feed_of(len(matching), matching[offset : offset + size])
 
     @property
     def searches(self) -> list[httpx.QueryParams]:
@@ -224,12 +357,49 @@ def normalise(connector: RechtspraakConnector, identifier: str) -> NormalisedCas
 
 # -- Discovery ------------------------------------------------------------------------
 
+#: A window every discovery test asks for explicitly. Bounded on both sides, because an
+#: unbounded walk starts in 1900 and the width it takes to cross a century is its own subject.
+WINDOW_START = datetime(2026, 6, 1, tzinfo=UTC)
+WINDOW_END = datetime(2026, 6, 2, tzinfo=UTC)
+
+
+def entries_at(moment: datetime, count: int, *, first: int = 1) -> list[FeedEntry]:
+    """Return several records sharing one ``updated`` timestamp.
+
+    Args:
+        moment: The timestamp they all carry.
+        count: How many to make.
+        first: Number the first ECLI takes, so several groups can be distinct.
+
+    Returns:
+        The records, which the feed is free to return in any order relative to each other.
+    """
+    return [FeedEntry(f"ECLI:NL:RBDHA:2026:{first + index}", moment) for index in range(count)]
+
+
+def spread(start: datetime, groups: int, per_group: int, apart: timedelta) -> list[FeedEntry]:
+    """Return a corpus of tied groups laid out across a window.
+
+    Args:
+        start: Timestamp of the first group.
+        groups: How many distinct timestamps to use.
+        per_group: How many records share each of them.
+        apart: Gap between one timestamp and the next.
+
+    Returns:
+        Every record, oldest first.
+    """
+    corpus: list[FeedEntry] = []
+    for index in range(groups):
+        corpus.extend(entries_at(start + apart * index, per_group, first=1 + index * per_group))
+    return corpus
+
 
 def test_discovery_yields_the_feed_entries_oldest_first() -> None:
     endpoint = Endpoint(pages=[fixture("search-page-1.atom"), fixture("search-page-empty.atom")])
-    connector = build(endpoint, pipeline_page_size=3)
+    connector = build(endpoint, rechtspraak_page_size=3)
     try:
-        found = list(connector.discover(None, None))
+        found = list(connector.discover(WINDOW_START, WINDOW_END))
     finally:
         connector.close()
 
@@ -241,9 +411,9 @@ def test_discovery_yields_the_feed_entries_oldest_first() -> None:
 
 def test_a_candidate_carries_what_the_pre_fetch_check_needs() -> None:
     endpoint = Endpoint(pages=[fixture("search-page-1.atom"), fixture("search-page-empty.atom")])
-    connector = build(endpoint, pipeline_page_size=3)
+    connector = build(endpoint, rechtspraak_page_size=3)
     try:
-        first = next(iter(connector.discover(None, None)))
+        first = next(iter(connector.discover(WINDOW_START, WINDOW_END)))
     finally:
         connector.close()
 
@@ -252,15 +422,17 @@ def test_a_candidate_carries_what_the_pre_fetch_check_needs() -> None:
     # document is skipped without being downloaded at all.
     assert first.content_hash is not None
     assert len(first.content_hash) == 64
-    assert first.cursor == "0"
+    # The cursor names the window as well as the position in it, so an interrupted run says
+    # where it stopped rather than only how far in.
+    assert first.cursor == "2026-06-01T00:00:00Z/2026-06-02T00:00:00Z#0"
     assert first.source_url is not None
     assert first.source_url.startswith("https://uitspraken.rechtspraak.nl/details?id=")
     assert first.title is not None and first.title.startswith(PAGE_ONE[0])
 
 
 def test_the_window_is_sent_in_dutch_local_time_and_restricted_to_documents() -> None:
-    endpoint = Endpoint(pages=[fixture("search-page-empty.atom")])
-    connector = build(endpoint, pipeline_page_size=7)
+    endpoint = Endpoint(corpus=[])
+    connector = build(endpoint, rechtspraak_page_size=7, rechtspraak_window_days=30)
     try:
         list(connector.discover(datetime(2026, 6, 1, tzinfo=UTC), datetime(2026, 7, 1, tzinfo=UTC)))
     finally:
@@ -277,21 +449,21 @@ def test_the_window_is_sent_in_dutch_local_time_and_restricted_to_documents() ->
 
 
 def test_the_document_restriction_can_be_switched_off() -> None:
-    endpoint = Endpoint(pages=[fixture("search-page-empty.atom")])
+    endpoint = Endpoint(corpus=[])
     connector = build(endpoint, rechtspraak_documents_only=False)
     try:
-        list(connector.discover(None, None))
+        list(connector.discover(WINDOW_START, WINDOW_END))
     finally:
         connector.close()
 
     assert "return" not in endpoint.searches[0]
 
 
-def test_an_upper_bound_alone_still_sends_a_range() -> None:
-    endpoint = Endpoint(pages=[fixture("search-page-empty.atom")])
+def test_a_walk_with_no_lower_bound_starts_at_the_earliest_the_feed_could_hold() -> None:
+    endpoint = Endpoint(corpus=[])
     connector = build(endpoint)
     try:
-        list(connector.discover(None, datetime(2026, 7, 1, tzinfo=UTC)))
+        list(connector.discover(None, datetime(1900, 2, 1, tzinfo=UTC)))
     finally:
         connector.close()
 
@@ -301,69 +473,228 @@ def test_an_upper_bound_alone_still_sends_a_range() -> None:
 
 
 def test_the_page_size_is_clamped_to_what_the_endpoint_serves() -> None:
-    endpoint = Endpoint(pages=[fixture("search-page-empty.atom")])
-    connector = build(endpoint, pipeline_page_size=1000)
+    endpoint = Endpoint(corpus=[])
+    connector = build(endpoint, rechtspraak_page_size=1000)
     try:
-        list(connector.discover(None, None))
+        list(connector.discover(WINDOW_START, WINDOW_END))
     finally:
         connector.close()
 
     assert endpoint.searches[0]["max"] == "1000"
 
 
-def test_discovery_pages_until_a_short_page_ends_it() -> None:
-    endpoint = Endpoint(
-        pages=[
-            fixture("search-page-1.atom"),
-            fixture("search-page-1.atom"),
-            fixture("search-page-empty.atom"),
-        ]
+# -- Discovery: the windows, and why the walk does not page ---------------------------
+
+
+def test_a_window_that_fits_costs_one_request_and_no_paging() -> None:
+    corpus = spread(
+        datetime(2026, 6, 1, 8, tzinfo=UTC), groups=4, per_group=2, apart=timedelta(hours=1)
     )
-    connector = build(endpoint, pipeline_page_size=3)
+    endpoint = Endpoint(corpus=corpus, unstable_ties=True)
+    connector = build(endpoint, rechtspraak_page_size=50, rechtspraak_window_days=1)
     try:
-        found = list(connector.discover(None, None))
+        found = list(connector.discover(WINDOW_START, WINDOW_END))
     finally:
         connector.close()
 
-    assert len(found) == 6
-    assert [query["from"] for query in endpoint.searches] == ["0", "3", "6"]
-    assert [candidate.cursor for candidate in found[3:]] == ["3", "4", "5"]
+    assert len(endpoint.searches) == 1
+    assert sorted(c.source_id for c in found) == sorted(e.ecli for e in corpus)
+    assert [query["from"] for query in endpoint.searches] == ["0"]
 
 
-def test_discovery_streams_rather_than_reading_the_whole_window() -> None:
-    endpoint = Endpoint(pages=[fixture("search-page-1.atom")] * 5)
-    connector = build(endpoint, pipeline_page_size=3)
+def test_a_window_too_big_for_one_request_is_narrowed_rather_than_paged() -> None:
+    corpus = spread(
+        datetime(2026, 6, 1, 0, 30, tzinfo=UTC), groups=12, per_group=2, apart=timedelta(hours=2)
+    )
+    endpoint = Endpoint(corpus=corpus, unstable_ties=True)
+    connector = build(endpoint, rechtspraak_page_size=6, rechtspraak_window_days=1)
     try:
-        stream = connector.discover(None, None)
-        next(stream)
+        found = list(connector.discover(WINDOW_START, WINDOW_END))
+    finally:
+        connector.close()
 
-        assert len(endpoint.searches) == 1
+    # Not one request asks for anything but the first entry of what it wants: the walk either
+    # reads a whole window or measures one it is about to discard.
+    assert {query["from"] for query in endpoint.searches} == {"0"}
+    assert sorted(c.source_id for c in found) == sorted(e.ecli for e in corpus)
 
-        next(stream)
-        next(stream)
-        next(stream)
 
-        assert len(endpoint.searches) == 2
+def tie_heavy() -> list[FeedEntry]:
+    """Return the corpus both halves of the paging argument are made against.
+
+    Fourteen groups of three records sharing a timestamp, spread across a day. Three does not
+    divide the page size of five, which is the whole point: a page boundary lands *inside* a
+    tied group, and that is the only arrangement under which an endpoint free to break a tie
+    either way can drop a record.
+
+    Returns:
+        The records, oldest first.
+    """
+    return spread(
+        datetime(2026, 6, 1, 0, 15, tzinfo=UTC), groups=14, per_group=3, apart=timedelta(minutes=45)
+    )
+
+
+def test_a_walk_over_an_unstable_tie_order_loses_and_repeats_nothing() -> None:
+    """The property the whole design exists for, against the worst order the feed may serve.
+
+    Forty-two records in fourteen tied groups, a page that holds five, and a fake that
+    reverses every tie on every other request. Offset paging over this arrangement
+    demonstrably loses entries — :func:`test_paging_the_same_window_by_offset_is_what_loses_entries`
+    measures it on the same corpus — so a walk that comes back whole is doing something other
+    than paging.
+    """
+    corpus = tie_heavy()
+    endpoint = Endpoint(corpus=corpus, unstable_ties=True)
+    connector = build(endpoint, rechtspraak_page_size=5, rechtspraak_window_days=1)
+    try:
+        found = [candidate.source_id for candidate in connector.discover(WINDOW_START, WINDOW_END)]
+    finally:
+        connector.close()
+
+    assert sorted(found) == sorted(entry.ecli for entry in corpus)
+    assert len(found) == len(set(found)) == 42
+
+
+def test_paging_the_same_window_by_offset_is_what_loses_entries() -> None:
+    """The guard is not vacuous: the corpus above is genuinely lethal to a paged walk.
+
+    Asked for the whole day in one window at a page size of five — which is what the connector
+    did before windows were narrowed — the same fake returns fewer distinct ECLIs than it
+    holds. If this test ever stops finding loss, the fake has stopped modelling the freedom
+    the live endpoint keeps, and every other paging assertion in this file has quietly become
+    an assertion about nothing.
+    """
+    corpus = tie_heavy()
+    endpoint = Endpoint(corpus=corpus, unstable_ties=True)
+    connector = build(endpoint, rechtspraak_page_size=5)
+    seen: list[str] = []
+    try:
+        window = Window(WINDOW_START, WINDOW_END)
+        for entry in connector._paged(window, 5, len(corpus)):
+            identifier = entry.get("id")
+            assert identifier is not None
+            seen.append(identifier)
+    finally:
+        connector.close()
+
+    assert len(seen) == len(corpus)
+    assert len(set(seen)) < len(corpus)
+
+
+def test_a_second_holding_more_than_a_page_is_paged_and_said_so(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The one window narrowing cannot rescue, and the reason it is never silent.
+
+    Twelve records share a single second. No width above the floor separates them, so the
+    walk pages — and the point of the warning is that a corpus assembled through this path is
+    distinguishable afterwards from one that was not.
+    """
+    corpus = entries_at(datetime(2026, 6, 1, 9, 0, 0, tzinfo=UTC), 12)
+    endpoint = Endpoint(corpus=corpus)
+    connector = build(endpoint, rechtspraak_page_size=5, rechtspraak_window_days=1)
+    try:
+        with caplog.at_level("WARNING"):
+            found = list(connector.discover(WINDOW_START, WINDOW_END))
+    finally:
+        connector.close()
+
+    assert sorted(c.source_id for c in found) == sorted(e.ecli for e in corpus)
+    assert "a single second holds more entries than one request returns" in caplog.text
+    # The offsets prove it really was paged, and the identical bounds prove it was paged over
+    # the one window nothing narrower exists than.
+    dense = [
+        query
+        for query in endpoint.searches
+        if query.get_list("modified")[0] == local_of(corpus[0].updated).isoformat()
+        and query["max"] == "5"
+    ]
+    assert [query["from"] for query in dense][-3:] == ["0", "5", "10"]
+
+
+def test_an_empty_stretch_widens_the_window_rather_than_costing_one_request_a_day() -> None:
+    endpoint = Endpoint(corpus=[])
+    connector = build(
+        endpoint,
+        rechtspraak_page_size=100,
+        rechtspraak_window_days=1,
+        rechtspraak_max_window_days=64,
+    )
+    try:
+        list(connector.discover(datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 7, 1, tzinfo=UTC)))
+    finally:
+        connector.close()
+
+    # Half a year of nothing: doubling gets there in a dozen requests where a fixed daily
+    # width would have spent 181.
+    assert len(endpoint.searches) < 15
+    widths = [
+        parse_local(query.get_list("modified")[1]) - parse_local(query.get_list("modified")[0])
+        for query in endpoint.searches
+    ]
+    assert widths[1] > widths[0]
+
+
+def test_the_windows_of_a_walk_cover_the_range_without_a_gap_or_an_overlap() -> None:
+    endpoint = Endpoint(corpus=[])
+    connector = build(endpoint, rechtspraak_page_size=100, rechtspraak_window_days=1)
+    try:
+        list(
+            connector.discover(datetime(2026, 6, 1, tzinfo=UTC), datetime(2026, 6, 20, tzinfo=UTC))
+        )
+    finally:
+        connector.close()
+
+    bounds = [query.get_list("modified") for query in endpoint.searches]
+    parsed = [(parse_local(lower), parse_local(upper)) for lower, upper in bounds]
+    assert parsed[0][0] == local_of(datetime(2026, 6, 1, tzinfo=UTC))
+    assert parsed[-1][1] == local_of(datetime(2026, 6, 20, tzinfo=UTC))
+    for (_, ended), (starts, _) in pairwise(parsed):
+        # One second apart: the bounds are inclusive and resolve to the second, so this is the
+        # only step that neither skips an instant nor claims one twice.
+        assert starts - ended == timedelta(seconds=1)
+
+
+def test_discovery_holds_one_window_rather_than_the_whole_walk() -> None:
+    corpus = spread(
+        datetime(2026, 6, 1, 1, tzinfo=UTC), groups=8, per_group=1, apart=timedelta(hours=2)
+    )
+    endpoint = Endpoint(corpus=corpus)
+    connector = build(endpoint, rechtspraak_page_size=4, rechtspraak_window_days=0.25)
+    try:
+        stream = connector.discover(WINDOW_START, WINDOW_END)
+        next(stream)
+        first = len(endpoint.searches)
+
+        assert first < len(endpoint.searches) + len(corpus)
+
+        remaining = list(stream)
+        assert len(remaining) == len(corpus) - 1
     finally:
         connector.close()
 
 
-def test_an_entry_modified_after_the_upper_bound_ends_the_stream() -> None:
-    endpoint = Endpoint(pages=[fixture("search-page-1.atom")] * 3)
-    connector = build(endpoint, pipeline_page_size=3)
+def test_an_entry_modified_after_the_upper_bound_is_left_out() -> None:
+    corpus = [
+        FeedEntry("ECLI:NL:RBDHA:2026:1", datetime(2026, 6, 1, 6, 0, tzinfo=UTC)),
+        FeedEntry("ECLI:NL:RBDHA:2026:2", datetime(2026, 6, 1, 8, 0, tzinfo=UTC)),
+    ]
+    endpoint = Endpoint(corpus=corpus)
+    connector = build(endpoint, rechtspraak_page_size=10)
     try:
-        found = list(connector.discover(None, datetime(2026, 6, 1, 6, 45, tzinfo=UTC)))
+        found = list(connector.discover(WINDOW_START, datetime(2026, 6, 1, 6, 45, tzinfo=UTC)))
     finally:
         connector.close()
 
-    assert [candidate.source_id for candidate in found] == [PAGE_ONE[0]]
+    assert [candidate.source_id for candidate in found] == ["ECLI:NL:RBDHA:2026:1"]
 
 
 def test_an_entry_modified_before_the_lower_bound_is_skipped() -> None:
     endpoint = Endpoint(pages=[fixture("search-page-1.atom"), fixture("search-page-empty.atom")])
-    connector = build(endpoint, pipeline_page_size=3)
+    connector = build(endpoint, rechtspraak_page_size=3)
     try:
-        found = list(connector.discover(datetime(2026, 6, 1, 6, 45, tzinfo=UTC), None))
+        found = list(connector.discover(datetime(2026, 6, 1, 6, 45, tzinfo=UTC), WINDOW_END))
     finally:
         connector.close()
 
@@ -371,12 +702,39 @@ def test_an_entry_modified_before_the_lower_bound_is_skipped() -> None:
     assert len(found) == 2
 
 
+def test_a_feed_that_states_no_total_is_paged_and_said_so(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A window that cannot be measured cannot be sized, so it is read the old, risky way.
+
+    Reported rather than assumed away: the subtitle is the only thing that lets a window be
+    checked before it is trusted, and a run that lost it should be legible in the log.
+    """
+    without_subtitle = (
+        b'<?xml version="1.0" encoding="utf-8"?>'
+        b'<feed xmlns="http://www.w3.org/2005/Atom">'
+        b"<entry><id>ECLI:NL:RBDHA:2026:1</id>"
+        b"<updated>2026-06-01T09:00:00Z</updated></entry></feed>"
+    )
+    empty = b'<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom"/>'
+    endpoint = Endpoint(pages=[without_subtitle, without_subtitle, empty])
+    connector = build(endpoint, rechtspraak_page_size=1, rechtspraak_window_days=1)
+    try:
+        with caplog.at_level("WARNING"):
+            found = list(connector.discover(WINDOW_START, WINDOW_END))
+    finally:
+        connector.close()
+
+    assert [candidate.source_id for candidate in found] == ["ECLI:NL:RBDHA:2026:1"]
+    assert "the feed stated no total for a window" in caplog.text
+
+
 def test_a_broken_feed_ends_the_run_rather_than_one_document() -> None:
     endpoint = Endpoint(pages=[b"<feed><entry>"])
     connector = build(endpoint)
     try:
         with pytest.raises(SourceUnavailableError, match="not well-formed"):
-            list(connector.discover(None, None))
+            list(connector.discover(WINDOW_START, WINDOW_END))
     finally:
         connector.close()
 

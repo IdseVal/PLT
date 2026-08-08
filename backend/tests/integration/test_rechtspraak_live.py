@@ -5,13 +5,22 @@ not called by every developer on every commit and CI stays green when it is down
 maintenance.
 
 What these cover that the recorded fixtures cannot is the *contract* — whether the endpoint
-still behaves the way the connector assumes. Three of those assumptions were surprises when
+still behaves the way the connector assumes. Four of those assumptions were surprises when
 they were first measured and would fail silently rather than loudly if they changed:
 ``modified`` is read in Dutch local time while the feed's ``updated`` is UTC, ``return``
-accepts ``DOC`` and nothing else, and ``sort=ASC`` with ``from``/``max`` holds a page
-boundary steady across requests. A fixture cannot notice any of them changing — least of all
-the last, because a fixture has no ordering of its own to be unstable, which is exactly how
-the EU connector shipped a walk that silently lost a sixth of its corpus.
+accepts ``DOC`` and nothing else, ``atom:subtitle`` states the window's own total, and
+``sort=ASC`` with ``from``/``max`` holds a page boundary steady across requests. A fixture
+cannot notice any of them changing — least of all the last, because a fixture has no ordering
+of its own to be unstable, which is exactly how the EU connector shipped a walk that silently
+lost a sixth of its corpus.
+
+The connector no longer *relies* on that last one: it narrows every window until the feed
+answers it in a single request, so a page boundary is not where its correctness comes from.
+Both are still tested here, and deliberately so. The narrowed walk is what production does
+and has to be pinned against the feed's own count. The paged walk is the fallback for a
+single second holding more than one request returns, and it is the only thing that can tell
+us whether the ordering *is* in fact stable today — a fact about Rechtspraak's implementation
+rather than a promise it makes, and one worth knowing the day it stops being true.
 
 The whole module fetches a handful of documents and reads about a dozen small feed pages, all
 at the configured request rate. It is meant to stay that size: proving a point about paging by
@@ -22,7 +31,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Final
 
@@ -82,7 +91,7 @@ _LOCAL_TIME_AVAILABLE: Final = _source_timezone() is not None
 @pytest.fixture
 def live() -> Iterator[RechtspraakConnector]:
     """Return a connector pointed at the real endpoints, closed afterwards."""
-    settings: Settings = build_settings(pipeline_page_size=5)
+    settings: Settings = build_settings(rechtspraak_page_size=5)
     connector = RechtspraakConnector(settings)
     try:
         yield connector
@@ -132,8 +141,8 @@ def reported_total(connector: RechtspraakConnector, since: datetime, until: date
     params: list[tuple[str, str]] = [("max", "1"), ("from", "0"), ("sort", "ASC")]
     if connector.settings.rechtspraak_documents_only:
         params.append(("return", "DOC"))
-    params.append(("modified", _window_bound(since, upper=False)))
-    params.append(("modified", _window_bound(until, upper=True)))
+    params.append(("modified", _window_bound(since)))
+    params.append(("modified", _window_bound(until)))
     response = connector._client.get(
         connector.settings.rechtspraak_search_url, params=httpx.QueryParams(tuple(params))
     )
@@ -144,41 +153,27 @@ def reported_total(connector: RechtspraakConnector, since: datetime, until: date
     return int(stated.group(1))
 
 
-@pytest.mark.skipif(
-    not _LOCAL_TIME_AVAILABLE,
-    reason="no timezone database, so the requested window is widened and the totals differ",
-)
-@pytest.mark.parametrize(("since", "until"), PAGING_WINDOWS)
-def test_a_paged_window_yields_every_ecli_the_feed_counts(
+def assert_whole(
+    found: Sequence[Candidate],
+    expected: int,
     since: datetime,
     until: datetime,
+    walked: str,
 ) -> None:
-    """The union of the pages of a window must be the window.
-
-    The Rechtspraak feed cannot be paged by key — it offers ``from`` and ``max`` and nothing
-    to page *after* — so the walk depends on the endpoint holding one ordering steady across
-    the requests that make up a window. ``sort=ASC`` orders on ``updated``, which is not
-    unique: where two entries share a timestamp their relative order is the endpoint's to
-    choose, and if it chooses differently on either side of a page boundary one entry is
-    returned twice and another never. That is the same defect class that cost the EU corpus a
-    sixth of its cases, and the same shape of test: walk the window, and check the union of
-    the pages against a count the walk cannot influence.
-
-    Both directions are asserted, because a walk that loses one entry and repeats another
-    returns exactly the expected number of rows.
+    """Assert a walk returned the window: nothing lost, nothing twice, and a tie in it.
 
     Args:
+        found: What the walk returned.
+        expected: What the feed says the window holds.
         since: Inclusive lower bound of the window.
         until: Upper bound of the window.
-    """
-    settings: Settings = build_settings(pipeline_page_size=PAGING_PAGE_SIZE)
-    connector = RechtspraakConnector(settings)
-    try:
-        expected = reported_total(connector, since, until)
-        found = list(connector.discover(since, until))
-    finally:
-        connector.close()
+        walked: How the window was walked, for the failure message.
 
+    Raises:
+        AssertionError: If the window no longer holds a tie — in which case the check has
+            gone vacuous and says so rather than passing — or if the walk lost or repeated
+            an ECLI.
+    """
     assert expected > PAGING_PAGE_SIZE, (
         f"the window {since:%Y-%m-%dT%H:%M} to {until:%Y-%m-%dT%H:%M} now holds {expected} "
         f"ECLIs, which is one page at a size of {PAGING_PAGE_SIZE}; it no longer tests paging "
@@ -197,11 +192,90 @@ def test_a_paged_window_yields_every_ecli_the_feed_counts(
     # One assertion for both directions, so a failure reports the whole shape of the loss
     # rather than whichever half of it pytest reached first.
     assert not lost and not duplicated, (
-        f"the paged walk of {since:%Y-%m-%dT%H:%M} to {until:%Y-%m-%dT%H:%M} at page size "
+        f"the {walked} walk of {since:%Y-%m-%dT%H:%M} to {until:%Y-%m-%dT%H:%M} at page size "
         f"{PAGING_PAGE_SIZE} returned {len(identifiers)} entries holding {len(distinct)} "
         f"distinct ECLIs, against {expected} the feed counts in the same window: {lost} lost "
         f"({lost / expected:.1%}), {len(duplicated)} returned more than once {duplicated[:5]}"
     )
+
+
+@pytest.mark.skipif(
+    not _LOCAL_TIME_AVAILABLE,
+    reason="no timezone database, so the requested window is widened and the totals differ",
+)
+@pytest.mark.parametrize(("since", "until"), PAGING_WINDOWS)
+def test_a_narrowed_walk_yields_every_ecli_the_feed_counts(
+    since: datetime,
+    until: datetime,
+) -> None:
+    """The union of the windows of a walk must be the range.
+
+    This is what production does. The Rechtspraak feed cannot be paged by key — it offers
+    ``from`` and ``max`` and nothing to page *after* — so instead of paging over an order the
+    endpoint does not guarantee, the connector cuts the range into windows the feed answers
+    whole. Splitting is where the risk moved to: a window boundary in the wrong place loses
+    an entry just as surely as a page boundary did, and a walk that overlaps its windows
+    returns one twice. So the same oracle answers both questions, against a count the walk
+    cannot influence.
+
+    The window is still required to hold a tie. Narrowing is supposed to make ties harmless —
+    two entries sharing a timestamp cannot be split across a boundary, because a boundary is
+    a whole second and so is a tie — and a check of that on a window with no ties in it would
+    be a check of nothing.
+
+    Args:
+        since: Inclusive lower bound of the window.
+        until: Upper bound of the window.
+    """
+    settings: Settings = build_settings(rechtspraak_page_size=PAGING_PAGE_SIZE)
+    connector = RechtspraakConnector(settings)
+    try:
+        expected = reported_total(connector, since, until)
+        found = list(connector.discover(since, until))
+    finally:
+        connector.close()
+
+    assert_whole(found, expected, since, until, "narrowed")
+
+
+@pytest.mark.skipif(
+    not _LOCAL_TIME_AVAILABLE,
+    reason="no timezone database, so the requested window is widened and the totals differ",
+)
+@pytest.mark.parametrize(("since", "until"), PAGING_WINDOWS)
+def test_paging_one_window_by_offset_still_holds_its_order(
+    since: datetime,
+    until: datetime,
+) -> None:
+    """The fallback path, and the only measurement of whether the sort is stable today.
+
+    A window at ``rechtspraak_min_window_seconds`` that still holds more than a page is paged
+    by offset, because the alternative is dropping it. Forcing the floor up to the width of
+    the whole window puts the connector on exactly that path, over a window whose page
+    boundaries are known to fall between entries sharing an ``updated`` timestamp.
+
+    A failure here is **not** a defect in the connector — production no longer walks this way
+    — but it is the thing worth knowing: it would mean Rechtspraak had begun reordering ties
+    between requests, that the corpus captured by offset before this change is suspect, and
+    that the fallback needs to stop being a fallback.
+
+    Args:
+        since: Inclusive lower bound of the window.
+        until: Upper bound of the window.
+    """
+    settings: Settings = build_settings(
+        rechtspraak_page_size=PAGING_PAGE_SIZE,
+        rechtspraak_min_window_seconds=int((until - since).total_seconds()),
+        rechtspraak_window_days=(until - since).total_seconds() / 86400,
+    )
+    connector = RechtspraakConnector(settings)
+    try:
+        expected = reported_total(connector, since, until)
+        found = list(connector.discover(since, until))
+    finally:
+        connector.close()
+
+    assert_whole(found, expected, since, until, "paged")
 
 
 def test_a_live_document_normalises_into_the_schema(live: RechtspraakConnector) -> None:

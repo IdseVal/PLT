@@ -94,7 +94,10 @@ docs/
    — but only against a configured ceiling on how large a window may be, so that what it
    holds is bounded by a setting rather than by how much case law the window happens to
    contain, and it must say in the log when a window exceeds that ceiling anyway.
-   `EurLexConnector` is the one that does this, and `eurlex_max_results` is the ceiling.
+   `EurLexConnector` does this against `eurlex_max_results`; `RechtspraakConnector` does it
+   against `rechtspraak_page_size`, which is at once the ceiling on a window and the reason
+   for it — a window narrowed to fit inside one request is a window that is never paged, and
+   Rechtspraak offers no key to page a window by.
 4. **Resumable.** Every connector run writes a checkpoint; a re-run after an interruption
    resumes rather than restarting.
 5. **Politeness to sources.** Configurable request rate, retry with exponential backoff and
