@@ -65,7 +65,6 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Iterator, Mapping
-from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
 from urllib.parse import quote
@@ -88,6 +87,7 @@ from plt.pipeline.base import (
     SourceUnavailableError,
 )
 from plt.pipeline.http import PoliteClient
+from plt.pipeline.windows import Window
 from plt.utils.logging import get_logger
 
 __all__ = ["EurLexConnector"]
@@ -431,50 +431,7 @@ def _collapse(text: str) -> str:
     return _WHITESPACE.sub(" ", text).strip()
 
 
-@dataclass(frozen=True, slots=True)
-class _Window:
-    """One date window of a discovery walk.
-
-    Attributes:
-        start: Inclusive lower bound.
-        stop: Exclusive upper bound.
-    """
-
-    start: datetime
-    stop: datetime
-
-    @property
-    def width(self) -> timedelta:
-        """Return how long the window is."""
-        return self.stop - self.start
-
-    def halved(self, floor: timedelta) -> _Window:
-        """Return the window halved, never narrower than a floor.
-
-        Args:
-            floor: Narrowest the window may become.
-
-        Returns:
-            A window starting where this one starts and ending halfway along it, or at the
-            floor, whichever is later.
-        """
-        half = max(self.width / 2, floor)
-        return _Window(self.start, min(self.start + half, self.stop))
-
-    def cursor(self, offset: int) -> str:
-        """Return the opaque cursor recorded on the checkpoint for a position in the window.
-
-        Args:
-            offset: Result offset within the window.
-
-        Returns:
-            A short, readable position, well inside the 255 characters
-            ``ingest_checkpoint.last_cursor`` holds.
-        """
-        return f"{self.start:%Y-%m-%dT%H:%M:%SZ}/{self.stop:%Y-%m-%dT%H:%M:%SZ}#{offset}"
-
-
-def _paging_key(row: Mapping[str, Mapping[str, str]], window: _Window) -> str:
+def _paging_key(row: Mapping[str, Mapping[str, str]], window: Window) -> str:
     """Return the CELEX number the next page of a window starts above.
 
     Args:
@@ -609,7 +566,7 @@ class EurLexConnector(SourceConnector):
             if count:
                 yield from self._candidates(window)
 
-    def _windows(self, start: datetime, stop: datetime) -> Iterator[tuple[_Window, int]]:
+    def _windows(self, start: datetime, stop: datetime) -> Iterator[tuple[Window, int]]:
         """Yield date windows each holding fewer results than CELLAR will return.
 
         Every window is counted before it is paged. One that reaches the cap is halved and
@@ -625,6 +582,10 @@ class EurLexConnector(SourceConnector):
         so an oversized window is now enumerated in full and the cap bounds what
         :meth:`_candidates` holds in memory instead.
 
+        The windows are half-open, which is the convention CELLAR's own ``>=`` and ``<``
+        bounds express and the reason the next one starts exactly where the last one stopped.
+        :class:`~plt.pipeline.windows.Window` does not decide that for either connector.
+
         Args:
             start: Inclusive lower bound of the walk.
             stop: Exclusive upper bound.
@@ -638,7 +599,7 @@ class EurLexConnector(SourceConnector):
         width = timedelta(days=self.settings.eurlex_window_days)
         cursor = start
         while cursor < stop:
-            window = _Window(cursor, min(cursor + width, stop))
+            window = Window(cursor, min(cursor + width, stop))
             count = self._count(window)
             while count >= cap and window.width > floor:
                 window = window.halved(floor)
@@ -659,7 +620,7 @@ class EurLexConnector(SourceConnector):
             yield window, count
             cursor = window.stop
 
-    def _candidates(self, window: _Window) -> Iterator[Candidate]:
+    def _candidates(self, window: Window) -> Iterator[Candidate]:
         """Page through one window and yield its candidates.
 
         The pages arrive in CELEX order, because that is the order that can be paged through
@@ -682,7 +643,7 @@ class EurLexConnector(SourceConnector):
             if candidate is not None:
                 yield candidate
 
-    def _rows(self, window: _Window) -> list[Mapping[str, Mapping[str, str]]]:
+    def _rows(self, window: Window) -> list[Mapping[str, Mapping[str, str]]]:
         """Read every result row of one window, paging by CELEX number.
 
         Args:
@@ -709,7 +670,7 @@ class EurLexConnector(SourceConnector):
     def _candidate(
         self,
         row: Mapping[str, Mapping[str, str]],
-        window: _Window,
+        window: Window,
         offset: int,
     ) -> Candidate | None:
         """Turn one SPARQL result row into a candidate.
@@ -763,7 +724,7 @@ class EurLexConnector(SourceConnector):
 
     # -- SPARQL ------------------------------------------------------------------------
 
-    def _page_query(self, window: _Window, limit: int, after: str | None) -> str:
+    def _page_query(self, window: Window, limit: int, after: str | None) -> str:
         """Build the query listing one page of a window.
 
         The page is taken by **keyset**: ordered by ``?celex`` and asking only for the numbers
@@ -818,7 +779,7 @@ class EurLexConnector(SourceConnector):
             f"LIMIT {int(limit)}\n"
         )
 
-    def _count_query(self, window: _Window) -> str:
+    def _count_query(self, window: Window) -> str:
         """Build the query counting the cases in a window.
 
         Args:
@@ -835,7 +796,7 @@ class EurLexConnector(SourceConnector):
             "}\n"
         )
 
-    def _body(self, window: _Window) -> str:
+    def _body(self, window: Window) -> str:
         """Build the graph pattern both discovery queries share.
 
         Every value interpolated here is either a typed literal rendered from a
@@ -877,7 +838,7 @@ class EurLexConnector(SourceConnector):
             f"{bound}"
         )
 
-    def _count(self, window: _Window) -> int:
+    def _count(self, window: Window) -> int:
         """Count the cases in a window.
 
         Args:
