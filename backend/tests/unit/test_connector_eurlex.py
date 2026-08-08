@@ -181,6 +181,7 @@ class FakeCellar:
         self.broken = broken or set()
         self.queries: list[str] = []
         self.requests: list[tuple[str, str, str | None]] = []
+        self._unstable = 0
 
     def transport(self) -> httpx.MockTransport:
         """Return a transport serving this source."""
@@ -225,6 +226,16 @@ class FakeCellar:
     def _sparql(self, request: httpx.Request) -> httpx.Response:
         """Answer a SPARQL query.
 
+        The ordering is modelled on the real endpoint rather than idealised, because the
+        difference between the two is what cost the corpus 15% of its cases. ``ORDER BY
+        ?celex`` is a total order over the ``GROUP BY`` key and is honoured exactly.
+        ``ORDER BY`` an aggregate alias is not, and CELLAR sorts each such page
+        independently: measured against the live endpoint on 7 August 2026, one window
+        counting 9,875 cases returned 9,875 rows holding 8,139 distinct CELEX. That is
+        modelled here by rotating the order once per page, which is the smallest faithful
+        version of "the sort does not survive between calls" — enough to make an
+        ``OFFSET`` walk drop rows, and harmless to one that pages by key.
+
         Args:
             request: The query request.
 
@@ -240,8 +251,15 @@ class FakeCellar:
         )
         if "COUNT(DISTINCT ?celex)" in query:
             return _json({"total": {"type": "literal", "value": str(len(inside))}})
-        limit, offset = _paging(query)
-        page = inside[offset : offset + limit]
+        limit = _page_limit(query)
+        if "ORDER BY ?celex" in query:
+            after = _page_after(query)
+            ordered = sorted(inside, key=lambda row: row.celex)
+            page = [row for row in ordered if after is None or row.celex > after][:limit]
+        else:
+            self._unstable += 1
+            turn = self._unstable % max(len(inside), 1)
+            page = (inside[turn:] + inside[:turn])[_page_offset(query) :][:limit]
         return _json(*(row.binding() for row in page))
 
     def _celex_in(self, raw_url: str) -> str:
@@ -355,18 +373,47 @@ def _instant(value: str) -> datetime:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
-def _paging(query: str) -> tuple[int, int]:
-    """Return the ``LIMIT`` and ``OFFSET`` of a query.
+def _page_limit(query: str) -> int:
+    """Return the ``LIMIT`` of a query.
 
     Args:
         query: The query text.
 
     Returns:
-        The limit and the offset.
+        The page size.
+
+    Raises:
+        AssertionError: If the query is unlimited, which the result cap makes impossible.
     """
-    match = re.search(r"LIMIT (\d+) OFFSET (\d+)", query)
+    match = re.search(r"LIMIT (\d+)", query)
     assert match is not None, "a page query must be limited"
-    return int(match.group(1)), int(match.group(2))
+    return int(match.group(1))
+
+
+def _page_after(query: str) -> str | None:
+    """Return the CELEX number a keyset page starts above.
+
+    Args:
+        query: The query text.
+
+    Returns:
+        The gate, or ``None`` on the first page of a window.
+    """
+    match = re.search(r'FILTER\(STR\(\?celex\) > "([^"]*)"\)', query)
+    return match.group(1) if match else None
+
+
+def _page_offset(query: str) -> int:
+    """Return the ``OFFSET`` of a query.
+
+    Args:
+        query: The query text.
+
+    Returns:
+        The offset, or ``0`` when the query states none.
+    """
+    match = re.search(r"OFFSET (\d+)", query)
+    return int(match.group(1)) if match else 0
 
 
 def rows(count: int, *, day: int = 1) -> list[Row]:
@@ -485,25 +532,61 @@ def test_discovery_pages_through_a_window() -> None:
         )
 
     assert len(found) == 25
-    offsets = [
-        _paging(query)[1] for query in source.queries if "COUNT(DISTINCT ?celex)" not in query
-    ]
-    assert offsets == [0, 10, 20]
+    paged = [query for query in source.queries if "COUNT(DISTINCT ?celex)" not in query]
+    assert len(paged) == 3
+    # Each page picks up above the CELEX number the one before it ended on, which is what a
+    # result the endpoint may re-sort between calls can still be walked by.
+    ended_on = [None, *(sorted(row.celex for row in rows(25, day=3))[index] for index in (9, 19))]
+    assert [_page_after(query) for query in paged] == ended_on
 
 
-def test_discovery_streams_rather_than_materialising_the_window() -> None:
-    source = FakeCellar(rows=rows(30, day=2))
+def test_discovery_pages_by_key_rather_than_by_offset() -> None:
+    """An ``OFFSET`` over an unstable order silently loses rows; this is why it is gone."""
+    source = FakeCellar(rows=rows(25, day=3))
 
     with source.connector(settings(pipeline_page_size=10)) as connector:
+        list(connector.discover(datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 2, 1, tzinfo=UTC)))
+
+    paged = [query for query in source.queries if "COUNT(DISTINCT ?celex)" not in query]
+    assert paged
+    for query in paged:
+        assert "OFFSET" not in query, "a page must not be taken by offset"
+        # ?celex is the GROUP BY key, so it is unique per row and a total order on its own.
+        # ?modified_at is MAX(?modified) and ordering by it is not, on this endpoint.
+        assert "ORDER BY ?celex\n" in query
+
+
+def test_a_window_survives_an_endpoint_that_re_sorts_between_pages() -> None:
+    """The regression: 15,528 of 104,088 EU cases were never discovered because of this."""
+    source = FakeCellar(rows=rows(60, day=3))
+
+    with source.connector(settings(pipeline_page_size=7)) as connector:
+        found = list(
+            connector.discover(datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 2, 1, tzinfo=UTC))
+        )
+
+    discovered = [candidate.source_id for candidate in found]
+    assert sorted(discovered) == sorted(row.celex for row in rows(60, day=3))
+    assert len(discovered) == len(set(discovered)), "a case was discovered twice"
+
+
+def test_discovery_holds_one_window_rather_than_the_whole_walk() -> None:
+    early = [Row(f"62026CJ{n:04d}", f"2026-01-02T00:{n:02d}:00+00:00") for n in range(4)]
+    late = [Row(f"62026CO{n:04d}", f"2026-01-20T00:{n:02d}:00+00:00") for n in range(4)]
+    source = FakeCellar(rows=early + late)
+
+    with source.connector(settings(pipeline_page_size=2, eurlex_window_days=1)) as connector:
         stream = connector.discover(
             datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 2, 1, tzinfo=UTC)
         )
         first = next(stream)
 
-    assert first.source_id == rows(30, day=2)[0].celex
-    # One count and one page, not the whole window: the runner consumes this lazily and
-    # commits per batch, which is what keeps memory flat over a run of any size.
-    assert len(source.queries) == 2
+    assert first.source_id == early[0].celex
+    # The window in hand and nothing beyond it: a window is bounded by eurlex_max_results,
+    # so peak memory is bounded too however long the walk is. Two empty days counted and
+    # skipped without being paged, then the dense day counted and paged twice.
+    assert len(source.queries) == 5
+    assert not any(window_of(query)[0].day == 20 for query in source.queries)
 
 
 def test_a_candidate_carries_what_the_runner_needs() -> None:
