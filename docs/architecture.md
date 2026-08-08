@@ -89,7 +89,12 @@ docs/
 2. **Interruptible.** Every long-running loop handles `SIGINT`/`KeyboardInterrupt`, finishes
    the item in flight, writes its checkpoint, and exits cleanly.
 3. **Incremental, not in-memory.** The pipeline streams page by page and commits per batch.
-   Never accumulate a full corpus in memory or in one transaction.
+   Never accumulate a full corpus in memory or in one transaction. Where a source cannot be
+   walked a page at a time without losing rows, a connector may hold one discovery *window*
+   — but only against a configured ceiling on how large a window may be, so that what it
+   holds is bounded by a setting rather than by how much case law the window happens to
+   contain. `EurLexConnector` is the one that does this, and `eurlex_max_results` is the
+   ceiling.
 4. **Resumable.** Every connector run writes a checkpoint; a re-run after an interruption
    resumes rather than restarting.
 5. **Politeness to sources.** Configurable request rate, retry with exponential backoff and

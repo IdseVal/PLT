@@ -21,6 +21,11 @@ Five properties of this source shape the implementation.
 reaches ``eurlex_max_results`` until it fits — down to ``eurlex_min_window_seconds``, past
 which it processes the window anyway and says so in the log rather than splitting forever.
 
+**Paging has to be by a key, not by an offset.** A window is paged on the CELEX number
+itself, each page asking for the numbers above the last one the previous page returned.
+``LIMIT``/``OFFSET`` over ``ORDER BY`` an aggregate alias looks equivalent and is not: see
+:meth:`EurLexConnector._page_query`, which is where the reason and the measurement are.
+
 **One case per CELEX.** A CELEX number resolves to several cellar works: the complex work,
 its members, and rectified versions carrying ``do_not_index``. The discovery query therefore
 groups by CELEX and aggregates over the works, so a case is discovered once however many
@@ -301,6 +306,31 @@ def _date_literal(moment: datetime) -> str:
     return f'"{aware.astimezone(UTC):%Y-%m-%d}"^^xsd:date'
 
 
+def _celex_literal(celex: str) -> str:
+    """Check a CELEX number immediately before it becomes part of a SPARQL query.
+
+    The second check, as :func:`_authority_uri` is for a vocabulary code: the caller has
+    already refused anything that is not a CELEX number, and this is what makes that
+    impossible to bypass by a later edit. A CELEX number can carry no quote, backslash,
+    angle bracket or whitespace, so one that passes here cannot close the literal it is
+    written into.
+
+    Args:
+        celex: The identifier, already validated by :func:`_paging_key`.
+
+    Returns:
+        The identifier, unchanged.
+
+    Raises:
+        ValueError: If it is not a CELEX number, which would mean the caller's check had
+            been bypassed.
+    """
+    if not _CELEX.fullmatch(celex):
+        message = f"{celex!r} is not a CELEX number and must not reach a query"
+        raise ValueError(message)
+    return celex
+
+
 def _authority_uri(collection: str, code: str) -> str:
     """Render a controlled-vocabulary URI for a SPARQL query.
 
@@ -444,6 +474,48 @@ class _Window:
         return f"{self.start:%Y-%m-%dT%H:%M:%SZ}/{self.stop:%Y-%m-%dT%H:%M:%SZ}#{offset}"
 
 
+def _paging_key(row: Mapping[str, Mapping[str, str]], window: _Window) -> str:
+    """Return the CELEX number the next page of a window starts above.
+
+    Args:
+        row: The last binding set of the page just read.
+        window: The window being enumerated, for the error message.
+
+    Returns:
+        The row's CELEX number.
+
+    Raises:
+        SourceUnavailableError: If the row carries nothing that can be paged past. A single
+            unusable row mid-window is skipped by :meth:`EurLexConnector._candidate`, but one
+            in the *last* position of a full page leaves the rest of the window unreachable,
+            and a window enumerated to an unknown depth must never be mistaken for a
+            complete one.
+    """
+    value = (row.get("celex", {}).get("value") or "").strip()
+    if not _CELEX.fullmatch(value):
+        message = (
+            f"the window {window.cursor(0)} ended a page on {value[:64]!r}, which is not a "
+            f"CELEX number; the rest of the window cannot be paged"
+        )
+        raise SourceUnavailableError(message)
+    return value
+
+
+def _discovery_order(row: Mapping[str, Mapping[str, str]]) -> tuple[datetime, str]:
+    """Return the sort key that puts a window's rows in the order the checkpoint expects.
+
+    Args:
+        row: One binding set of a discovery page.
+
+    Returns:
+        The row's modification instant and CELEX number. A row CELLAR gave no modification
+        date sorts first, which keeps it ahead of the position any later row could leave on
+        the checkpoint rather than stranded behind it.
+    """
+    binding = row.get("modified_at", {}).get("value")
+    return _parse_instant(binding) or _EPOCH, row.get("celex", {}).get("value") or ""
+
+
 class EurLexConnector(SourceConnector):
     """The European Union's case law, from EUR-Lex through CELLAR.
 
@@ -484,11 +556,13 @@ class EurLexConnector(SourceConnector):
     # -- discovery ---------------------------------------------------------------------
 
     def discover(self, since: datetime | None, until: datetime | None) -> Iterator[Candidate]:
-        """Yield one candidate per CELEX number in the window, oldest first, streaming.
+        """Yield one candidate per CELEX number in the window, oldest first.
 
         The window is walked in slices small enough that no single search reaches CELLAR's
-        result cap, and each slice is paged through. Candidates are yielded as they are read,
-        so peak memory is one page of results whatever the size of the window.
+        result cap, and each slice is paged through on the CELEX number. Peak memory is one
+        slice's candidates, whatever the size of the whole window: a slice is halved until it
+        holds fewer than ``eurlex_max_results`` cases, so that setting bounds this as well as
+        the query.
 
         Args:
             since: Inclusive lower bound. ``None`` means no lower bound, which walks the
@@ -577,23 +651,49 @@ class EurLexConnector(SourceConnector):
     def _candidates(self, window: _Window) -> Iterator[Candidate]:
         """Page through one window and yield its candidates.
 
+        The pages arrive in CELEX order, because that is the order that can be paged through
+        without losing rows. The checkpoint needs modification order, though — it holds the
+        highest instant processed, so a run killed part-way through a window must not leave
+        behind a position that the cases still to come in that window sit *below*. The
+        window is therefore ordered here, once it has been read, before any of it is handed
+        to the runner. That costs one window in memory, which ``eurlex_max_results`` bounds,
+        and it is what keeps "oldest first" a promise the caller can resume against.
+
         Args:
             window: The window to enumerate.
 
         Yields:
             One candidate per CELEX number in the window, oldest first.
         """
+        rows = sorted(self._rows(window), key=_discovery_order)
+        for offset, row in enumerate(rows):
+            candidate = self._candidate(row, window, offset)
+            if candidate is not None:
+                yield candidate
+
+    def _rows(self, window: _Window) -> list[Mapping[str, Mapping[str, str]]]:
+        """Read every result row of one window, paging by CELEX number.
+
+        Args:
+            window: The window to enumerate.
+
+        Returns:
+            The rows, in the order CELLAR returned them.
+
+        Raises:
+            SourceUnavailableError: If a page ends on a row this connector cannot page past.
+                A window that cannot be walked to its end is not a window that happens to be
+                short, and treating it as one is the whole reason this method exists.
+        """
         page_size = self.settings.pipeline_page_size
-        offset = 0
+        collected: list[Mapping[str, Mapping[str, str]]] = []
+        after: str | None = None
         while True:
-            rows = self._query(self._page_query(window, page_size, offset))
-            for row in rows:
-                candidate = self._candidate(row, window, offset)
-                if candidate is not None:
-                    yield candidate
+            rows = self._query(self._page_query(window, page_size, after))
+            collected.extend(rows)
             if len(rows) < page_size:
-                return
-            offset += page_size
+                return collected
+            after = _paging_key(rows[-1], window)
 
     def _candidate(
         self,
@@ -652,24 +752,46 @@ class EurLexConnector(SourceConnector):
 
     # -- SPARQL ------------------------------------------------------------------------
 
-    def _page_query(self, window: _Window, limit: int, offset: int) -> str:
+    def _page_query(self, window: _Window, limit: int, after: str | None) -> str:
         """Build the query listing one page of a window.
+
+        The page is taken by **keyset**: ordered by ``?celex`` and asking only for the numbers
+        above the last one the previous page returned. The obvious alternative — ``ORDER BY
+        ?modified_at ?celex`` with ``LIMIT``/``OFFSET`` — is what this connector used until
+        it was measured, and it loses cases. ``?modified_at`` is an aggregate alias
+        (``MAX(?modified)``), and ordering a grouped result by one is not a stable total
+        order on this endpoint: consecutive offsets are sorted independently, so some CELEX
+        come back twice and others never come back at all. Against the live endpoint on
+        7 August 2026, page size 100: the window 2023-04-01 to 2023-04-16 counts 9,875 cases
+        and returned 9,875 rows holding 8,139 distinct CELEX — 1,736 cases, 17.6% of the
+        window, silently absent. The same window paged as below returns 9,875 distinct rows.
+
+        ``?celex`` is the ``GROUP BY`` key, so it is unique per row and a total order by
+        itself, and a keyset page cannot skip or repeat whatever the endpoint does with its
+        query plan. It also avoids a deep ``OFFSET`` over two ``OPTIONAL`` expression joins,
+        which is what made the far end of a large window expensive enough to time out.
 
         Args:
             window: The window to enumerate.
             limit: Page size.
-            offset: Result offset within the window.
+            after: CELEX number the previous page ended on, or ``None`` for the first page.
+                It comes from a source payload, so unlike everything else interpolated into
+                a query it is checked here rather than trusted — :func:`_paging_key` has
+                already refused anything that is not a CELEX number, and a CELEX number can
+                carry no quote, backslash, angle bracket or whitespace.
 
         Returns:
             The SPARQL query.
         """
         preferred = _authority_uri("language", self.settings.eurlex_languages[0])
+        gate = f'  FILTER(STR(?celex) > "{_celex_literal(after)}")\n' if after else ""
         return (
             f"{_PREFIXES}"
             "SELECT ?celex (MAX(?modified) AS ?modified_at) (MIN(?date) AS ?document_date)\n"
             "       (SAMPLE(?preferred) AS ?title) (SAMPLE(?any) AS ?fallback_title)\n"
             "WHERE {\n"
             f"{self._body(window)}"
+            f"{gate}"
             "  OPTIONAL {\n"
             "    ?preferred_expression cdm:expression_belongs_to_work ?work .\n"
             f"    ?preferred_expression cdm:expression_uses_language {preferred} .\n"
@@ -681,8 +803,8 @@ class EurLexConnector(SourceConnector):
             "  }\n"
             "}\n"
             "GROUP BY ?celex\n"
-            "ORDER BY ?modified_at ?celex\n"
-            f"LIMIT {int(limit)} OFFSET {int(offset)}\n"
+            "ORDER BY ?celex\n"
+            f"LIMIT {int(limit)}\n"
         )
 
     def _count_query(self, window: _Window) -> str:
@@ -708,8 +830,10 @@ class EurLexConnector(SourceConnector):
         Every value interpolated here is either a typed literal rendered from a
         :class:`datetime` or a controlled-vocabulary code that :class:`~plt.config.Settings`
         has restricted to letters, digits and underscores and :func:`_authority_uri` checks
-        again. No string from a source payload, a request or an identifier ever reaches a
-        query, which is what closes SPARQL injection on this connector.
+        again. Nothing from a source payload or a request reaches this pattern at all. The
+        one source-derived value that reaches a query anywhere on this connector is the
+        keyset page gate, which :func:`_paging_key` and :func:`_celex_literal` between them
+        restrict to a CELEX number — that, and this, is what closes SPARQL injection here.
 
         Args:
             window: The window to bound the pattern by.
