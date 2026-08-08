@@ -105,6 +105,17 @@ docs/
 7. **Logging.** Structured, levelled, no PII from case texts in logs beyond identifiers.
 8. **Tests are part of the deliverable.** Network calls are mocked against recorded fixtures
    in unit tests; integration tests hitting live endpoints are marked and opt-in.
+9. **A fake is evidence about payloads, never about behaviour.** A recording pins what a
+   source *returns* and stays true offline. It cannot pin how the source *behaves* —
+   ordering, paging, retry semantics, what a second identical request does — because none of
+   that is in a payload, so the double has to invent it, and a double that invents something
+   better behaved than the real endpoint makes a broken connector pass. Wherever a fake
+   models behaviour, an opt-in integration test pins that behaviour against the live service.
+   The standing instance is **paging integrity**: every connector that walks a window in
+   pages has an integration test asserting the union of the pages equals the window's own
+   count from the source, in both directions — nothing lost and nothing returned twice.
+   Discovery paged by offset over an unstable sort cost the EU corpus 14.9% of its cases
+   while every unit test passed, because the fake CELLAR sorted stably.
 
 ---
 

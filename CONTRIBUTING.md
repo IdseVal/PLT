@@ -197,6 +197,17 @@ Tests are part of the deliverable, not an afterthought (`docs/architecture.md` �
 - Unit tests never touch the network. Record a source payload once into
   `backend/tests/fixtures/` and mock the HTTP client against it.
 - Tests that do hit a live endpoint are marked `@pytest.mark.integration` and are opt-in.
+- **A recording is evidence about payloads, not about behaviour** (§2.9). The moment your
+  fake has to decide what *order* to return rows in, whether a repeated request answers the
+  same way, or what a retry does, it is inventing behaviour the recording never contained —
+  and a fake that invents something better behaved than the real endpoint will pass a
+  connector that is broken. That is not hypothetical: `FakeCellar` sorted stably, CELLAR does
+  not, and a discovery walk that silently lost 14.9% of the EU corpus passed the whole suite.
+  Pin the behaviour with an integration test instead. For anything that pages a window, the
+  test already has a shape — walk it in pages and assert the union equals the count the
+  source itself reports for the same window, asserting **both** that nothing is missing and
+  that nothing came back twice. See `test_a_paged_window_yields_every_case_the_endpoint_counts`
+  and `test_a_paged_window_yields_every_ecli_the_feed_counts`.
 - Frontend tests render through `@testing-library/react` and assert on accessible roles and
   names, so the tests break when the page stops being accessible.
 
