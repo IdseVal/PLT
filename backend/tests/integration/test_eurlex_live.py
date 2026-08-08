@@ -32,8 +32,9 @@ import pytest
 
 from plt.config import EurLexDiscoveryDate, Settings
 from plt.pipeline.base import Candidate, DocumentUnavailableError
-from plt.pipeline.connectors.eurlex import EurLexConnector, _Window
+from plt.pipeline.connectors.eurlex import EurLexConnector
 from plt.pipeline.filters.keywords import KeywordFilter
+from plt.pipeline.windows import Window
 from tests.conftest import build_settings
 
 pytestmark = pytest.mark.integration
@@ -125,7 +126,7 @@ def test_a_paged_window_yields_every_case_the_endpoint_counts(
     """
     connector = EurLexConnector(live_settings(pipeline_page_size=PAGING_PAGE_SIZE))
     try:
-        expected = connector._count(_Window(start, stop))
+        expected = connector._count(Window(start, stop))
         found = [candidate.source_id for candidate in connector.discover(start, stop)]
     finally:
         connector.close()

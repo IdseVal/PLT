@@ -435,7 +435,12 @@ class Settings(BaseSettings):
     )
     pipeline_page_size: Annotated[int, Field(ge=1, le=1000)] = Field(
         default=100,
-        description="Result-page size requested from source endpoints during discovery.",
+        description=(
+            "Result-page size requested from source endpoints during discovery. Read by the "
+            "EU connector, which pages CELLAR by the CELEX number. The Dutch connector has "
+            "its own rechtspraak_page_size, because there the number decides how large a "
+            "window may be rather than how a window is paged."
+        ),
     )
     pipeline_report_dir: Path = Field(
         default=_REPO_ROOT / "reports",
@@ -484,6 +489,43 @@ class Settings(BaseSettings):
             "Restrict Rechtspraak discovery to ECLIs that carry text (return=DOC). The "
             "excluded registrations have no summary and no body, so they cost roughly three "
             "requests for every one that can match; disable only to mirror the bare register."
+        ),
+    )
+    rechtspraak_page_size: Annotated[int, Field(ge=1, le=1000)] = Field(
+        default=1000,
+        description=(
+            "Entries one Rechtspraak search returns, and therefore the largest a discovery "
+            "window is allowed to be: a window that holds more is narrowed until it fits, so "
+            "the walk never pages. 1000 is the endpoint's own maximum, and the default "
+            "because every page boundary avoided is a place the feed's sort - which is on a "
+            "non-unique timestamp - could otherwise have reordered between requests."
+        ),
+    )
+    rechtspraak_window_days: Annotated[float, Field(gt=0, le=3650)] = Field(
+        default=1.0,
+        description=(
+            "Width a Rechtspraak discovery window starts at. The walk resizes itself from "
+            "there - doubling over sparse history, halving into a bulk re-publication - so "
+            "this is only where it begins looking. A Dutch day held 371 records when this "
+            "default was measured, comfortably inside one page."
+        ),
+    )
+    rechtspraak_max_window_days: Annotated[float, Field(gt=0, le=3650)] = Field(
+        default=365.0,
+        description=(
+            "Widest a Rechtspraak discovery window may grow to. Bounds how much of an empty "
+            "stretch one request can claim to have covered. A backfill with no lower bound "
+            "starts in 1900 and the feed's earliest record is from 2013, so this is what "
+            "decides whether crossing that century costs a hundred requests or forty "
+            "thousand."
+        ),
+    )
+    rechtspraak_min_window_seconds: Annotated[int, Field(ge=1, le=86_400 * 366)] = Field(
+        default=1,
+        description=(
+            "Narrowest a Rechtspraak discovery window is split to. The feed's timestamps "
+            "resolve to the second, so one second is the point past which splitting cannot "
+            "separate two records; such a window is paged and logged rather than dropped."
         ),
     )
     eurlex_sparql_url: str = Field(

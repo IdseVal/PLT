@@ -203,11 +203,20 @@ Tests are part of the deliverable, not an afterthought (`docs/architecture.md` �
   and a fake that invents something better behaved than the real endpoint will pass a
   connector that is broken. That is not hypothetical: `FakeCellar` sorted stably, CELLAR does
   not, and a discovery walk that silently lost 14.9% of the EU corpus passed the whole suite.
-  Pin the behaviour with an integration test instead. For anything that pages a window, the
-  test already has a shape — walk it in pages and assert the union equals the count the
-  source itself reports for the same window, asserting **both** that nothing is missing and
-  that nothing came back twice. See `test_a_paged_window_yields_every_case_the_endpoint_counts`
-  and `test_a_paged_window_yields_every_ecli_the_feed_counts`.
+  Pin the behaviour with an integration test instead. For anything that walks a window in
+  more than one request, the test already has a shape — walk it and assert the union equals
+  the count the source itself reports for the same window, asserting **both** that nothing is
+  missing and that nothing came back twice. See
+  `test_a_paged_window_yields_every_case_the_endpoint_counts` and
+  `test_a_narrowed_walk_yields_every_ecli_the_feed_counts`.
+
+  A fake that models behaviour is not forbidden — it is forbidden to model it *kindly*.
+  `Endpoint` in `test_connector_rechtspraak.py` answers searches out of a corpus and can be
+  told to break a tie one way on even requests and the other on odd ones, which is the worst
+  the live feed is permitted to do. Two tests then hold each other honest: the narrowed walk
+  loses nothing over that corpus, and paging the same corpus demonstrably does lose entries.
+  Without the second, the first would be a check on nothing the day the fake stopped being
+  adversarial.
 - Frontend tests render through `@testing-library/react` and assert on accessible roles and
   names, so the tests break when the page stops being accessible.
 
