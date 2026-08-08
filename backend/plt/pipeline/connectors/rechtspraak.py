@@ -79,6 +79,7 @@ from plt.pipeline.base import (
     NormalisedDocument,
     RawDocument,
     SourceConnector,
+    SourceTraffic,
     SourceUnavailableError,
 )
 from plt.pipeline.dedup import content_hash
@@ -772,6 +773,11 @@ class RechtspraakConnector(SourceConnector):
         self._client = client if client is not None else PoliteClient(self.settings)
         self._owns_client = client is None
         self._courts: dict[str, CourtRecord] | None = None
+
+    @property
+    def traffic(self) -> SourceTraffic:
+        """Return what this connector has asked of Rechtspraak.nl so far."""
+        return self._client.traffic
 
     # -- Discovery --------------------------------------------------------------------
 
