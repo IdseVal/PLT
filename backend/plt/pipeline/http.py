@@ -22,6 +22,9 @@ What it guarantees, all of it from :class:`plt.config.Settings` and none of it h
   address, so an operator whose endpoint we are inconveniencing can reach a human.
 * **Interruptibility.** Backoff sleeps in short slices and checks the caller's stop
   predicate between them, so ``Ctrl+C`` during a 60-second backoff does not wait it out.
+* **Accountability.** Every request, retry and honoured ``Retry-After`` is counted into a
+  :class:`~plt.pipeline.base.SourceTraffic`, so a run can state afterwards what it asked of
+  the source rather than only that it was configured to be polite.
 
 These are public research endpoints belonging to courts. The defaults are deliberately
 conservative; raising them is a decision, not a tweak.
@@ -41,7 +44,12 @@ import httpx
 
 from plt import __version__
 from plt.config import Settings, get_settings
-from plt.pipeline.base import ConnectorError, DocumentUnavailableError, SourceUnavailableError
+from plt.pipeline.base import (
+    ConnectorError,
+    DocumentUnavailableError,
+    SourceTraffic,
+    SourceUnavailableError,
+)
 from plt.utils.logging import get_logger
 
 __all__ = [
@@ -168,6 +176,7 @@ class PoliteClient:
             rng: Random source for backoff jitter; injectable so a test can pin the delays.
         """
         self._settings = settings if settings is not None else get_settings()
+        self._traffic = SourceTraffic()
         self._sleep = sleep
         self._should_stop = should_stop if should_stop is not None else _never
         self._rng = rng if rng is not None else random.Random()  # noqa: S311 - jitter, not crypto
@@ -209,6 +218,16 @@ class PoliteClient:
     def user_agent(self) -> str:
         """Return the ``User-Agent`` sent with every request."""
         return str(self._client.headers.get("User-Agent", ""))
+
+    @property
+    def traffic(self) -> SourceTraffic:
+        """Return what this client has asked of the source so far.
+
+        Returns:
+            The live counts. It is the client's own object rather than a copy, so a caller
+            that keeps a reference sees the run's totals as they accumulate.
+        """
+        return self._traffic
 
     def get(
         self,
@@ -272,6 +291,9 @@ class PoliteClient:
                 message = f"stop requested before {method} {url}"
                 raise SourceUnavailableError(message)
             self._limiter.acquire()
+            self._traffic.requests += 1
+            if attempt:
+                self._traffic.retries += 1
             try:
                 response = self._client.request(
                     method, url, params=params, headers=headers, content=content, data=data
@@ -292,6 +314,10 @@ class PoliteClient:
             if attempt + 1 >= attempts:
                 break
             delay = self._backoff_delay(attempt, retry_after)
+            self._traffic.backoff_seconds += delay
+            if retry_after is not None:
+                self._traffic.retry_after_waits += 1
+                self._traffic.retry_after_seconds += retry_after
             log.warning(
                 "source request failed; backing off",
                 extra={

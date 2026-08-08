@@ -52,6 +52,7 @@ __all__ = [
     "PipelineError",
     "RawDocument",
     "SourceConnector",
+    "SourceTraffic",
     "SourceUnavailableError",
 ]
 
@@ -456,6 +457,34 @@ class NormalisedCase:
         return tuple(document.language for document in self.documents if document.has_text)
 
 
+@dataclass(slots=True)
+class SourceTraffic:
+    """How much a run asked of its source, and how hard the source pushed back.
+
+    Politeness is a requirement rather than a courtesy (``docs/architecture.md`` rule 2.5),
+    and a requirement nobody can see the effect of is one nobody can hold the project to.
+    These are the numbers that make it visible after the fact: how many requests left the
+    process, how often one had to be repeated, and whether the source ever asked us to wait —
+    which is the part an operator of a public endpoint would want to see honoured.
+
+    Counted by :class:`plt.pipeline.http.PoliteClient`, which is the only place requests are
+    sent from, and read back through :attr:`SourceConnector.traffic`.
+
+    Attributes:
+        requests: Requests actually sent, retries included.
+        retries: Requests that had to be sent again after a failure worth retrying.
+        retry_after_waits: Times a ``Retry-After`` header was obeyed as sent.
+        retry_after_seconds: Total seconds waited because a source asked for them.
+        backoff_seconds: Total seconds spent backing off, ``Retry-After`` waits included.
+    """
+
+    requests: int = 0
+    retries: int = 0
+    retry_after_waits: int = 0
+    retry_after_seconds: float = 0.0
+    backoff_seconds: float = 0.0
+
+
 class SourceConnector(ABC):
     """One jurisdiction's data source.
 
@@ -492,6 +521,21 @@ class SourceConnector(ABC):
     def settings(self) -> Settings:
         """Return the settings this connector reads its configuration from."""
         return self._settings
+
+    @property
+    def traffic(self) -> SourceTraffic | None:
+        """Return what this connector has asked of its source so far.
+
+        A connector that fetches through :class:`plt.pipeline.http.PoliteClient` returns that
+        client's running count, which is what lets a run report the rate it worked at and
+        every ``Retry-After`` it honoured.
+
+        Returns:
+            The counts, or ``None`` when the connector does not report them — the default, so
+            a source reached by some other means, or a fake in a test, is honestly recorded
+            as "not reported" rather than as a run that sent no requests at all.
+        """
+        return None
 
     @abstractmethod
     def discover(self, since: datetime | None, until: datetime | None) -> Iterator[Candidate]:

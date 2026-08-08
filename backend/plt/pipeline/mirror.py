@@ -22,6 +22,7 @@ The shape on disk is one directory per jurisdiction, one folder per case::
             manifest.json              what the corpus is, and when it was taken
             _checkpoint.json           where the next run resumes
             _failures.jsonl            the cases that did not come down, and why
+            logs/                      one readable record per run
 
 The Dutch half of that tree already exists, so its names are taken as given: a folder per
 case, ``metadata.json`` beside ``raw_content.xml``. Nothing here is EU-specific — the mirror
@@ -60,7 +61,10 @@ the retry budget; a second signal falls through to the default handler.
 **Accountable.** Each case records when it was fetched and from what URL; the corpus records
 its capture window, the connector's configuration and its totals in ``manifest.json``, and
 every failure in ``_failures.jsonl``. A published methodology has to be able to say what the
-corpus is and when it was taken, and an absence nobody can audit is the expensive kind.
+corpus is and when it was taken, and an absence nobody can audit is the expensive kind. On
+top of those machine records, every run - including one that failed or was interrupted -
+leaves one file a person can read in ``logs/``; see :mod:`plt.pipeline.runlog`, which exists
+because this command is about to run weekly with nobody watching it.
 
 One rule is inherited from the ingestion runner deliberately: **the checkpoint stops
 advancing at the first case that failed**, so nothing after a failure is ever considered
@@ -73,6 +77,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from dataclasses import dataclass, field
@@ -93,10 +98,12 @@ from plt.pipeline.base import (
     PipelineError,
     RawDocument,
     SourceConnector,
+    SourceTraffic,
     SourceUnavailableError,
 )
 from plt.pipeline.checkpoint import Checkpoint, resolve_since
 from plt.pipeline.registry import connector_for
+from plt.pipeline.runlog import LOG_DIR_NAME, write_run_log
 from plt.utils.logging import get_logger
 from plt.utils.shutdown import StopRequest
 
@@ -104,6 +111,7 @@ __all__ = [
     "CorpusStore",
     "CorpusStoreError",
     "MirrorCounters",
+    "MirrorFailure",
     "MirrorReport",
     "StoredFile",
     "case_folder_name",
@@ -122,12 +130,19 @@ _SOURCE_RECORD_STEM: Final[str] = "raw_content"
 #: One language version of the full text.
 _FULL_TEXT_STEM: Final[str] = "fulltext"
 
-#: Corpus-level bookkeeping, beside the case folders. No case may take one of these names.
+#: Corpus-level bookkeeping, beside the case folders. No case may take one of these names —
+#: ``logs`` included, or a source identifier that sanitises onto it would scatter payload
+#: files through the run logs.
 _MANIFEST_NAME: Final[str] = "manifest.json"
 _CHECKPOINT_NAME: Final[str] = "_checkpoint.json"
 _FAILURES_NAME: Final[str] = "_failures.jsonl"
 _RESERVED_FILES: Final[frozenset[str]] = frozenset(
-    {_MANIFEST_NAME.lower(), _CHECKPOINT_NAME.lower(), _FAILURES_NAME.lower()}
+    {
+        _MANIFEST_NAME.lower(),
+        _CHECKPOINT_NAME.lower(),
+        _FAILURES_NAME.lower(),
+        LOG_DIR_NAME.lower(),
+    }
 )
 
 #: Version of the on-disk layout, recorded in the manifest so a reader of a store taken
@@ -137,6 +152,11 @@ _LAYOUT_VERSION: Final[int] = 1
 #: Runs kept in the manifest's history. A capture interrupted nightly for a fortnight should
 #: not grow the manifest without bound; the cumulative totals beside it are complete.
 _MANIFEST_RUN_HISTORY: Final[int] = 50
+
+#: Failures a run keeps in memory for its own log. Every failure is counted and written to
+#: ``_failures.jsonl`` whatever this is; only the sample the log prints is bounded, so a run
+#: where the source refused everything still holds a fixed amount (architecture rule 2.3).
+_FAILURE_SAMPLE: Final[int] = 20
 
 #: Characters allowed in a case folder name. Everything else is replaced, which is what turns
 #: ``ECLI:NL:CBB:1994:ZG1226`` into the folder the Dutch store already holds. No slash, no
@@ -705,6 +725,54 @@ class CorpusStore:
             message = f"the corpus manifest could not be written to {self._path}: {error}"
             raise CorpusStoreError(message) from error
 
+    # -- run logs ----------------------------------------------------------------------
+
+    @property
+    def log_dir(self) -> Path:
+        """Return the directory this jurisdiction's run logs are written to."""
+        return self._path / LOG_DIR_NAME
+
+    def write_run_log(self, name: str, text: str) -> Path:
+        """Write one run's log, without ever replacing another run's.
+
+        Args:
+            name: File name the run chose, from :func:`plt.pipeline.runlog.run_log_name`.
+            text: The rendered log.
+
+        Returns:
+            The file as written. A name already taken - two runs started in the same second -
+            gains an underscore and a number rather than overwriting the earlier record,
+            which is the one thing a log directory must not do. The suffix sorts *after* the
+            unsuffixed name, so a listing stays in the order the runs happened.
+
+        Raises:
+            OSError: If the directory or the file cannot be written. The caller reports it
+                and carries on: a run that has already stored its cases is not lost because
+                its log could not be.
+        """
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        path = self.log_dir / name
+        stem, suffix = path.stem, path.suffix
+        attempt = 2
+        while path.exists():
+            path = self.log_dir / f"{stem}_{attempt}{suffix}"
+            attempt += 1
+        path.write_text(text, encoding="utf-8", newline="\n")
+        return path
+
+    def run_logs(self) -> list[Path]:
+        """Return the run logs on disk.
+
+        Returns:
+            Every file in the log directory, unsorted and unfiltered - the caller decides
+            which of them it wrote and may therefore delete. Empty when there is no log
+            directory yet.
+        """
+        try:
+            return [entry for entry in self.log_dir.iterdir() if entry.is_file()]
+        except OSError:
+            return []
+
 
 def _replace(path: Path, body: bytes) -> None:
     """Write a file whole, replacing any previous version in one step.
@@ -786,6 +854,22 @@ class MirrorCounters:
     bytes_written: int = 0
 
 
+@dataclass(frozen=True, slots=True)
+class MirrorFailure:
+    """One case that did not come down, kept for the run's own log.
+
+    ``_failures.jsonl`` holds the store's whole history; this is the handful the run log
+    prints, so a reader sees what went wrong without opening a file that spans years.
+
+    Attributes:
+        source_id: The case's identifier.
+        reason: What went wrong, as the connector reported it.
+    """
+
+    source_id: str
+    reason: str
+
+
 @dataclass(slots=True)
 class MirrorReport:
     """The outcome of one mirror run, for the CLI, the log and the manifest.
@@ -803,6 +887,17 @@ class MirrorReport:
         checkpoint_before: Position the run started from.
         checkpoint_after: Position it left behind.
         error_message: Why it failed, when it did.
+        limit: Cap the caller put on how many cases would be fetched, if any. Recorded
+            because a rehearsal that stopped at fifty cases and a run that found fifty are
+            indistinguishable in the counts alone.
+        failures: The first few cases that failed, for the run log. Deliberately capped:
+            a run of any size has to hold a bounded amount in memory (architecture rule 2.3),
+            and the complete record is ``_failures.jsonl``.
+        failure_kinds: Every failure counted by exception type, however many there were.
+        traffic: What the connector asked of its source, or ``None`` when it does not report
+            it. Live while the run is in progress.
+        cases_on_disk: Complete cases in the store once the run had finished, counted from
+            the filesystem rather than from a counter.
     """
 
     jurisdiction_code: str
@@ -817,6 +912,11 @@ class MirrorReport:
     checkpoint_before: Checkpoint | None = None
     checkpoint_after: Checkpoint | None = None
     error_message: str | None = None
+    limit: int | None = None
+    failures: list[MirrorFailure] = field(default_factory=list)
+    failure_kinds: Counter[str] = field(default_factory=Counter)
+    traffic: SourceTraffic | None = None
+    cases_on_disk: int | None = None
 
     def summary(self) -> str:
         """Return the one-line summary the CLI prints.
@@ -899,6 +999,8 @@ def mirror_jurisdiction(
             store_path=store.path,
             started_at=started,
             window_until=until,
+            limit=limit,
+            traffic=source.traffic,
         )
         report.checkpoint_before = store.read_checkpoint(source.name)
         report.window_since = resolve_since(since, report.checkpoint_before)
@@ -916,7 +1018,18 @@ def mirror_jurisdiction(
                 }
             },
         )
-        _run(source, store, report, stop, resolved, limit)
+        try:
+            _run(source, store, report, stop, resolved, limit)
+        except BaseException as error:
+            # Whatever ends a run - a full disk, a bug, a signal the handler did not take -
+            # the record of it is the point. Written first, then the failure is re-raised
+            # untouched for the CLI to turn into an exit code.
+            report.status = IngestStatus.FAILED
+            report.error_message = report.error_message or f"{type(error).__name__}: {error}"
+            report.finished_at = datetime.now(UTC)
+            report.cases_on_disk = store.count_cases()
+            write_run_log(store, report, resolved)
+            raise
         report.finished_at = datetime.now(UTC)
         _finish(store, report, resolved)
     return report
@@ -1076,7 +1189,11 @@ def _failed(store: CorpusStore, report: MirrorReport, source_id: str, error: Exc
         ``False``, so the caller holds the checkpoint back.
     """
     report.counters.errors += 1
-    store.record_failure(source_id, f"{type(error).__name__}: {error}")
+    kind = type(error).__name__
+    report.failure_kinds[kind] += 1
+    if len(report.failures) < _FAILURE_SAMPLE:
+        report.failures.append(MirrorFailure(source_id=source_id, reason=f"{kind}: {error}"))
+    store.record_failure(source_id, f"{kind}: {error}")
     log.warning(
         "case not mirrored; holding the checkpoint back",
         extra={"context": {"source_id": source_id, "error": str(error)}},
@@ -1181,14 +1298,16 @@ def _final_status(report: MirrorReport, *, stopped: bool) -> IngestStatus:
 
 
 def _finish(store: CorpusStore, report: MirrorReport, settings: Settings) -> None:
-    """Write the corpus manifest, and log what the run did.
+    """Write the corpus manifest and the run's own log, and log what the run did.
 
     Args:
-        store: The store to write the manifest to.
+        store: The store to write to.
         report: The finished run.
         settings: The validated settings the run used, recorded in the manifest.
     """
+    report.cases_on_disk = store.count_cases()
     store.write_manifest(_manifest(store, report, settings))
+    write_run_log(store, report, settings)
     log.info(
         "mirror run finished",
         extra={
@@ -1209,8 +1328,8 @@ def _manifest(store: CorpusStore, report: MirrorReport, settings: Settings) -> d
     figure quoted against it means nothing a year later.
 
     Args:
-        store: The store, for the totals actually on disk.
-        report: The run that just finished.
+        store: The store, for what the previous manifest recorded.
+        report: The run that just finished, carrying the count of what is actually on disk.
         settings: The validated settings the run used.
 
     Returns:
@@ -1235,7 +1354,7 @@ def _manifest(store: CorpusStore, report: MirrorReport, settings: Settings) -> d
         },
         "source": _capture_configuration(settings, report.connector),
         "totals": {
-            "cases": store.count_cases(),
+            "cases": report.cases_on_disk if report.cases_on_disk is not None else 0,
             "bytes_written": int(totals.get("bytes_written") or 0) + report.counters.bytes_written,
             "runs": int(totals.get("runs") or 0) + 1,
         },

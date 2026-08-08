@@ -21,6 +21,7 @@ from plt.cli import main
 from plt.config import Settings
 from plt.pipeline import registry
 from plt.pipeline.base import SourceUnavailableError
+from plt.pipeline.runlog import LOG_DIR_NAME
 from tests.conftest import build_settings
 from tests.fakes import FakeConnector, FakeDocument, documents
 
@@ -104,13 +105,29 @@ def _no_signal_leak() -> Iterator[None]:
     signal.signal(signal.SIGINT, previous)
 
 
+def case_folders(store_root: Path) -> list[str]:
+    """Return the case folders in the EU store, leaving the run logs out.
+
+    Args:
+        store_root: Root of the case-law store.
+
+    Returns:
+        The folder names, sorted. ``logs/`` sits beside the cases and is not one of them.
+    """
+    return sorted(
+        path.name
+        for path in (store_root / "EU").iterdir()
+        if path.is_dir() and path.name != LOG_DIR_NAME
+    )
+
+
 def test_a_capture_reports_success_and_leaves_the_corpus_on_disk(store_root: Path) -> None:
     code = main(["mirror", "--jurisdiction", "EU"])
 
     assert code == 0
-    folders = sorted(path.name for path in (store_root / "EU").iterdir() if path.is_dir())
-    assert folders == [document.source_id for document in EU_DOCS]
+    assert case_folders(store_root) == [document.source_id for document in EU_DOCS]
     assert (store_root / "EU" / "manifest.json").is_file()
+    assert len(list((store_root / "EU" / "logs").iterdir())) == 1
 
 
 def test_the_store_can_be_named_on_the_command_line(tmp_path: Path, store_root: Path) -> None:
@@ -127,7 +144,7 @@ def test_a_limited_capture_stops_where_it_was_told_to(store_root: Path) -> None:
     code = main(["mirror", "--jurisdiction", "EU", "--limit", "1"])
 
     assert code == 0
-    assert len([path for path in (store_root / "EU").iterdir() if path.is_dir()]) == 1
+    assert len(case_folders(store_root)) == 1
 
 
 def test_an_unreachable_source_exits_one(store_root: Path) -> None:

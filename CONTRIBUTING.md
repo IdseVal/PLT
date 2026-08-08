@@ -339,6 +339,48 @@ unit's environment file (mode `0600`, never in the repository), and leave the po
 settings alone — `PLT_HTTP_REQUESTS_PER_SECOND` and the backoff are what keep the project
 welcome at a public court endpoint.
 
+### The corpus mirror, and the log each run leaves
+
+`plt mirror` (`docs/architecture.md` §9) copies a jurisdiction's source payloads to disk
+verbatim. It is not an ingestion: it writes no database row and reads no keyword list.
+
+```bash
+cd backend
+python -m plt.cli mirror -j EU --limit 5 --store ./scratch-store   # a rehearsal
+python -m plt.cli mirror -j EU                                     # the real thing
+```
+
+The store is `PLT_CORPUS_STORE_DIR`; `--store PATH` overrides it for one run, which is how you
+rehearse without touching the real corpus. Run without `--since` — the store's own checkpoint
+supplies the window, so a run resumes rather than starting over, and a case already on disk
+costs no request.
+
+**Every run writes one log**, whether it finished, failed or was interrupted:
+
+```
+<PLT_CORPUS_STORE_DIR>/EU/logs/2026-W32_20260809T031205Z.log
+```
+
+The name is the ISO week the run belongs to and the exact UTC instant it started, so a weekly
+job never overwrites last week's record, two runs in one week each keep their own, and sorting
+by name sorts by date. Open one and it says, in plain text and without needing the code:
+
+- when it ran, how long it took, and whether it finished, failed or was interrupted;
+- the window it covered, as the checkpoint before and after — which is what says how much of
+  the source it actually looked at, and whether the position moved at all;
+- how many cases were discovered, newly fetched, **already on disk and skipped**, and failed.
+  That middle distinction is the one to read first: *skipped because already present* against
+  *newly fetched* is what separates a genuinely quiet week from a run that did nothing;
+- what failed and why, summarised, pointing at `_failures.jsonl` for the full history;
+- how many requests it made, how many were retries, and every `Retry-After` it honoured;
+- how many cases the store holds now.
+
+Every log is kept by default. `PLT_CORPUS_LOG_RETENTION_RUNS=52` keeps the newest 52 per
+jurisdiction and deletes what is older; leaving it unset keeps everything, and nothing this
+project did not write is ever deleted. `manifest.json`, `_checkpoint.json` and
+`_failures.jsonl` beside `logs/` are unchanged — the capture's scope, the resume position, and
+every failure the store has ever seen.
+
 ## 5a. The mailing list and the digest
 
 The subscriber alert (`docs/architecture.md` §8) is `plt digest`, and the same

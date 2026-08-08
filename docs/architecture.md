@@ -834,6 +834,8 @@ inside it. The Dutch store already had this shape, so it is the shape:
     manifest.json          capture window, connector configuration, totals
     _checkpoint.json       where the next run resumes
     _failures.jsonl        the cases that did not come down, and why
+    logs/
+      2026-W32_20260809T031205Z.log   one readable record per run
 ```
 
 **Rules.**
@@ -854,3 +856,14 @@ inside it. The Dutch store already had this shape, so it is the shape:
 6. **The store is configuration.** `PLT_CORPUS_STORE_DIR`, documented in `.env.example`. The
    built-in default is `./corpus` inside the checkout, git-ignored; a corpus outgrows a
    checkout, so a real deployment names the volume it lives on.
+7. **Every run leaves one log a person can read**, in `logs/`, named for the ISO week and the
+   instant it started — so a weekly job never overwrites last week's and two runs in one week
+   never collide. It states the outcome, the window as the checkpoint before and after, the
+   counts (discovered, newly fetched, **already held and skipped**, failed), a summary of the
+   failures pointing at `_failures.jsonl`, the requests and every `Retry-After` honoured, and
+   the store total afterwards. It is written on the failed and interrupted paths too: this
+   command runs weekly with nobody watching, and a record that only appears on success cannot
+   catch the failure it exists for (core document §2.7). A log that cannot be written is
+   warned about and never fails the run. `PLT_CORPUS_LOG_RETENTION_RUNS` caps how many are
+   kept; unset — the default — keeps every one, and only files the project wrote are ever
+   deleted.

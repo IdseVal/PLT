@@ -79,6 +79,7 @@ from plt.pipeline.base import (
     NormalisedParty,
     RawDocument,
     SourceConnector,
+    SourceTraffic,
     SourceUnavailableError,
 )
 from plt.pipeline.http import PoliteClient
@@ -474,6 +475,11 @@ class EurLexConnector(SourceConnector):
         """
         super().__init__(settings)
         self._client = client if client is not None else PoliteClient(self.settings)
+
+    @property
+    def traffic(self) -> SourceTraffic:
+        """Return what this connector has asked of CELLAR so far."""
+        return self._client.traffic
 
     # -- discovery ---------------------------------------------------------------------
 
