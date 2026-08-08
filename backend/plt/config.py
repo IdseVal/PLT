@@ -453,6 +453,17 @@ class Settings(BaseSettings):
             "misconfigured run writes somewhere obvious rather than somewhere surprising."
         ),
     )
+    corpus_log_retention_runs: int | None = Field(
+        default=None,
+        ge=1,
+        description=(
+            "How many of a jurisdiction's mirror run logs to keep in <store>/<CODE>/logs, "
+            "newest first. Unset - the default - keeps every one of them: the logs are the "
+            "audit trail of an unattended weekly job, they are a few kilobytes each, and how "
+            "long that record is worth keeping is the deployment's decision rather than a "
+            "default nobody chose. Only files this project wrote are ever deleted."
+        ),
+    )
 
     # -- Source endpoints -----------------------------------------------------------
     rechtspraak_search_url: str = Field(
@@ -595,6 +606,7 @@ class Settings(BaseSettings):
         "subscription_address_pepper",
         "subscriber_retention_days",
         "subscriber_unconfirmed_expiry_days",
+        "corpus_log_retention_runs",
         mode="before",
     )
     @classmethod
@@ -604,7 +616,7 @@ class Settings(BaseSettings):
         ``PLT_SUBSCRIBER_RETENTION_DAYS=`` in a ``.env`` is how an operator writes "I have not
         decided this", which is the state issue #75 leaves the project in; without this it is
         either a parse error or, for the pepper, an empty secret that would key every digest
-        with nothing at all. All three settings mean "not configured" when they are blank.
+        with nothing at all. Every setting listed above means "not configured" when blank.
 
         Args:
             value: The value as configured.
