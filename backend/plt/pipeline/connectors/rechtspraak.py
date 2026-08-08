@@ -1062,8 +1062,10 @@ class RechtspraakConnector(SourceConnector):
         """Read a window that could not be narrowed to fit, by offset.
 
         The one place in this connector that still depends on the endpoint holding an order
-        steady across requests. It is reached only for a window already at
-        ``rechtspraak_min_window_seconds``, and :meth:`_fit` logs before calling it.
+        steady across requests. Two things reach it, both of them a window that cannot be
+        narrowed to fit: one already at ``rechtspraak_min_window_seconds``, and one the feed
+        stated no total for and so cannot be measured at all. :meth:`_fit` logs either before
+        calling this.
 
         Args:
             window: The window to read.
