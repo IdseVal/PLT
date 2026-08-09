@@ -44,6 +44,7 @@ __all__ = [
     "ConnectorError",
     "ConnectorNotFoundError",
     "DocumentUnavailableError",
+    "IdentifierListUnavailableError",
     "NormalisedCase",
     "NormalisedCitation",
     "NormalisedCourt",
@@ -83,6 +84,16 @@ class SourceUnavailableError(ConnectorError):
 
     Fatal to the run. The runner records the failure and leaves the checkpoint untouched, so
     the same window is attempted again next time (``docs/architecture.md`` section 7).
+    """
+
+
+class IdentifierListUnavailableError(ConnectorError):
+    """The source cannot list its identifiers more cheaply than by walking discovery.
+
+    Raised by the default :meth:`SourceConnector.enumerate_identifiers`. A repair of a partial
+    corpus rests on that listing being cheap (``docs/architecture.md`` rule 2.10); a connector
+    that cannot supply one is refused up front rather than quietly given the expensive walk it
+    was written to avoid.
     """
 
 
@@ -562,6 +573,47 @@ class SourceConnector(ABC):
         Raises:
             SourceUnavailableError: If the source cannot be enumerated at all.
         """
+
+    def enumerate_identifiers(
+        self, since: datetime | None = None, until: datetime | None = None
+    ) -> Iterator[Candidate]:
+        """Yield the identifiers the source holds, by the cheapest route it offers.
+
+        This is **not** discovery. Discovery answers "what has changed, and what do I need to
+        know about it to decide whether to fetch it" — for CELLAR that means a ``GROUP BY``
+        over a sector with optional expression joins, counted per window and paged. This
+        answers only "what exists", which every source can say far more cheaply, and it is
+        what lets a partial corpus be repaired by listing, diffing against the store and
+        fetching the difference, instead of replaying thousands of discovery queries over the
+        cases already on disk (``docs/architecture.md`` rule 2.10).
+
+        The candidates it yields carry the identifier and whatever else the listing states for
+        free. They are **not** required to carry a modification timestamp or a revision hash,
+        and a caller must not treat them as a discovery result: nothing here says whether a
+        case has changed, only that the source has one.
+
+        Args:
+            since: Narrow the listing to identifiers modified at or after this instant, where
+                the source can express that without becoming expensive. ``None`` lists
+                everything the source holds, which is the cheap case and the usual one.
+            until: Upper bound, on the same terms.
+
+        Yields:
+            One :class:`Candidate` per identifier, in whatever order the source lists them
+            most cheaply — which is not necessarily oldest first, because a listing is not
+            resumed against a checkpoint the way a window is.
+
+        Raises:
+            IdentifierListUnavailableError: If this source has no listing cheaper than
+                discovery. The default, so a connector says so by saying nothing.
+            SourceUnavailableError: If the source cannot be listed at all.
+        """
+        del since, until
+        message = (
+            f"{self.name} cannot list its identifiers without walking discovery, so a "
+            f"targeted repair would cost more than the walk it replaces"
+        )
+        raise IdentifierListUnavailableError(message)
 
     @abstractmethod
     def fetch(self, candidate: Candidate) -> RawDocument:
