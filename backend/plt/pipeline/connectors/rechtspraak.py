@@ -885,6 +885,40 @@ class RechtspraakConnector(SourceConnector):
                         continue
                 yield candidate
 
+    def enumerate_identifiers(
+        self, since: datetime | None = None, until: datetime | None = None
+    ) -> Iterator[Candidate]:
+        """List the ECLIs the feed holds, which for this source *is* discovery.
+
+        The cheapest-method rule (``docs/architecture.md`` rule 2.10) asks for the least
+        expensive request that answers "what does the source hold". For CELLAR that is a
+        different query from discovery, and much cheaper. Here it is the same request: one
+        search returns up to a thousand Atom entries, each already carrying the ECLI, the
+        portal link and the ``updated`` marker, and there is nothing to strip out — no count
+        pass to skip, no aggregate, no join. A second walk written to "list identifiers
+        cheaply" would send the identical requests to the identical endpoint and parse fewer
+        fields out of the identical answers.
+
+        So this delegates, and the saving a repair makes here is a different one: it is in
+        what gets **fetched**. A ``--since/--until`` re-walk re-offers every ECLI in the range
+        and the store skips the ones it holds; a repair narrows the same listing and fetches
+        precisely the absences, which is the same traffic to the search feed and none of the
+        guesswork about where a gap begins and ends.
+
+        Args:
+            since: Only identifiers modified at or after this instant, inclusive. ``None``
+                lists the whole feed, which is ~950 requests — pass the band a gap is known
+                to lie in.
+            until: Only identifiers modified at or before this instant, inclusive.
+
+        Yields:
+            One candidate per document in the range, oldest first.
+
+        Raises:
+            SourceUnavailableError: If the feed cannot be read at all.
+        """
+        yield from self.discover(since, until)
+
     def _windows(self, start: datetime, stop: datetime) -> Iterator[tuple[Window, list[Entry]]]:
         """Yield each window of the walk with the entries it holds, oldest first.
 
