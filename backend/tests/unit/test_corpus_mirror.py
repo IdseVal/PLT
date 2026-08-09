@@ -36,6 +36,7 @@ from plt.pipeline.mirror import (
     MirrorReport,
     case_folder_name,
     mirror_jurisdiction,
+    rebuild_manifest,
 )
 from tests.conftest import build_settings
 from tests.fakes import EPOCH, FakeConnector, FakeDocument, documents
@@ -56,6 +57,19 @@ class MirrorConnector(FakeConnector):
 
     jurisdiction_code = "EU"
     name = "eurlex"
+
+    @staticmethod
+    def resource_type(source_id: str) -> str:
+        """Return the kind of record a case is, as CELLAR would state it.
+
+        Args:
+            source_id: The case's CELEX number.
+
+        Returns:
+            ``OPIN_AG`` for every third case and ``JUDG`` for the rest, so that a store built
+            from these documents has a breakdown to observe rather than one uniform type.
+        """
+        return "OPIN_AG" if source_id.endswith(("2", "5", "8")) else "JUDG"
 
     def normalise(self, raw: RawDocument) -> NormalisedCase:
         """Map the payload onto the schema, one document per language version.
@@ -103,7 +117,11 @@ class MirrorConnector(FakeConnector):
             source_url=case.source_url,
             court=NormalisedCourt(source_identifier="curia", name="Court of Justice"),
             documents=tuple(versions),
-            source_metadata={"celex": case.source_id, "eurovoc_descriptors": ["pesticide"]},
+            source_metadata={
+                "celex": case.source_id,
+                "eurovoc_descriptors": ["pesticide"],
+                "resource_type": self.resource_type(case.source_id),
+            },
         )
 
 
@@ -533,28 +551,117 @@ class TestManifest:
 
         assert manifest["jurisdiction"] == "EU"
         assert manifest["connector"] == "eurlex"
-        assert manifest["layout_version"] == 1
+        assert manifest["layout_version"] == 2
         assert isinstance(capture, dict)
         assert capture["window_until"] == until.isoformat()
         assert capture["status"] == IngestStatus.SUCCESS.value
         assert datetime.fromisoformat(str(capture["started_at"])).tzinfo is not None
         assert isinstance(totals, dict)
-        assert totals["cases"] == 3
         assert totals["bytes_written"] == report.counters.bytes_written
+        assert totals["runs"] == 1
+        # The corpus's own figures live in one place, and it is the one counted from disk.
+        assert "cases" not in totals
+
+    def test_the_manifest_describes_the_corpus_by_counting_it(self, settings: Settings) -> None:
+        run(settings, eu_documents(3))
+        contents = read_json(store_for(settings).path / "manifest.json")["contents"]
+
+        assert isinstance(contents, dict)
+        assert contents["cases"] == 3
+        # Two judgments and an opinion were stored, and that is what the store says it holds.
+        assert contents["resource_types"] == {"JUDG": 2, "OPIN_AG": 1}
+        assert contents["languages"] == {"en": 3, "fr": 3}
+        assert contents["payload_bytes"] > 0
+        assert contents["unreadable"] == 0
+        assert datetime.fromisoformat(str(contents["observed_at"])).tzinfo is not None
+        assert isinstance(contents["fetched_at"], dict)
+        assert contents["fetched_at"]["earliest"] is not None
+        assert contents["fetched_at"]["latest"] is not None
+
+    def test_the_scope_is_what_the_store_holds_rather_than_what_was_configured(
+        self, settings: Settings
+    ) -> None:
+        # The defect this exists for: a run launched with the narrow default against a store
+        # captured under a wider one used to leave the store declaring the narrow list.
+        narrow = build_settings(
+            corpus_store_dir=settings.corpus_store_dir,
+            eurlex_resource_types=["JUDG"],
+        )
+        run(narrow, eu_documents(3))
+        manifest = read_json(store_for(settings).path / "manifest.json")
+        contents, configuration = manifest["contents"], manifest["configuration"]
+
+        assert isinstance(contents, dict)
+        assert isinstance(configuration, dict)
+        assert list(contents["resource_types"]) == ["JUDG", "OPIN_AG"]
+        assert configuration["settings"]["eurlex_resource_types"] == ["JUDG"]
 
     def test_the_manifest_records_the_configuration_the_capture_was_taken_under(
         self, settings: Settings
     ) -> None:
-        run(settings, eu_documents(1))
-        source = read_json(store_for(settings).path / "manifest.json")["source"]
+        report, _ = run(settings, eu_documents(1))
+        configuration = read_json(store_for(settings).path / "manifest.json")["configuration"]
 
-        assert isinstance(source, dict)
+        assert isinstance(configuration, dict)
+        # Labelled as the run's, and attributed to a named run, so it cannot be read as a
+        # description of the corpus.
+        assert "contents" in str(configuration["note"])
+        assert configuration["recorded_by"] == {
+            "run_started_at": report.started_at.isoformat(),
+            "mode": "mirror",
+            "status": IngestStatus.SUCCESS.value,
+        }
+        source = configuration["settings"]
         # Every setting the connector reads is named after it, so the manifest can state what
-        # was captured without this module knowing which jurisdiction it is.
+        # the run was launched with without this module knowing which jurisdiction it is.
         assert source["eurlex_sparql_url"] == settings.eurlex_sparql_url
         assert source["eurlex_languages"] == settings.eurlex_languages
         assert source["requests_per_second"] == settings.http_requests_per_second
         assert "PLT/" in str(source["user_agent"])
+
+    def test_a_failed_run_does_not_redescribe_how_the_corpus_was_captured(
+        self, settings: Settings
+    ) -> None:
+        run(settings, eu_documents(3))
+        first = read_json(store_for(settings).path / "manifest.json")["configuration"]
+        narrow = build_settings(
+            corpus_store_dir=settings.corpus_store_dir,
+            eurlex_resource_types=["JUDG"],
+        )
+        connector = MirrorConnector(
+            narrow, docs=eu_documents(4), raise_on_discover=SourceUnavailableError("gone")
+        )
+        report = mirror_jurisdiction("EU", settings=narrow, connector=connector)
+        second = read_json(store_for(settings).path / "manifest.json")
+
+        assert report.status is IngestStatus.FAILED
+        assert second["configuration"] == first
+        # What the failed run did is still recorded, where a run's own record belongs.
+        assert isinstance(second["runs"], list)
+        assert second["runs"][-1]["status"] == IngestStatus.FAILED.value
+
+    def test_a_manifest_written_by_the_older_layout_is_migrated_rather_than_dropped(
+        self, settings: Settings
+    ) -> None:
+        run(settings, eu_documents(1))
+        store = store_for(settings)
+        legacy = {
+            **read_json(store.path / "manifest.json"),
+            "layout_version": 1,
+            "source": {"eurlex_resource_types": ["JUDG", "ORDER"]},
+        }
+        del legacy["configuration"]
+        store.write_manifest(legacy)
+        connector = MirrorConnector(
+            settings, docs=eu_documents(2), raise_on_discover=SourceUnavailableError("gone")
+        )
+        mirror_jurisdiction("EU", settings=settings, connector=connector)
+        configuration = read_json(store.path / "manifest.json")["configuration"]
+
+        assert isinstance(configuration, dict)
+        assert configuration["settings"] == {"eurlex_resource_types": ["JUDG", "ORDER"]}
+        # The old layout did not say which run wrote it, and nothing here invents an answer.
+        assert configuration["recorded_by"] is None
 
     def test_a_resumed_capture_keeps_the_instant_it_started(self, settings: Settings) -> None:
         docs = eu_documents(4)
@@ -576,6 +683,136 @@ class TestManifest:
         assert second["totals"]["runs"] == 2
         assert isinstance(second["runs"], list)
         assert len(second["runs"]) == 2
+
+
+class TestSurvey:
+    """The store describes itself, and the description is a count rather than a claim."""
+
+    def test_an_empty_store_says_so_rather_than_failing(self, tmp_path: Path) -> None:
+        store = CorpusStore(tmp_path, "EU")
+        store.prepare()
+        survey = store.survey()
+
+        assert survey.cases == 0
+        assert survey.resource_types == {}
+        assert survey.earliest_decision is None
+        assert survey.observed_at.tzinfo is not None
+
+    def test_a_store_that_is_not_there_is_described_as_empty(self, tmp_path: Path) -> None:
+        survey = CorpusStore(tmp_path / "nothing", "EU").survey()
+
+        assert survey.cases == 0
+
+    def test_the_span_of_the_corpus_is_read_off_the_cases(self, settings: Settings) -> None:
+        run(settings, eu_documents(4))
+        survey = store_for(settings).survey()
+
+        assert survey.cases == 4
+        assert survey.earliest_decision is not None
+        assert survey.latest_decision is not None
+        assert survey.earliest_decision <= survey.latest_decision
+        assert survey.first_fetched_at is not None
+        assert survey.last_fetched_at is not None
+
+    def test_a_case_whose_metadata_cannot_be_read_is_counted_and_not_described(
+        self, settings: Settings
+    ) -> None:
+        run(settings, eu_documents(3))
+        store = store_for(settings)
+        damaged = store.case_dir(eu_documents(3)[0].source_id) / "metadata.json"
+        damaged.write_text("{ not json", encoding="utf-8")
+        survey = store.survey()
+
+        assert survey.cases == 3
+        assert survey.unreadable == 1
+        # The payloads are still on disk, so the case is held; it just describes nothing.
+        assert sum(survey.resource_types.values()) == 2
+
+    def test_a_breakdown_is_bounded_by_a_setting_rather_than_by_the_corpus(
+        self, tmp_path: Path
+    ) -> None:
+        store = CorpusStore(tmp_path, "EU")
+        store.prepare()
+        for index in range(300):
+            case = store.path / f"case{index:04d}"
+            case.mkdir()
+            (case / "metadata.json").write_text(
+                json.dumps(
+                    {
+                        "identifier": f"case{index}",
+                        "source_metadata": {"resource_type": f"TYPE{index:04d}"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+        survey = store.survey()
+
+        assert survey.cases == 300
+        assert sum(survey.resource_types.values()) == 300
+        # Whatever a store turns out to hold, what the walk accumulates has a ceiling.
+        assert len(survey.resource_types) < 300
+        assert survey.resource_types["(other)"] > 0
+
+
+class TestRebuildManifest:
+    """A store's description of itself can be re-derived from the store, on its own."""
+
+    def test_the_contents_are_re_observed_and_the_rest_carried_forward(
+        self, settings: Settings
+    ) -> None:
+        run(settings, eu_documents(3))
+        store = store_for(settings)
+        before = read_json(store.path / "manifest.json")
+        stale = {**before, "contents": {"cases": 1, "resource_types": {"JUDG": 1}}}
+        store.write_manifest(stale)
+
+        path, survey = rebuild_manifest("EU", settings=settings)
+        after = read_json(path)
+
+        contents = after["contents"]
+        assert path == store.path / "manifest.json"
+        assert survey.cases == 3
+        assert isinstance(contents, dict)
+        assert contents["cases"] == 3
+        assert contents["resource_types"] == {"JUDG": 2, "OPIN_AG": 1}
+        # Nothing a run recorded is invented, dropped or re-stated by a walk of the disk.
+        assert after["capture"] == before["capture"]
+        assert after["configuration"] == before["configuration"]
+        assert after["runs"] == before["runs"]
+        assert after["totals"] == before["totals"]
+        assert after["connector"] == "eurlex"
+        assert after["layout_version"] == 2
+
+    def test_it_corrects_a_manifest_the_older_layout_left_behind(self, settings: Settings) -> None:
+        run(settings, eu_documents(3))
+        store = store_for(settings)
+        legacy = {
+            "layout_version": 1,
+            "jurisdiction": "EU",
+            "connector": "eurlex",
+            "capture": {"window_since": None},
+            "source": {"eurlex_resource_types": ["JUDG"]},
+            "totals": {"cases": 99, "bytes_written": 12, "runs": 2},
+            "runs": [],
+        }
+        store.write_manifest(legacy)
+
+        _, survey = rebuild_manifest("EU", settings=settings, store_root=settings.corpus_store_dir)
+        after = read_json(store.path / "manifest.json")
+
+        contents, configuration = after["contents"], after["configuration"]
+        assert survey.resource_types == {"JUDG": 2, "OPIN_AG": 1}
+        assert isinstance(contents, dict)
+        assert isinstance(configuration, dict)
+        assert contents["cases"] == 3
+        # The narrow declaration is kept, as a fact about a run, and no longer as scope.
+        assert configuration["settings"] == {"eurlex_resource_types": ["JUDG"]}
+        assert after["totals"] == {"bytes_written": 12, "runs": 2}
+        assert "source" not in after
+
+    def test_a_store_that_does_not_exist_is_refused(self, settings: Settings) -> None:
+        with pytest.raises(CorpusStoreError):
+            rebuild_manifest("EU", settings=settings)
 
 
 class TestLimit:
