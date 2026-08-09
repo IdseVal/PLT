@@ -778,14 +778,15 @@ class EurLexConnector(SourceConnector):
         ======================================  ==========  ===================================
         The discovery walk, 1952 to now         19,524      3h 23m, then refused; refused again
                                                             the next morning after 206
-        This listing, the whole of sector 6     ~105        0.64s per 1,000-row page, 0.55s for
-                                                            a 10-row one; ~2 min at 2 req/s
+        This listing, the whole of sector 6     107         137s, 104,088 identifiers, one
+                                                            retry and no ``Retry-After``
         ======================================  ==========  ===================================
 
-        Two hundred times fewer requests for the same question, on an endpoint that had just
-        stopped answering the expensive form of it. The near-identical time for 10 rows and
-        1,000 says the cost is the scan rather than the rows, which is why the page size is
-        ``eurlex_identifier_page_size`` and not the discovery page size.
+        **182 times fewer requests for the same question**, on an endpoint that had refused the
+        expensive form of it twice that morning. A 1,000-row page took 0.64s and a 10-row page
+        0.55s, so the cost is the scan rather than the rows — which is why the page size is
+        ``eurlex_identifier_page_size`` and not the discovery page size, and why a small page
+        would spend ten times the requests to save nothing.
 
         The listing is paged by keyset on ``?celex`` for the same reason discovery is: it is
         the only column that is a total order on this endpoint, and a deep ``OFFSET`` over a
