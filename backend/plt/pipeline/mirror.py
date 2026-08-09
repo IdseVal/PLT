@@ -20,7 +20,8 @@ The shape on disk is one directory per jurisdiction, one folder per case::
                 raw_content.xml        the source record, verbatim
                 fulltext.en.xhtml      one per language version, verbatim
             manifest.json              what the corpus is, and when it was taken
-            _checkpoint.json           where the next run resumes
+            _checkpoint.json           where the next capture resumes
+            _repair_checkpoint.json    how far the last repair read the identifier listing
             _failures.jsonl            the cases that did not come down, and why
             logs/                      one readable record per run
 
@@ -71,6 +72,14 @@ advancing at the first case that failed**, so nothing after a failure is ever co
 done. A case that fails every run holds its window open and keeps appearing in the failure
 count, which is how an operator finds out about it. Re-enumerating that window costs
 discovery queries but no fetches, because everything already on disk is skipped.
+
+That last sentence is the one that turned out to be too comfortable, and
+:mod:`plt.pipeline.repair` is the answer to it. "Discovery queries but no fetches" is not
+free: for CELLAR it is a counting query per window and a grouped, join-carrying page query
+per window that holds anything, and re-running the whole walk to find a few thousand absences
+replays every one of them over the hundred thousand cases already on disk. The repair reuses
+everything in this module — the store, :func:`mirror_case`, the checkpoint value object, the
+manifest, the run log — and replaces only where the list of cases comes from.
 """
 
 from __future__ import annotations
@@ -78,7 +87,7 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
@@ -103,7 +112,7 @@ from plt.pipeline.base import (
 )
 from plt.pipeline.checkpoint import Checkpoint, resolve_since
 from plt.pipeline.registry import connector_for
-from plt.pipeline.runlog import LOG_DIR_NAME, write_run_log
+from plt.pipeline.runlog import LOG_DIR_NAME, RunMode, write_run_log
 from plt.utils.logging import get_logger
 from plt.utils.shutdown import StopRequest
 
@@ -113,9 +122,13 @@ __all__ = [
     "MirrorCounters",
     "MirrorFailure",
     "MirrorReport",
+    "RunWork",
     "StoredFile",
     "case_folder_name",
+    "final_status",
+    "mirror_case",
     "mirror_jurisdiction",
+    "run_against_store",
 ]
 
 log = get_logger(__name__)
@@ -135,11 +148,13 @@ _FULL_TEXT_STEM: Final[str] = "fulltext"
 #: files through the run logs.
 _MANIFEST_NAME: Final[str] = "manifest.json"
 _CHECKPOINT_NAME: Final[str] = "_checkpoint.json"
+_REPAIR_CHECKPOINT_NAME: Final[str] = "_repair_checkpoint.json"
 _FAILURES_NAME: Final[str] = "_failures.jsonl"
 _RESERVED_FILES: Final[frozenset[str]] = frozenset(
     {
         _MANIFEST_NAME.lower(),
         _CHECKPOINT_NAME.lower(),
+        _REPAIR_CHECKPOINT_NAME.lower(),
         _FAILURES_NAME.lower(),
         LOG_DIR_NAME.lower(),
     }
@@ -603,7 +618,7 @@ class CorpusStore:
     # -- corpus-level bookkeeping ------------------------------------------------------
 
     def read_checkpoint(self, connector: str) -> Checkpoint | None:
-        """Read where the last run of this connector stopped.
+        """Read where the last capture of this connector stopped.
 
         Args:
             connector: Connector name, which the stored position must match — a store
@@ -613,16 +628,70 @@ class CorpusStore:
         Returns:
             The stored position, or ``None`` when there is none to resume from.
         """
+        return self._read_checkpoint(_CHECKPOINT_NAME, connector)
+
+    def write_checkpoint(self, checkpoint: Checkpoint) -> None:
+        """Store where the next capture should resume.
+
+        Args:
+            checkpoint: The position to store. It describes cases already on disk, so it is
+                written whatever the outcome of the run — unlike the ingestion checkpoint,
+                whose work can still be rolled back when a run fails.
+
+        Raises:
+            CorpusStoreError: If it cannot be written; a run that cannot record its position
+                would silently start over.
+        """
+        self._write_checkpoint(_CHECKPOINT_NAME, checkpoint)
+
+    def read_repair_checkpoint(self, connector: str) -> Checkpoint | None:
+        """Read how far the last repair read the source's identifier listing.
+
+        A file of its own, deliberately. The capture's position is a high-water mark on the
+        source's modification dates and is what supplies the next capture's window; a repair's
+        is a place in a listing and means nothing as a window. Writing one over the other
+        would make the next capture resume from a bound no run had actually walked to.
+
+        Args:
+            connector: Connector name, which the stored position must match.
+
+        Returns:
+            The stored position, or ``None`` when there is none.
+        """
+        return self._read_checkpoint(_REPAIR_CHECKPOINT_NAME, connector)
+
+    def write_repair_checkpoint(self, checkpoint: Checkpoint) -> None:
+        """Store how far a repair has read the identifier listing.
+
+        Args:
+            checkpoint: The position to store.
+
+        Raises:
+            CorpusStoreError: If it cannot be written.
+        """
+        self._write_checkpoint(_REPAIR_CHECKPOINT_NAME, checkpoint)
+
+    def _read_checkpoint(self, name: str, connector: str) -> Checkpoint | None:
+        """Read one of the store's stored positions.
+
+        Args:
+            name: File the position is kept in.
+            connector: Connector name the stored position must match.
+
+        Returns:
+            The stored position, or ``None`` when the file is absent, unreadable or belongs
+            to another connector — all of which mean "nothing to resume from".
+        """
         try:
-            body = (self._path / _CHECKPOINT_NAME).read_bytes()
+            body = (self._path / name).read_bytes()
         except OSError:
             return None
         try:
             record = json.loads(body)
         except (json.JSONDecodeError, UnicodeDecodeError):
             log.warning(
-                "unreadable mirror checkpoint; starting from the beginning of the window",
-                extra={"context": {"path": str(self._path / _CHECKPOINT_NAME)}},
+                "unreadable stored position; starting from the beginning",
+                extra={"context": {"path": str(self._path / name)}},
             )
             return None
         if not isinstance(record, dict) or record.get("connector") != connector:
@@ -636,26 +705,24 @@ class CorpusStore:
             updated_at=_instant(record.get("updated_at")),
         )
 
-    def write_checkpoint(self, checkpoint: Checkpoint) -> None:
-        """Store where the next run should resume.
+    def _write_checkpoint(self, name: str, checkpoint: Checkpoint) -> None:
+        """Store one of the store's positions.
 
         Written whole and replaced atomically, so a process killed here leaves either the old
         position or the new one and never half of either.
 
         Args:
-            checkpoint: The position to store. It describes cases already on disk, so it is
-                written whatever the outcome of the run — unlike the ingestion checkpoint,
-                whose work can still be rolled back when a run fails.
+            name: File the position belongs in.
+            checkpoint: The position to store.
 
         Raises:
-            CorpusStoreError: If it cannot be written; a run that cannot record its position
-                would silently start over.
+            CorpusStoreError: If it cannot be written.
         """
         record = {**checkpoint.as_dict(), "updated_at": datetime.now(UTC).isoformat()}
         try:
-            _replace(self._path / _CHECKPOINT_NAME, _dump(record))
+            _replace(self._path / name, _dump(record))
         except OSError as error:
-            message = f"the mirror checkpoint could not be written to {self._path}: {error}"
+            message = f"{name} could not be written to {self._path}: {error}"
             raise CorpusStoreError(message) from error
 
     def record_failure(self, source_id: str, reason: str) -> None:
@@ -878,6 +945,9 @@ class MirrorReport:
         jurisdiction_code: Jurisdiction mirrored.
         connector: Connector that supplied the cases.
         store_path: Directory the cases were written to.
+        mode: How the run got its list of cases — a discovery walk or a targeted repair. The
+            counters mean different things in the two, so the log and the manifest both have
+            to be able to tell which they are reading.
         started_at: When the run began.
         finished_at: When it ended, or ``None`` while it is running.
         status: Terminal state, in the ingestion pipeline's own vocabulary.
@@ -904,6 +974,7 @@ class MirrorReport:
     connector: str
     store_path: Path
     started_at: datetime
+    mode: RunMode = RunMode.MIRROR
     finished_at: datetime | None = None
     status: IngestStatus = IngestStatus.RUNNING
     counters: MirrorCounters = field(default_factory=MirrorCounters)
@@ -925,9 +996,10 @@ class MirrorReport:
             The jurisdiction, the outcome and the counters, in the order they happen.
         """
         counters = self.counters
+        offered = "listed" if self.mode is RunMode.REPAIR else "discovered"
         return (
-            f"{self.jurisdiction_code}: {self.status.value} - "
-            f"{counters.discovered} discovered, {counters.mirrored} mirrored, "
+            f"{self.jurisdiction_code}: {self.mode.value} {self.status.value} - "
+            f"{counters.discovered} {offered}, {counters.mirrored} mirrored, "
             f"{counters.skipped} already held, {counters.errors} failed, "
             f"{counters.bytes_written / 1_000_000:.1f} MB written to {self.store_path}"
         )
@@ -935,6 +1007,7 @@ class MirrorReport:
     def as_dict(self) -> dict[str, Any]:
         """Return the JSON form recorded in the corpus manifest."""
         return {
+            "mode": self.mode.value,
             "started_at": self.started_at.isoformat(),
             "finished_at": self.finished_at.isoformat() if self.finished_at else None,
             "status": self.status.value,
@@ -983,6 +1056,93 @@ def mirror_jurisdiction(
         ConnectorNotFoundError: If no connector serves the jurisdiction.
         CorpusStoreError: If the store cannot be opened or its position cannot be recorded.
     """
+
+    def walk(
+        source: SourceConnector,
+        store: CorpusStore,
+        report: MirrorReport,
+        stop: StopRequest,
+        resolved: Settings,
+        cap: int | None,
+    ) -> None:
+        """Resolve the window from the stored position, then walk it."""
+        report.checkpoint_before = store.read_checkpoint(source.name)
+        report.window_since = resolve_since(since, report.checkpoint_before)
+        log.info(
+            "mirroring a corpus",
+            extra={
+                "context": {
+                    "jurisdiction": report.jurisdiction_code,
+                    "connector": report.connector,
+                    "store": str(store.path),
+                    "since": report.window_since.isoformat() if report.window_since else None,
+                    "until": until.isoformat() if until else None,
+                    "already_held": store.count_cases(),
+                }
+            },
+        )
+        _run(source, store, report, stop, resolved, cap)
+
+    return run_against_store(
+        jurisdiction_code,
+        walk,
+        mode=RunMode.MIRROR,
+        until=until,
+        settings=settings,
+        store_root=store_root,
+        limit=limit,
+        connector=connector,
+    )
+
+
+#: What a run does once its store, connector and report are ready. It receives the connector,
+#: the store, the report to accumulate into, the shutdown flag, the settings and the fetch
+#: limit, and must leave a terminal status on the report. The capture and the repair differ
+#: only in this callable, which is what keeps one set of scaffolding — the store, the signal
+#: handler, the "write the log whatever happens" rule and the manifest — for both.
+RunWork = Callable[
+    [SourceConnector, "CorpusStore", "MirrorReport", StopRequest, Settings, int | None], None
+]
+
+
+def run_against_store(
+    jurisdiction_code: str,
+    work: RunWork,
+    *,
+    mode: RunMode,
+    until: datetime | None = None,
+    settings: Settings | None = None,
+    store_root: Path | None = None,
+    limit: int | None = None,
+    connector: SourceConnector | None = None,
+) -> MirrorReport:
+    """Open a store, run one piece of work against it, and record what happened.
+
+    Everything a run against the corpus store owes whatever it was doing: the connector is
+    built and closed, the store is opened, ``SIGINT`` is trapped, and the run log is written
+    on every path out — including the one where the process is dying, because a run that
+    failed is exactly the run whose record matters (core document 2.7).
+
+    Args:
+        jurisdiction_code: Jurisdiction to run against, e.g. ``EU``.
+        work: What to do once everything is ready; see :data:`RunWork`.
+        mode: Whether this is a capture or a repair, recorded on the report so the log and the
+            manifest can be read correctly.
+        until: Upper bound the caller pinned, if any, recorded on the report.
+        settings: Validated settings. Defaults to the process-wide settings.
+        store_root: Root of the case-law store. Defaults to ``corpus_store_dir``.
+        limit: Stop after this many cases have been fetched, or ``None``.
+        connector: Connector to drive. Defaults to the one the registry holds for the
+            jurisdiction; tests pass a fake.
+
+    Returns:
+        The run's report. Ownership of the connector passes to this function, which closes it
+        however the run ends.
+
+    Raises:
+        ConnectorNotFoundError: If no connector serves the jurisdiction.
+        CorpusStoreError: If the store cannot be opened or its position cannot be recorded.
+    """
     resolved = settings if settings is not None else get_settings()
     started = datetime.now(UTC)
     with ExitStack() as stack:
@@ -998,28 +1158,14 @@ def mirror_jurisdiction(
             connector=source.name,
             store_path=store.path,
             started_at=started,
+            mode=mode,
             window_until=until,
             limit=limit,
             traffic=source.traffic,
         )
-        report.checkpoint_before = store.read_checkpoint(source.name)
-        report.window_since = resolve_since(since, report.checkpoint_before)
         stop = stack.enter_context(StopRequest())
-        log.info(
-            "mirroring a corpus",
-            extra={
-                "context": {
-                    "jurisdiction": report.jurisdiction_code,
-                    "connector": report.connector,
-                    "store": str(store.path),
-                    "since": report.window_since.isoformat() if report.window_since else None,
-                    "until": until.isoformat() if until else None,
-                    "already_held": store.count_cases(),
-                }
-            },
-        )
         try:
-            _run(source, store, report, stop, resolved, limit)
+            work(source, store, report, stop, resolved, limit)
         except BaseException as error:
             # Whatever ends a run - a full disk, a bug, a signal the handler did not take -
             # the record of it is the point. Written first, then the failure is re-raised
@@ -1066,7 +1212,7 @@ def _run(
             if stop.requested:
                 break
             report.counters.discovered += 1
-            stored = _mirror_one(source, store, candidate, report)
+            stored = mirror_case(source, store, candidate, report)
             if stored and not holding_back:
                 position = position.advanced_to(
                     modified_at=candidate.modified_at,
@@ -1093,17 +1239,21 @@ def _run(
             extra={"context": {"jurisdiction": report.jurisdiction_code, "error": str(error)}},
         )
     else:
-        report.status = _final_status(report, stopped=stop.requested)
+        report.status = final_status(report, stopped=stop.requested)
     store.write_checkpoint(position)
 
 
-def _mirror_one(
+def mirror_case(
     source: SourceConnector,
     store: CorpusStore,
     candidate: Candidate,
     report: MirrorReport,
 ) -> bool:
     """Store one case, unless it is already held.
+
+    The local half of this — ``store.holds`` — is what makes a repair possible at all: it is
+    a stat call rather than a request, so a run may be offered a hundred thousand identifiers
+    and pay only for the ones it does not have (``docs/architecture.md`` rule 2.10).
 
     Args:
         source: The connector to fetch through.
@@ -1280,17 +1430,18 @@ def _iso(value: datetime | date | None) -> str | None:
     return value.isoformat() if value is not None else None
 
 
-def _final_status(report: MirrorReport, *, stopped: bool) -> IngestStatus:
-    """Decide how a run that reached the end of its window should be recorded.
+def final_status(report: MirrorReport, *, stopped: bool) -> IngestStatus:
+    """Decide how a run that reached the end of its list of cases should be recorded.
 
     Args:
         report: The run's report.
         stopped: Whether a shutdown was requested.
 
     Returns:
-        ``interrupted`` when a signal ended it, ``partial`` when cases failed — the window
-        did not fully advance, so a scheduler must be able to see it — and ``success``
-        otherwise.
+        ``interrupted`` when a signal ended it, ``partial`` when cases failed and ``success``
+        otherwise. ``partial`` is not cosmetic in either mode: for a capture the window did
+        not fully advance, for a repair the cases are still missing, and a scheduler has to be
+        able to see both.
     """
     if stopped:
         return IngestStatus.INTERRUPTED
@@ -1345,13 +1496,7 @@ def _manifest(store: CorpusStore, report: MirrorReport, settings: Settings) -> d
         "layout_version": _LAYOUT_VERSION,
         "jurisdiction": report.jurisdiction_code,
         "connector": report.connector,
-        "capture": {
-            "started_at": capture.get("started_at") or report.started_at.isoformat(),
-            "updated_at": (report.finished_at or report.started_at).isoformat(),
-            "window_since": report.window_since.isoformat() if report.window_since else None,
-            "window_until": report.window_until.isoformat() if report.window_until else None,
-            "status": report.status.value,
-        },
+        "capture": _capture_block(capture, report),
         "source": _capture_configuration(settings, report.connector),
         "totals": {
             "cases": report.cases_on_disk if report.cases_on_disk is not None else 0,
@@ -1359,6 +1504,36 @@ def _manifest(store: CorpusStore, report: MirrorReport, settings: Settings) -> d
             "runs": int(totals.get("runs") or 0) + 1,
         },
         "runs": runs,
+    }
+
+
+def _capture_block(previous: Mapping[str, Any], report: MirrorReport) -> dict[str, Any]:
+    """Build the manifest's statement of what this corpus is and when it was taken.
+
+    A capture states its own window: that is what a methodology page cites. A **repair** does
+    not, and must not overwrite one. It never walked a window — it compared an identifier
+    listing with the disk — so a repair that rewrote ``window_since`` to its own bound, or to
+    ``null``, would leave the corpus claiming an edge no run had ever reached. It therefore
+    leaves the capture's own fields exactly as it found them and touches only ``updated_at``;
+    what it did is in the ``runs`` history beside it, where it is labelled a repair.
+
+    Args:
+        previous: The ``capture`` block of the manifest already on disk, or an empty mapping.
+        report: The run that just finished.
+
+    Returns:
+        The block to write.
+    """
+    touched = (report.finished_at or report.started_at).isoformat()
+    started = previous.get("started_at") or report.started_at.isoformat()
+    if report.mode is RunMode.REPAIR and previous:
+        return {**previous, "started_at": started, "updated_at": touched}
+    return {
+        "started_at": started,
+        "updated_at": touched,
+        "window_since": report.window_since.isoformat() if report.window_since else None,
+        "window_until": report.window_until.isoformat() if report.window_until else None,
+        "status": report.status.value,
     }
 
 
