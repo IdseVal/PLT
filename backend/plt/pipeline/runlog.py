@@ -45,7 +45,7 @@ from __future__ import annotations
 import enum
 import re
 import textwrap
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Final
 
@@ -252,6 +252,7 @@ def render_run_log(report: MirrorReport, settings: Settings) -> str:
         f"{report.jurisdiction_code} corpus {'repair' if repairing else 'mirror'} - "
         f"{iso_week(report.started_at)}"
     )
+    contents = _contents_rows(report)
     blocks = [
         f"{heading}\n{'=' * len(heading)}\n\n{_verdict(report)}",
         _section("The run", _run_rows(report)),
@@ -259,6 +260,7 @@ def render_run_log(report: MirrorReport, settings: Settings) -> str:
             "What it compared" if repairing else "The window it covered", _window_rows(report)
         ),
         _section("What it did", _work_rows(report)),
+        _section("What the store holds now", contents) if contents else "",
         _section("Traffic to the source", _traffic_rows(report, settings)),
         _failures(report),
         _section("Where the rest of the record is", _neighbours(report)),
@@ -544,6 +546,65 @@ def _work_rows(report: MirrorReport) -> list[tuple[str, str]]:
     return rows
 
 
+def _contents_rows(report: MirrorReport) -> list[tuple[str, str]]:
+    """Return what the store was found to contain, counted from the store.
+
+    This is the same observation the manifest's ``contents`` block records
+    (``docs/architecture.md`` rule 2.11), printed here so that the figure an operator reads on
+    a Monday morning and the figure a methodology page cites are one figure. It is deliberately
+    not derived from this run's counters: those describe the run.
+
+    Args:
+        report: The finished run.
+
+    Returns:
+        Label and value pairs, or an empty list when the run ended before the store could be
+        walked — a failed run's log says what it managed, and inventing a description of the
+        corpus from its settings is the mistake this section exists to retire.
+    """
+    survey = report.survey
+    if survey is None:
+        return []
+    walked = survey.observed_at.astimezone(UTC).strftime(_INSTANT)
+    rows = [("Counted", f"{survey.cases:,} cases on disk, walked at {walked}")]
+    if survey.resource_types:
+        rows.append(("Resource types", _breakdown(survey.resource_types, "kinds of record")))
+    if survey.languages:
+        rows.append(("Text held in", _breakdown(survey.languages, "languages")))
+    if survey.earliest_decision and survey.latest_decision:
+        rows.append(("Decisions from", f"{survey.earliest_decision} to {survey.latest_decision}"))
+    if survey.first_fetched_at and survey.last_fetched_at:
+        rows.append(("Fetched between", f"{survey.first_fetched_at} and {survey.last_fetched_at}"))
+    rows.append(
+        ("Payloads", f"{_size(survey.payload_bytes)}, as the cases' own records state them")
+    )
+    if survey.unreadable:
+        rows.append(
+            (
+                "Unreadable",
+                f"{survey.unreadable:,} case folders hold metadata that could not be parsed; "
+                "they are counted above but described by nothing else here",
+            )
+        )
+    return rows
+
+
+def _breakdown(counts: Mapping[str, int], noun: str) -> str:
+    """Render one observed breakdown on a line.
+
+    Args:
+        counts: The values and their counts, largest first.
+        noun: What the values are, for the count that leads the line.
+
+    Returns:
+        ``17 kinds of record - INFO_JUDICIAL 48,854; JUDG 25,823; ...``. How many there are
+        comes first, because that is the number a reader compares against what they expected
+        the corpus to be.
+    """
+    listed = "; ".join(f"{name} {count:,}" for name, count in counts.items())
+    return f"{len(counts)} {noun} - {listed}"
+
+
 def _traffic_rows(report: MirrorReport, settings: Settings) -> list[tuple[str, str]]:
     """Return what the run asked of the source, and how hard the source pushed back.
 
@@ -632,7 +693,11 @@ def _neighbours(report: MirrorReport) -> list[tuple[str, str]]:
         seen this store can find the rest without reading any code.
     """
     rows = [
-        ("manifest.json", "what this corpus is: capture window, connector settings, totals"),
+        (
+            "manifest.json",
+            "what this corpus is: contents counted from the store, the capture window, and "
+            "the configuration the last completed run was launched with",
+        ),
         ("_checkpoint.json", "where the next capture resumes"),
     ]
     if report.mode is RunMode.REPAIR:
