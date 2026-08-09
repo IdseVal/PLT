@@ -8,7 +8,8 @@ Two equivalent routes into the same commands, per ``docs/architecture.md`` secti
 
 Five commands live here. ``plt ingest`` scans a jurisdiction, ``plt mirror`` copies a
 jurisdiction's corpus to disk verbatim so a selection experiment can be repeated over an
-identical corpus, ``plt digest`` sends the weekly mailing-list digest,
+identical corpus — with ``--repair`` to close a gap in one without re-running the discovery
+walk over the cases already held — ``plt digest`` sends the weekly mailing-list digest,
 ``plt purge-subscribers`` applies whatever retention rules a deployment has configured for
 that list, and ``plt seed-vocabularies`` refreshes the court tables. All of them are what the
 scheduled workflows call, so anything reproducible in a terminal is what runs unattended.
@@ -54,6 +55,7 @@ from plt.pipeline.base import PipelineError
 from plt.pipeline.mirror import MirrorReport, mirror_jurisdiction
 from plt.pipeline.persistence import resolve_court
 from plt.pipeline.registry import available_jurisdictions, connector_classes, connector_for
+from plt.pipeline.repair import repair_jurisdiction
 from plt.pipeline.runner import IngestReport, run_jurisdiction
 from plt.utils.logging import configure_logging, get_logger
 
@@ -303,6 +305,14 @@ def _notify_reviews(reports: list[IngestReport], settings: Settings) -> None:
     help="Stop after this many cases have been fetched. For rehearsing a capture.",
 )
 @click.option(
+    "--repair",
+    "repair_mode",
+    is_flag=True,
+    help="Repair a partial corpus instead of walking discovery: list the source's "
+    "identifiers, compare them with the store, and fetch only the cases that are missing. "
+    "--since/--until narrow the listing; without them the whole corpus is compared.",
+)
+@click.option(
     "--fail-on-partial",
     is_flag=True,
     help="Exit 3 when a run completed but cases failed, so an unattended job goes red "
@@ -315,6 +325,7 @@ def mirror(
     until: datetime | None,
     store_root: Path | None,
     limit: int | None,
+    repair_mode: bool,
     fail_on_partial: bool,
 ) -> None:
     """Mirror a jurisdiction's corpus to disk, verbatim, resuming where the last run stopped.
@@ -328,19 +339,27 @@ def mirror(
     the same command again. ``Ctrl+C`` finishes the case in flight, writes the position and
     exits 130.
 
+    ``--repair`` answers the other question: not "what has changed" but "what am I missing".
+    It lists the source's identifiers by the cheapest route the connector has, compares them
+    with the store, and fetches only the difference — no discovery walk, and no re-running of
+    the counting and paging queries over the cases already held. Use it to close a gap left by
+    an interrupted capture; the weekly run stays the plain command (architecture 2.10).
+
     Raises:
         click.UsageError: If no jurisdiction was named.
         click.ClickException: If any run failed, if no connector serves a named jurisdiction,
-            or if the store itself cannot be written to. The last of those is reported rather
-            than raised through: a full or read-only disk is an operator's problem to read in
-            one line, not a traceback.
+            if a named jurisdiction's source cannot list its identifiers cheaply, or if the
+            store itself cannot be written to. The last of those is reported rather than
+            raised through: a full or read-only disk is an operator's problem to read in one
+            line, not a traceback.
     """
     settings = get_settings()
     codes = _selected_jurisdictions(jurisdictions, every_jurisdiction=every_jurisdiction)
+    run = repair_jurisdiction if repair_mode else mirror_jurisdiction
     reports: list[MirrorReport] = []
     for code in codes:
         try:
-            report = mirror_jurisdiction(
+            report = run(
                 code,
                 since,
                 until,
