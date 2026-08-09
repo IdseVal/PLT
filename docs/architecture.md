@@ -144,6 +144,33 @@ docs/
     project needs them weekly for years. The cheapest correct method is not an optimisation
     here — it is the terms on which we are welcome.
 
+11. **An artefact describes itself by observation, not by declaration.** Whenever something
+    this project writes states what it *contains* — a corpus manifest, a term count, a
+    coverage figure in a document — that statement is derived by counting the thing at the
+    moment of writing. It is never taken from the configuration a process ran under. The two
+    answer different questions: settings say what a process was *asked* to do, and a process
+    can be misconfigured, can fail, or can never have run. Only the artefact says what is
+    there, and it is the artefact that gets cited.
+
+    A configuration is still worth recording. It is recorded as a fact about the run, in a
+    block that says so, and never in the place a reader looks for scope. A run that did not
+    complete does not rewrite even that: it has nothing to say about how the corpus was taken.
+
+    The standing instance is **`manifest.json`'s scope**. Two EU captures were launched
+    without `PLT_EURLEX_RESOURCE_TYPES` set, failed within minutes, and each rewrote the
+    manifest's declared scope from `Settings` — leaving a 100,000-case store captured under
+    seventeen resource types describing itself as four. Nothing was corrupted and no run
+    reported an error; the damage was that the next repair to trust the file would have
+    enumerated ~44,000 identifiers, compared them against a 100,000-case store, found nothing
+    missing and reported the corpus **complete**. That is the failure of §2.10's own
+    neighbours — `discovered == mirrored + skipped` holding exactly over the wrong set — and
+    counting the store instead makes it impossible rather than merely visible.
+
+    Counting is what makes this cheap enough to be unconditional. Walking a hundred thousand
+    case records takes a few seconds, sends nothing, and cannot be wrong, so `contents` is
+    re-derived on every write of the manifest — and `plt corpus-manifest` re-derives it on its
+    own, for a store an older version of this code described.
+
 ---
 
 ## 3. Database schema (contract)
@@ -468,6 +495,7 @@ because a recall problem is invisible in a report that lists only successes — 
 plt ingest --jurisdiction NL [--since ...] [--until ...] [--dry-run] [--report PATH]
 plt ingest --all
 plt mirror --jurisdiction EU [--since ...] [--until ...] [--store DIR] [--limit N]
+plt corpus-manifest --jurisdiction EU [--store DIR]
 plt digest [--since ...] [--until ...] [--dry-run]
 plt purge-subscribers
 plt jurisdictions [--json]
@@ -881,7 +909,7 @@ inside it. The Dutch store already had this shape, so it is the shape:
       metadata.json        index + provenance; written LAST, so it marks the case complete
       raw_content.xml      RawDocument.payload, verbatim
       fulltext.fr.xhtml    one per further language version, verbatim
-    manifest.json          capture window, connector configuration, totals
+    manifest.json          what the store holds (counted), the capture window, the run's config
     _checkpoint.json       where the next capture resumes
     _repair_checkpoint.json  how far the last repair read the identifier listing
     _failures.jsonl        the cases that did not come down, and why
@@ -908,7 +936,23 @@ inside it. The Dutch store already had this shape, so it is the shape:
 6. **The store is configuration.** `PLT_CORPUS_STORE_DIR`, documented in `.env.example`. The
    built-in default is `./corpus` inside the checkout, git-ignored; a corpus outgrows a
    checkout, so a real deployment names the volume it lives on.
-7. **Every run leaves one log a person can read**, in `logs/`, named for the ISO week and the
+7. **`manifest.json` describes the corpus by counting it** (rule 2.11). Three blocks, and the
+   difference between them is the point of the file. `contents` is **observed**: a walk of the
+   store at the moment of writing, giving the case count, the resource types with a count
+   each, the languages text is held in, the span of decision dates and the span of fetch
+   instants. `capture` is what the runs *asked* the source for — the window a methodology page
+   states. `configuration` is what a run was *launched with*, labelled as such, attributed to
+   a named run in `recorded_by`, and **not rewritten by a run that failed or was interrupted**:
+   a run that did not finish has no standing to say how the corpus was taken. `totals` holds
+   the only two figures that belong to the runs rather than to the corpus — bytes written and
+   runs recorded. The case count lives in `contents` alone, because one fact with two homes is
+   how the staler of them gets quoted.
+
+   **`plt corpus-manifest -j EU` re-derives `contents` from the store and nothing else**, with
+   no connector and no request. It is how a store described by an older version of this code,
+   or by a misconfigured run, is corrected once — from observation rather than by hand.
+
+8. **Every run leaves one log a person can read**, in `logs/`, named for the ISO week and the
    instant it started — so a weekly job never overwrites last week's and two runs in one week
    never collide. It states the outcome, the window as the checkpoint before and after, the
    counts (discovered, newly fetched, **already held and skipped**, failed), a summary of the
