@@ -149,6 +149,76 @@ def test_a_paged_window_yields_every_case_the_endpoint_counts(
     )
 
 
+@pytest.mark.parametrize(("start", "stop"), PAGING_WINDOWS)
+def test_a_paged_listing_yields_every_identifier_the_endpoint_counts(
+    start: datetime, stop: datetime
+) -> None:
+    """The union of the pages of the identifier listing must be the listing.
+
+    The same oracle as the discovery walk above, applied to the query a repair depends on,
+    and for the same reason: the fake in ``test_connector_eurlex.py`` had to invent how the
+    endpoint pages a ``DISTINCT``, and behaviour a fake invents is behaviour nothing has
+    checked (``docs/architecture.md`` rule 2.9). A listing that silently dropped identifiers
+    would tell a repair that the cases it never listed are already held — the absence nobody
+    can audit, which is exactly what this mode exists to fix.
+
+    It is bounded to a window rather than run over the whole of sector 6 so that the test
+    stays as cheap as its neighbours: rule 2.10 applies to the test suite too.
+
+    Args:
+        start: Inclusive lower bound of the window listed.
+        stop: Exclusive upper bound.
+    """
+    connector = EurLexConnector(live_settings(eurlex_identifier_page_size=PAGING_PAGE_SIZE))
+    try:
+        expected = connector._count(Window(start, stop))
+        listed = [candidate.source_id for candidate in connector.enumerate_identifiers(start, stop)]
+    finally:
+        connector.close()
+
+    assert expected > PAGING_PAGE_SIZE, (
+        f"the window {start:%Y-%m-%d} to {stop:%Y-%m-%d} now counts {expected} cases, which is "
+        f"one page at a size of {PAGING_PAGE_SIZE}; it no longer tests paging"
+    )
+    distinct = set(listed)
+    duplicated = sorted(celex for celex, seen in Counter(listed).items() if seen > 1)
+    assert len(distinct) == expected and not duplicated, (
+        f"the listing of {start:%Y-%m-%d} to {stop:%Y-%m-%d} at page size {PAGING_PAGE_SIZE} "
+        f"returned {len(listed)} rows holding {len(distinct)} distinct CELEX, against "
+        f"{expected} the endpoint counts over the same graph pattern: "
+        f"{expected - len(distinct)} lost, {len(duplicated)} repeated {duplicated[:5]}"
+    )
+    assert listed == sorted(listed), "a keyset listing must arrive in identifier order"
+
+
+def test_the_listing_costs_a_fraction_of_the_walk_it_replaces() -> None:
+    """The claim rule 2.10 rests on, measured rather than asserted.
+
+    A repair is only worth having if listing is genuinely cheaper than walking, so this
+    compares the two over one window: how many requests each spends to establish which cases
+    the window holds. Measured on 9 August 2026 the walk spent a count plus five pages
+    against the listing's two — and over the whole of sector 6 the ratio is what matters:
+    19,524 requests for the walk on 8 August, about 105 for the listing.
+    """
+    start, stop = datetime(2023, 4, 1, tzinfo=UTC), datetime(2023, 4, 2, tzinfo=UTC)
+    walker = EurLexConnector(live_settings(pipeline_page_size=PAGING_PAGE_SIZE))
+    lister = EurLexConnector(live_settings(eurlex_identifier_page_size=1000))
+    try:
+        walked = {candidate.source_id for candidate in walker.discover(start, stop)}
+        walk_requests = walker.traffic.requests
+        listed = {candidate.source_id for candidate in lister.enumerate_identifiers(start, stop)}
+        list_requests = lister.traffic.requests
+    finally:
+        walker.close()
+        lister.close()
+
+    assert listed == walked, "the two routes must agree on what the window holds"
+    assert list_requests < walk_requests, (
+        f"the listing spent {list_requests} requests and the walk {walk_requests}; the repair "
+        f"is only justified while the first number is the smaller one"
+    )
+
+
 def test_discovery_by_document_date_finds_the_decisions_of_a_day() -> None:
     built = EurLexConnector(live_settings(eurlex_discovery_date=EurLexDiscoveryDate.DOCUMENT))
 

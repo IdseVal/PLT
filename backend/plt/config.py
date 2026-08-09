@@ -554,6 +554,17 @@ class Settings(BaseSettings):
             "the cap is processed anyway and logged, rather than splitting forever."
         ),
     )
+    eurlex_identifier_page_size: Annotated[int, Field(ge=1, le=10_000)] = Field(
+        default=1000,
+        description=(
+            "CELEX numbers per page of the identifier listing a repair diffs against the "
+            "store. Its own setting rather than pipeline_page_size because the two queries "
+            "cost nothing like the same per row: a listing page is a DISTINCT over one index "
+            "and answered in well under a second at a thousand rows, so a small page would "
+            "spend requests for no reason. Measured against the live endpoint on 9 August "
+            "2026: 10 rows in 0.55s, 1,000 rows in 0.64s."
+        ),
+    )
     eurlex_languages: _StringList = Field(
         default_factory=lambda: ["eng"],
         description=(
