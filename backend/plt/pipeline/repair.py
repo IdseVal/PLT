@@ -39,6 +39,15 @@ what succeeded, so a failure that let the position move would be a case silently
 repair has nothing to advance past — the next repair recomputes the difference from what is on
 disk, and a case that did not come down is simply still missing, so it is offered again.
 
+**A repaired case records no discovery.** ``metadata.json`` carries ``source_modified_at``,
+``source_revision`` and ``discovery_cursor`` from the candidate, and a listing states none of
+the three, so on a repaired case all three are ``null`` where a captured case has values. That
+is the honest record rather than a defect: nothing was discovered, so nothing should claim to
+have been. None of it is *lost* — the source's own modification date is in the notice stored
+beside it and in ``source_metadata.cellar_last_modification_date``, verbatim, which is where a
+reader who needs it should look. The next capture to reach the case through its window fills
+the fields in.
+
 **What makes it resumable is the store, not the checkpoint.** A re-run lists again, finds the
 cases fetched last time on disk, and skips them. That costs one cheap listing, which is the
 entire premise of the mode; machinery to avoid re-listing would be machinery justified only by

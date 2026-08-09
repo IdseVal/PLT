@@ -944,3 +944,9 @@ Four rules of its own:
 4. **Its log says it is a repair**, counts `listed`/`already held`/`missing` rather than a
    window's `discovered`, and says so in the heading — a reader must never mistake a repair
    for a walk that covered a window it never asked for.
+5. **A repaired case records no discovery.** `source_modified_at`, `source_revision` and
+   `discovery_cursor` come from the candidate, and a listing states none of them, so all three
+   are `null` on a case a repair fetched. That is the honest record, not a defect: nothing was
+   discovered. Nothing is lost either — the source's modification date is in the notice stored
+   beside it and in `source_metadata`, verbatim — and the next capture whose window reaches
+   the case fills the fields in.
