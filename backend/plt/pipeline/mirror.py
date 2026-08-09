@@ -1101,7 +1101,7 @@ def mirror_jurisdiction(
 #: only in this callable, which is what keeps one set of scaffolding — the store, the signal
 #: handler, the "write the log whatever happens" rule and the manifest — for both.
 RunWork = Callable[
-    [SourceConnector, "CorpusStore", "MirrorReport", StopRequest, Settings, int | None], None
+    [SourceConnector, CorpusStore, MirrorReport, StopRequest, Settings, int | None], None
 ]
 
 
