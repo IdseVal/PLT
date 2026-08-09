@@ -119,6 +119,30 @@ docs/
    count from the source, in both directions — nothing lost and nothing returned twice.
    Discovery paged by offset over an unstable sort cost the EU corpus 14.9% of its cases
    while every unit test passed, because the fake CELLAR sorted stably.
+10. **The cheapest request that answers the question, and never re-derive what is already
+    known locally.** Rule 5 is about *how* we ask; this is about *whether we need to*. Before
+    a connector or a job sends anything, two questions: is there a cheaper query that answers
+    this one, and is the answer already on our own disk? A count is cheaper than a page, a
+    plain `SELECT DISTINCT` is cheaper than a `GROUP BY` with optional joins, a listing of
+    identifiers is cheaper than a discovery walk, and a stat call is free. A source may
+    tolerate an expensive query and still refuse a thousand of them, and a rate limit obeyed
+    politely is no defence against work that never needed doing.
+
+    The standing instance is **repairing a partial corpus**. Re-running the discovery walk
+    re-fetches nothing — everything on disk is skipped — but it re-runs every discovery query,
+    which for CELLAR is the most expensive thing the project does. Closing a gap of 4,827
+    cases that way cost 19,524 requests and 3h 23m on 8 August 2026 and ended in
+    `Retry-After: 1800`; the next morning the same walk was refused after 206 requests, while
+    a trivial `SELECT ?s WHERE { ?s ?p ?o } LIMIT 1` returned `200` immediately. The endpoint
+    was not down and the method was not wrong — the *cost* was. `plt mirror --repair`
+    (`plt.pipeline.repair`, §9) is the shape of the answer: list the source's identifiers by
+    the cheapest route it offers, diff against the store, fetch the difference. Every
+    connector should be able to say what it holds without being asked what has changed;
+    `SourceConnector.enumerate_identifiers` is where it says so.
+
+    These are public endpoints belonging to courts and the Publications Office, and this
+    project needs them weekly for years. The cheapest correct method is not an optimisation
+    here — it is the terms on which we are welcome.
 
 ---
 
@@ -317,6 +341,13 @@ class SourceConnector(ABC):
     def normalise(self, raw: RawDocument) -> NormalisedCase:
         """Map source fields onto the schema in section 3, preserving everything else
         in source_metadata."""
+
+    def enumerate_identifiers(
+        self, since: datetime | None = None, until: datetime | None = None
+    ) -> Iterator[Candidate]:
+        """List what the source holds, by its cheapest route (rule 2.10). Not discovery:
+        it answers "what exists", not "what changed", and the candidates it yields say
+        nothing about revisions. The default raises IdentifierListUnavailableError."""
 
     def close(self) -> None: ...          # called in a finally, interruptions included
 ```
@@ -851,7 +882,8 @@ inside it. The Dutch store already had this shape, so it is the shape:
       raw_content.xml      RawDocument.payload, verbatim
       fulltext.fr.xhtml    one per further language version, verbatim
     manifest.json          capture window, connector configuration, totals
-    _checkpoint.json       where the next run resumes
+    _checkpoint.json       where the next capture resumes
+    _repair_checkpoint.json  how far the last repair read the identifier listing
     _failures.jsonl        the cases that did not come down, and why
     logs/
       2026-W32_20260809T031205Z.log   one readable record per run
@@ -871,7 +903,8 @@ inside it. The Dutch store already had this shape, so it is the shape:
 4. **Its checkpoint is a file, not the `ingest_checkpoint` row.** A mirror pass that advanced
    the ingestion position would make the pipeline skip cases it never ingested.
 5. **A failed case holds the checkpoint back**, exactly as in the runner (§7). Re-enumerating
-   costs discovery queries and no fetches, because everything already on disk is skipped.
+   costs discovery queries and no fetches, because everything already on disk is skipped —
+   and rule 2.10 is there because those queries are not free either. See the repair below.
 6. **The store is configuration.** `PLT_CORPUS_STORE_DIR`, documented in `.env.example`. The
    built-in default is `./corpus` inside the checkout, git-ignored; a corpus outgrows a
    checkout, so a real deployment names the volume it lives on.
@@ -886,3 +919,28 @@ inside it. The Dutch store already had this shape, so it is the shape:
    warned about and never fails the run. `PLT_CORPUS_LOG_RETENTION_RUNS` caps how many are
    kept; unset — the default — keeps every one, and only files the project wrote are ever
    deleted.
+
+**Repair (`plt mirror --repair`, `plt.pipeline.repair`).** A capture that was interrupted
+leaves a partial corpus, and re-running the walk to close the gap is the expensive mistake
+rule 2.10 forbids. The repair asks the other question — not "what has changed" but "what am
+I missing" — in three steps: list the source's identifiers through
+`SourceConnector.enumerate_identifiers`, diff against the store (a stat call per identifier,
+no request), and fetch only the difference through the same `fetch` and the same store writer
+a capture uses. It is a *mode*, not a second implementation: the connector, the politeness,
+the failure log, the manifest and the run log are all the mirror's.
+
+Four rules of its own:
+
+1. **It writes `_repair_checkpoint.json`, never `_checkpoint.json`.** The capture's position
+   is a high-water mark on modification dates and supplies the next capture's window; a
+   repair's is a place in a listing. Writing one over the other would make a capture resume
+   from a bound no run had walked to.
+2. **A failed case holds nothing back.** There is no window to advance past: the next repair
+   re-derives the difference from the disk, so a case that did not come down is simply still
+   missing and is offered again.
+3. **It does not restate the capture window.** The `capture` block of `manifest.json` is left
+   as the repair found it, `updated_at` aside; what the repair did is in the `runs` history
+   beside it, labelled `"mode": "repair"`.
+4. **Its log says it is a repair**, counts `listed`/`already held`/`missing` rather than a
+   window's `discovered`, and says so in the heading — a reader must never mistake a repair
+   for a walk that covered a window it never asked for.
