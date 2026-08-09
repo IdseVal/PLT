@@ -230,6 +230,32 @@ def test_a_repair_cannot_be_asked_of_a_source_that_has_no_cheap_listing(
     assert not case_folders(store_root)
 
 
+def test_the_manifest_can_be_rebuilt_from_the_store_alone(
+    store_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    main(["mirror", "--jurisdiction", "EU"])
+    manifest_path = store_root / "EU" / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["contents"] = {"cases": 0, "resource_types": {}}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    code = main(["corpus-manifest", "--jurisdiction", "EU"])
+    rebuilt = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert code == 0
+    assert rebuilt["contents"]["cases"] == len(EU_DOCS)
+    assert rebuilt["runs"] == manifest["runs"]
+    assert f"{len(EU_DOCS)} cases on disk" in capsys.readouterr().out
+
+
+def test_rebuilding_the_manifest_of_a_store_that_is_not_there_exits_one(
+    store_root: Path,
+) -> None:
+    assert store_root.parent.is_dir()
+
+    assert main(["corpus-manifest", "--jurisdiction", "EU"]) == 1
+
+
 def test_a_store_that_cannot_be_opened_exits_one(tmp_path: Path, store_root: Path) -> None:
     assert store_root.parent.is_dir()
     blocked = tmp_path / "blocked"

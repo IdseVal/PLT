@@ -6,10 +6,11 @@ Two equivalent routes into the same commands, per ``docs/architecture.md`` secti
 * ``python -m plt.cli <command>`` / ``plt <command>`` - the same group standalone, so a
   server cron can call the identical code path as the scheduled workflow.
 
-Five commands live here. ``plt ingest`` scans a jurisdiction, ``plt mirror`` copies a
+Six commands live here. ``plt ingest`` scans a jurisdiction, ``plt mirror`` copies a
 jurisdiction's corpus to disk verbatim so a selection experiment can be repeated over an
 identical corpus — with ``--repair`` to close a gap in one without re-running the discovery
-walk over the cases already held — ``plt digest`` sends the weekly mailing-list digest,
+walk over the cases already held — ``plt corpus-manifest`` re-derives a store's description
+of itself from the store, ``plt digest`` sends the weekly mailing-list digest,
 ``plt purge-subscribers`` applies whatever retention rules a deployment has configured for
 that list, and ``plt seed-vocabularies`` refreshes the court tables. All of them are what the
 scheduled workflows call, so anything reproducible in a terminal is what runs unattended.
@@ -52,7 +53,7 @@ from plt.notifications.mailer import MailError, build_mailer
 from plt.notifications.retention import run_purge
 from plt.notifications.reviews import notify_new_reviews
 from plt.pipeline.base import PipelineError
-from plt.pipeline.mirror import MirrorReport, mirror_jurisdiction
+from plt.pipeline.mirror import MirrorReport, mirror_jurisdiction, rebuild_manifest
 from plt.pipeline.persistence import resolve_court
 from plt.pipeline.registry import available_jurisdictions, connector_classes, connector_for
 from plt.pipeline.repair import repair_jurisdiction
@@ -375,6 +376,68 @@ def mirror(
             # Do not start the next jurisdiction after Ctrl+C.
             break
     _exit_for(reports, strict=fail_on_partial)
+
+
+@plt_cli.command(name="corpus-manifest")
+@click.option(
+    "--jurisdiction",
+    "-j",
+    "jurisdictions",
+    multiple=True,
+    metavar="CODE",
+    help="Jurisdiction whose manifest to rewrite, e.g. EU. Repeat for several.",
+)
+@click.option(
+    "--all",
+    "every_jurisdiction",
+    is_flag=True,
+    help="Rewrite the manifest of every jurisdiction a connector exists for.",
+)
+@click.option(
+    "--store",
+    "store_root",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=None,
+    help="Root of the case-law store. Defaults to PLT_CORPUS_STORE_DIR.",
+)
+def corpus_manifest(
+    jurisdictions: tuple[str, ...],
+    every_jurisdiction: bool,
+    store_root: Path | None,
+) -> None:
+    """Rewrite a store's ``manifest.json`` from the store itself, sending nothing.
+
+    The manifest's ``contents`` block is what a reader of the corpus cites: how many cases are
+    held, of which resource types, in which languages, over what span of decision dates. Every
+    mirror and repair run writes it by walking the store, so it is normally current. This
+    command does that walk on its own, for the two cases where it is not: a store whose
+    manifest was written by an older version of this code, and one whose manifest a
+    misconfigured run described wrongly.
+
+    Nothing is fetched and no connector is built. The capture window, the run history and the
+    configuration the runs recorded are carried forward untouched — only the description of
+    what is on disk is re-derived, from the disk.
+
+    Raises:
+        click.UsageError: If no jurisdiction was named.
+        click.ClickException: If a named jurisdiction has no store to describe, or its
+            manifest cannot be written.
+    """
+    settings = get_settings()
+    codes = _selected_jurisdictions(jurisdictions, every_jurisdiction=every_jurisdiction)
+    for code in codes:
+        try:
+            path, survey = rebuild_manifest(code, settings=settings, store_root=store_root)
+        except PipelineError as error:
+            raise click.ClickException(f"{code}: {error}") from error
+        click.echo(f"{code}: {survey.cases:,} cases on disk, described in {path}")
+        for label, counts in (
+            ("resource types", survey.resource_types),
+            ("cases with text in", survey.languages),
+        ):
+            if counts:
+                listed = "; ".join(f"{name} {count:,}" for name, count in counts.items())
+                click.echo(f"  {label}: {listed}")
 
 
 @plt_cli.command(name="digest")
