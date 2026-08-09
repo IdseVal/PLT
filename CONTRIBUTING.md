@@ -426,8 +426,37 @@ by name sorts by date. Open one and it says, in plain text and without needing t
 Every log is kept by default. `PLT_CORPUS_LOG_RETENTION_RUNS=52` keeps the newest 52 per
 jurisdiction and deletes what is older; leaving it unset keeps everything, and nothing this
 project did not write is ever deleted. `manifest.json`, `_checkpoint.json` and
-`_failures.jsonl` beside `logs/` are unchanged — the capture's scope, the resume position, and
-every failure the store has ever seen.
+`_failures.jsonl` beside `logs/` are unchanged — what the corpus holds, the resume position,
+and every failure the store has ever seen.
+
+### What `manifest.json` says, and which part of it you may cite
+
+The manifest is what makes a corpus self-describing, so it is careful about the difference
+between what was counted and what was configured:
+
+- **`contents` is counted from the store**, every time the file is written: the case total,
+  the resource types with a count each, the languages text is held in, the span of decision
+  dates, the span of fetch instants. **This is the block to cite.** It is an observation, it
+  costs no request, and it cannot be wrong about the disk it was read from.
+- **`capture`** is the window the runs asked the source for, and **`configuration`** is what
+  one named run was launched with — `recorded_by` says which run and how it ended. A run that
+  failed or was interrupted does not overwrite it.
+
+Never read scope out of `configuration`. `PLT_EURLEX_RESOURCE_TYPES` is what a process was
+*told* to fetch; two runs launched without it, which both failed in minutes, once left a
+100,000-case EU store describing itself as four resource types. The repair that trusted it
+would have compared the corpus against a third of itself and reported it complete.
+
+**To re-derive a store's description of itself**, without fetching anything:
+
+```bash
+python -m plt.cli corpus-manifest -j EU              # rewrite contents from the store
+python -m plt.cli corpus-manifest -j EU --store D:/CaseLawStore
+```
+
+It builds no connector and sends no request; `capture`, `configuration`, `totals` and the run
+history are carried through untouched. Run it against a store whose manifest predates this
+layout, and after any run that you suspect described the corpus from its own settings.
 
 ## 5a. The mailing list and the digest
 

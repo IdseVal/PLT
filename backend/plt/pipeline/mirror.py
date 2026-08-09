@@ -60,12 +60,23 @@ arriving mid-backoff is noticed when that request resolves, so the wait can be a
 the retry budget; a second signal falls through to the default handler.
 
 **Accountable.** Each case records when it was fetched and from what URL; the corpus records
-its capture window, the connector's configuration and its totals in ``manifest.json``, and
-every failure in ``_failures.jsonl``. A published methodology has to be able to say what the
-corpus is and when it was taken, and an absence nobody can audit is the expensive kind. On
-top of those machine records, every run - including one that failed or was interrupted -
-leaves one file a person can read in ``logs/``; see :mod:`plt.pipeline.runlog`, which exists
-because this command is about to run weekly with nobody watching it.
+what it holds, its capture window and the configuration of the run that took it in
+``manifest.json``, and every failure in ``_failures.jsonl``. A published methodology has to be
+able to say what the corpus is and when it was taken, and an absence nobody can audit is the
+expensive kind. On top of those machine records, every run - including one that failed or was
+interrupted - leaves one file a person can read in ``logs/``; see :mod:`plt.pipeline.runlog`,
+which exists because this command is about to run weekly with nobody watching it.
+
+**Self-describing from the store, not from the process** (``docs/architecture.md`` rule 2.11).
+What the manifest says the corpus *contains* is counted off the disk by :meth:`CorpusStore.survey`
+every time it is written: the cases, the resource types with a count each, the languages held,
+the span of decision dates and of fetch instants. It is not taken from ``Settings``, because a
+setting states what a process was asked to do and a corpus is what a process actually left
+behind. The two drifted apart once already — two runs launched without
+``PLT_EURLEX_RESOURCE_TYPES`` set rewrote the manifest of a 100,000-case store captured under
+seventeen resource types with the four-type default, and the next repair to trust it would have
+compared the store against a corpus a third its size and reported it complete. The run's own
+configuration is still recorded, under ``configuration``, labelled as a fact about the run.
 
 One rule is inherited from the ingestion runner deliberately: **the checkpoint stops
 advancing at the first case that failed**, so nothing after a failure is ever considered
@@ -119,6 +130,7 @@ from plt.utils.shutdown import StopRequest
 __all__ = [
     "CorpusStore",
     "CorpusStoreError",
+    "CorpusSurvey",
     "MirrorCounters",
     "MirrorFailure",
     "MirrorReport",
@@ -128,6 +140,7 @@ __all__ = [
     "final_status",
     "mirror_case",
     "mirror_jurisdiction",
+    "rebuild_manifest",
     "run_against_store",
 ]
 
@@ -161,8 +174,10 @@ _RESERVED_FILES: Final[frozenset[str]] = frozenset(
 )
 
 #: Version of the on-disk layout, recorded in the manifest so a reader of a store taken
-#: today can tell whether it is the layout the code in front of them expects.
-_LAYOUT_VERSION: Final[int] = 1
+#: today can tell whether it is the layout the code in front of them expects. Version 2
+#: describes the corpus from the corpus: ``contents`` is counted off the disk, and what
+#: version 1 called ``source`` is ``configuration``, which is the run's and says so.
+_LAYOUT_VERSION: Final[int] = 2
 
 #: Runs kept in the manifest's history. A capture interrupted nightly for a fortnight should
 #: not grow the manifest without bound; the cumulative totals beside it are complete.
@@ -197,6 +212,38 @@ _DEFAULT_EXTENSION: Final[str] = "bin"
 
 #: Language tag used for a payload whose language the connector could not determine.
 _UNKNOWN_LANGUAGE: Final[str] = "und"
+
+#: Where a connector records what kind of record a case is, inside the case's
+#: ``source_metadata``. The mirror knows no jurisdiction's vocabulary and does not need to: it
+#: counts the values it finds, whatever they are, so ``JUDG`` and ``OPIN_AG`` reach the
+#: manifest without this module having heard of either. A connector with no such notion — the
+#: Dutch one — simply leaves the breakdown empty.
+_RESOURCE_TYPE_KEY: Final[str] = "resource_type"
+
+#: Distinct values one observed breakdown may hold before the rest are counted together. A
+#: survey walks a corpus of any size, so what it accumulates has to be bounded by something
+#: other than the corpus (architecture rule 2.3). A source has tens of resource types and tens
+#: of languages, so a store that is what it claims to be never reaches this; one that is not
+#: says so in a bucket rather than in the process's memory.
+_MAX_OBSERVED_VALUES: Final[int] = 256
+
+#: Where values past that bound are counted.
+_OBSERVED_OVERFLOW: Final[str] = "(other)"
+
+#: Outcomes that entitle a run to say how the corpus was taken. A run that failed or was
+#: interrupted did not finish the work it was configured for, so it leaves the recorded
+#: configuration alone rather than replacing it with its own.
+_CAPTURED_SOMETHING: Final[frozenset[IngestStatus]] = frozenset(
+    {IngestStatus.SUCCESS, IngestStatus.PARTIAL}
+)
+
+#: Printed in the manifest beside the settings, because the mistake this prevents was a
+#: reading mistake: a person looked at a block of settings and read it as the corpus's scope.
+_CONFIGURATION_NOTE: Final[str] = (
+    "The settings the run named in recorded_by was launched with. This describes that run, "
+    "not this corpus: what the corpus actually contains is in contents, counted from the "
+    "store itself. Cite contents."
+)
 
 
 class CorpusStoreError(PipelineError):
@@ -351,6 +398,7 @@ def _payloads(raw: RawDocument, case: NormalisedCase | None) -> list[_Payload]:
             stored=StoredFile(
                 name=f"{_SOURCE_RECORD_STEM}.{_extension(source_format)}",
                 role="source_record",
+                language=_source_record_language(raw, case),
                 media_format=source_format,
                 content_type=_content_type(raw.source_metadata),
                 source_url=raw.source_url or raw.candidate.source_url,
@@ -380,6 +428,31 @@ def _payloads(raw: RawDocument, case: NormalisedCase | None) -> list[_Payload]:
             )
         )
     return files
+
+
+def _source_record_language(raw: RawDocument, case: NormalisedCase | None) -> str | None:
+    """Return the language the source record is itself the text of, if it is one.
+
+    A source that serves the decision rather than a notice about it makes one file do both
+    jobs: the payload is not written twice, so the language version it carries would go
+    unrecorded unless the source record names it. What that costs is not tidiness — it is the
+    store's own statement of which languages it holds text in, which is counted from these
+    names (rule 2.11).
+
+    Args:
+        raw: The connector's response.
+        case: The normalised case, or ``None``.
+
+    Returns:
+        The language of the document whose payload is the source response, or ``None`` when
+        the response is a notice rather than a text.
+    """
+    if case is None:
+        return None
+    for document in case.documents:
+        if document.raw_payload and document.raw_payload == raw.payload:
+            return document.language
+    return None
 
 
 def _full_text_name(document: NormalisedDocument, index: int, taken: set[str]) -> str:
@@ -449,6 +522,247 @@ def _dump(record: Mapping[str, Any]) -> bytes:
         Greek or Bulgarian is readable in the file rather than escaped.
     """
     return json.dumps(record, indent=2, ensure_ascii=False, default=_jsonable).encode("utf-8")
+
+
+@dataclass(frozen=True, slots=True)
+class CorpusSurvey:
+    """What a store contains, counted from the store.
+
+    Every field here is an observation. Nothing in it is taken from ``Settings``, from a run's
+    counters or from the previous manifest, which is the point: a corpus's own description has
+    to be a fact about the corpus (``docs/architecture.md`` rule 2.11). The walk is local and
+    costs no request — one directory listing and one small read per case — so the honest answer
+    is also the cheap one.
+
+    Attributes:
+        observed_at: When the walk was made. A survey ages the moment a run writes another
+            case, so it says when it was true.
+        cases: Case folders holding a ``metadata.json``, which is what marks a case complete.
+        unreadable: How many of those held metadata that could not be parsed. Counted as cases
+            — the payloads are there — but they contribute to no breakdown below, so a reader
+            can see how much of the description rests on files that could not be read.
+        payload_bytes: Sum of the payload sizes each case's own record states.
+        resource_types: How many cases of each kind of record the store holds, as the cases
+            themselves say. Empty for a source with no such notion.
+        languages: How many cases the store holds text for, per language. Counted per case
+            rather than per file, so a case whose source record and full text are the same
+            language is one case in that language and not two.
+        earliest_decision: Earliest decision date on any case, ISO 8601.
+        latest_decision: Latest decision date on any case.
+        first_fetched_at: When the earliest-fetched case in the store was fetched. This and
+            the next are the capture window as it actually happened, beside the one the runs
+            asked for.
+        last_fetched_at: When the latest-fetched case was fetched.
+    """
+
+    observed_at: datetime
+    cases: int = 0
+    unreadable: int = 0
+    payload_bytes: int = 0
+    resource_types: Mapping[str, int] = field(default_factory=dict)
+    languages: Mapping[str, int] = field(default_factory=dict)
+    earliest_decision: str | None = None
+    latest_decision: str | None = None
+    first_fetched_at: str | None = None
+    last_fetched_at: str | None = None
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return the JSON form written into the manifest's ``contents`` block."""
+        return {
+            "observed_at": self.observed_at.isoformat(),
+            "cases": self.cases,
+            "resource_types": dict(self.resource_types),
+            "languages": dict(self.languages),
+            "decision_dates": {"earliest": self.earliest_decision, "latest": self.latest_decision},
+            "fetched_at": {"earliest": self.first_fetched_at, "latest": self.last_fetched_at},
+            "payload_bytes": self.payload_bytes,
+            "unreadable": self.unreadable,
+        }
+
+
+class _Span:
+    """The earliest and latest of a stream of stored dates, kept as they were written.
+
+    The comparison is on the parsed instant, so an offset cannot make one string sort before
+    another it is later than; what is reported is the original text, so nothing a case recorded
+    is reworded on its way into the manifest.
+    """
+
+    __slots__ = ("_earliest", "_latest")
+
+    def __init__(self) -> None:
+        """Start with nothing seen."""
+        self._earliest: tuple[datetime, str] | None = None
+        self._latest: tuple[datetime, str] | None = None
+
+    def add(self, value: object) -> None:
+        """Offer one stored date or instant.
+
+        Args:
+            value: The stored value. Anything that is not a readable ISO 8601 date or instant
+                is ignored: a corpus with one unparseable date should still be able to state
+                the span of the rest.
+        """
+        if not isinstance(value, str):
+            return
+        moment = _moment(value)
+        if moment is None:
+            return
+        if self._earliest is None or moment < self._earliest[0]:
+            self._earliest = (moment, value)
+        if self._latest is None or moment > self._latest[0]:
+            self._latest = (moment, value)
+
+    @property
+    def earliest(self) -> str | None:
+        """Return the earliest value seen, as it was stored."""
+        return self._earliest[1] if self._earliest is not None else None
+
+    @property
+    def latest(self) -> str | None:
+        """Return the latest value seen, as it was stored."""
+        return self._latest[1] if self._latest is not None else None
+
+
+class _Tally:
+    """The running total of a survey, bounded whatever the corpus turns out to hold."""
+
+    __slots__ = (
+        "cases",
+        "decisions",
+        "fetches",
+        "languages",
+        "payload_bytes",
+        "resource_types",
+        "unreadable",
+    )
+
+    def __init__(self) -> None:
+        """Start an empty tally."""
+        self.cases = 0
+        self.unreadable = 0
+        self.payload_bytes = 0
+        self.resource_types: Counter[str] = Counter()
+        self.languages: Counter[str] = Counter()
+        self.decisions = _Span()
+        self.fetches = _Span()
+
+    def add(self, record: Mapping[str, Any] | None) -> None:
+        """Count one case folder.
+
+        Args:
+            record: The case's ``metadata.json``, or ``None`` when it could not be read. An
+                unreadable record still counts as a case — the payloads beside it are on disk
+                — and contributes to no breakdown.
+        """
+        self.cases += 1
+        if record is None:
+            self.unreadable += 1
+            return
+        source_metadata = record.get("source_metadata")
+        if isinstance(source_metadata, Mapping):
+            _count_value(self.resource_types, source_metadata.get(_RESOURCE_TYPE_KEY))
+        languages: set[str] = set()
+        files = record.get("files")
+        if isinstance(files, list):
+            for item in files:
+                self._add_file(item, languages)
+        for language in sorted(languages):
+            _count_value(self.languages, language)
+        self.decisions.add(record.get("decision_date"))
+        self.fetches.add(record.get("fetched_at"))
+
+    def _add_file(self, item: object, languages: set[str]) -> None:
+        """Count one payload file listed in a case's record.
+
+        Args:
+            item: The file's entry.
+            languages: The languages this case holds text in, added to. Every stored file that
+                names a language counts, the source record included: where a source serves the
+                decision itself rather than a notice about it, that file *is* the text, and a
+                measure that ignored it would report a corpus with no language coverage at all.
+        """
+        if not isinstance(item, Mapping):
+            return
+        size = item.get("size_bytes")
+        if isinstance(size, int) and not isinstance(size, bool) and size > 0:
+            self.payload_bytes += size
+        language = item.get("language")
+        if isinstance(language, str) and language.strip():
+            languages.add(language.strip())
+
+    def finish(self, observed_at: datetime) -> CorpusSurvey:
+        """Return the survey these counts add up to.
+
+        Args:
+            observed_at: When the walk began.
+
+        Returns:
+            The survey, its breakdowns ordered by count and then by name so that two surveys
+            of the same store produce the same file.
+        """
+        return CorpusSurvey(
+            observed_at=observed_at,
+            cases=self.cases,
+            unreadable=self.unreadable,
+            payload_bytes=self.payload_bytes,
+            resource_types=_ordered(self.resource_types),
+            languages=_ordered(self.languages),
+            earliest_decision=self.decisions.earliest,
+            latest_decision=self.decisions.latest,
+            first_fetched_at=self.fetches.earliest,
+            last_fetched_at=self.fetches.latest,
+        )
+
+
+def _count_value(counts: Counter[str], value: object) -> None:
+    """Count one observed value, without letting the tally grow with the corpus.
+
+    Args:
+        counts: The breakdown to count into.
+        value: The value a case recorded. A blank or non-string value is not counted: a
+            breakdown is a statement about what is there, and "absent" is not a kind.
+    """
+    if not isinstance(value, str) or not value.strip():
+        return
+    name = value.strip()
+    if name not in counts and len(counts) >= _MAX_OBSERVED_VALUES:
+        counts[_OBSERVED_OVERFLOW] += 1
+        return
+    counts[name] += 1
+
+
+def _ordered(counts: Counter[str]) -> dict[str, int]:
+    """Return a breakdown in the order a person would want to read it.
+
+    Args:
+        counts: The counted values.
+
+    Returns:
+        The same counts, largest first and ties broken by name.
+    """
+    ranked = sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))
+    return dict(ranked)
+
+
+def _moment(value: str) -> datetime | None:
+    """Parse a stored ISO 8601 date or instant into something comparable.
+
+    Args:
+        value: The stored text.
+
+    Returns:
+        An aware instant — a bare date is read as midnight UTC and a naive instant as UTC — or
+        ``None`` when the text is neither.
+    """
+    text = value.strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
 
 
 class CorpusStore:
@@ -753,13 +1067,45 @@ class CorpusStore:
         Returns:
             How many folders hold a ``metadata.json``. Read from the filesystem rather than
             from a counter, because the manifest's total is what a reader of the corpus will
-            cite and a counter can only ever be what the code believed.
+            cite and a counter can only ever be what the code believed. This is the stat-only
+            answer, for a log line mid-run; :meth:`survey` is the one the manifest is written
+            from, and the two agree on what a case is.
         """
         try:
             entries = list(self._path.iterdir())
         except OSError:
             return 0
         return sum(1 for entry in entries if (entry / _METADATA_NAME).is_file())
+
+    def survey(self) -> CorpusSurvey:
+        """Describe the corpus by reading it: what kinds of case, in what languages, how many.
+
+        This is what the manifest's ``contents`` block is written from, and it is a walk of the
+        store rather than a summary of the run that happened to write it last. A run states
+        what it was configured to fetch; only the disk states what is here, and the two are not
+        the same claim (``docs/architecture.md`` rule 2.11).
+
+        The walk reads one small file per case and holds a fixed number of counters, so it is
+        bounded by the settings rather than by the corpus (rule 2.3), and it sends nothing:
+        roughly a hundred thousand cases in a few seconds, against a run that took hours.
+
+        Returns:
+            The survey. A store that cannot be walked, or that is not there at all, yields an
+            empty one rather than an error: a corpus is not lost because it could not be
+            described, and the count of zero is itself the observation.
+        """
+        observed_at = datetime.now(UTC)
+        tally = _Tally()
+        try:
+            for entry in self._path.iterdir():
+                if (entry / _METADATA_NAME).is_file():
+                    tally.add(self._read_case_metadata(entry))
+        except OSError as error:
+            log.warning(
+                "the store could not be walked to the end; the survey describes what was read",
+                extra={"context": {"path": str(self._path), "error": str(error)}},
+            )
+        return tally.finish(observed_at)
 
     def read_manifest(self) -> dict[str, Any]:
         """Read the corpus manifest, or an empty record when there is none yet.
@@ -968,6 +1314,10 @@ class MirrorReport:
             it. Live while the run is in progress.
         cases_on_disk: Complete cases in the store once the run had finished, counted from
             the filesystem rather than from a counter.
+        survey: What the store was found to contain once the run had finished, or ``None``
+            when the run died before it could be walked. It is the manifest's ``contents``
+            block, and the run log prints it, so an operator reads the same observed figures
+            a citation would.
     """
 
     jurisdiction_code: str
@@ -988,6 +1338,7 @@ class MirrorReport:
     failure_kinds: Counter[str] = field(default_factory=Counter)
     traffic: SourceTraffic | None = None
     cases_on_disk: int | None = None
+    survey: CorpusSurvey | None = None
 
     def summary(self) -> str:
         """Return the one-line summary the CLI prints.
@@ -1179,6 +1530,68 @@ def run_against_store(
         report.finished_at = datetime.now(UTC)
         _finish(store, report, resolved)
     return report
+
+
+def rebuild_manifest(
+    jurisdiction_code: str,
+    *,
+    settings: Settings | None = None,
+    store_root: Path | None = None,
+) -> tuple[Path, CorpusSurvey]:
+    """Rewrite a store's manifest from the store, without running anything against a source.
+
+    The ``contents`` block is re-observed and everything a run recorded — the capture window,
+    the configuration, the totals, the run history — is carried forward exactly as it stands.
+    Nothing is fetched, no connector is built and no request is sent, so this is safe to run
+    against a corpus at any time, and it is how a store whose manifest was written by an
+    earlier version of this code, or by a run that misdescribed it, is corrected once rather
+    than left as folklore.
+
+    Args:
+        jurisdiction_code: Jurisdiction whose store is described, e.g. ``EU``.
+        settings: Validated settings. Defaults to the process-wide settings.
+        store_root: Root of the case-law store. Defaults to ``corpus_store_dir``.
+
+    Returns:
+        The manifest as written, and what the walk found.
+
+    Raises:
+        CorpusStoreError: If the jurisdiction has no directory under the store root — an empty
+            manifest for a store that is not there would be a confident description of
+            nothing — or if the manifest cannot be written.
+    """
+    resolved = settings if settings is not None else get_settings()
+    store = CorpusStore(
+        store_root if store_root is not None else resolved.corpus_store_dir, jurisdiction_code
+    )
+    if not store.path.is_dir():
+        message = f"there is no {store.jurisdiction_code} store at {store.path} to describe"
+        raise CorpusStoreError(message)
+    previous = store.read_manifest()
+    survey = store.survey()
+    record = {
+        "layout_version": _LAYOUT_VERSION,
+        "jurisdiction": store.jurisdiction_code,
+        "connector": previous.get("connector"),
+        "contents": survey.as_dict(),
+        "capture": dict(_mapping(previous.get("capture"))),
+        "configuration": _previous_configuration(previous),
+        "totals": _carried_totals(previous),
+        "runs": list(previous["runs"]) if isinstance(previous.get("runs"), list) else [],
+    }
+    store.write_manifest(record)
+    log.info(
+        "corpus manifest rewritten from the store",
+        extra={
+            "context": {
+                "jurisdiction": store.jurisdiction_code,
+                "store": str(store.path),
+                "cases": survey.cases,
+                "resource_types": dict(survey.resource_types),
+            }
+        },
+    )
+    return store.path / _MANIFEST_NAME, survey
 
 
 def _run(
@@ -1451,13 +1864,18 @@ def final_status(report: MirrorReport, *, stopped: bool) -> IngestStatus:
 def _finish(store: CorpusStore, report: MirrorReport, settings: Settings) -> None:
     """Write the corpus manifest and the run's own log, and log what the run did.
 
+    The store is surveyed first, and the survey is what supplies both the manifest's ``contents``
+    block and the run's own count of what is on disk — so the two can never disagree, and
+    neither of them is the run's opinion of what it fetched.
+
     Args:
         store: The store to write to.
         report: The finished run.
         settings: The validated settings the run used, recorded in the manifest.
     """
-    report.cases_on_disk = store.count_cases()
-    store.write_manifest(_manifest(store, report, settings))
+    report.survey = store.survey()
+    report.cases_on_disk = report.survey.cases
+    store.write_manifest(_manifest(store, report, settings, report.survey))
     write_run_log(store, report, settings)
     log.info(
         "mirror run finished",
@@ -1471,24 +1889,36 @@ def _finish(store: CorpusStore, report: MirrorReport, settings: Settings) -> Non
     )
 
 
-def _manifest(store: CorpusStore, report: MirrorReport, settings: Settings) -> dict[str, Any]:
+def _manifest(
+    store: CorpusStore,
+    report: MirrorReport,
+    settings: Settings,
+    survey: CorpusSurvey,
+) -> dict[str, Any]:
     """Build the corpus manifest: what this corpus is, and when it was taken.
 
-    The capture window is the whole point. A methodology page has to be able to state the
-    instant a corpus was closed at and the configuration it was taken under, or a precision
-    figure quoted against it means nothing a year later.
+    Three blocks, and the difference between them is the point of the file.
+
+    ``contents`` is **observed**: it is :meth:`CorpusStore.survey`, a walk of the disk, and it
+    is what a reader may cite. ``capture`` is what the runs *asked* the source for, which is
+    the window a methodology page states. ``configuration`` is what a run was *configured*
+    with, which describes that process and nothing else — a run that was misconfigured, or
+    that failed before it fetched anything, still has a configuration, and it is not a
+    description of the corpus. Version 1 of this file called that block ``source`` and put it
+    where scope was read from, which is how a store of a hundred thousand cases came to
+    declare four resource types (rule 2.11).
 
     Args:
         store: The store, for what the previous manifest recorded.
-        report: The run that just finished, carrying the count of what is actually on disk.
+        report: The run that just finished.
         settings: The validated settings the run used.
+        survey: What the store was found to contain, counted from the store.
 
     Returns:
         The manifest, carrying forward what earlier runs of the same capture recorded.
     """
     previous = store.read_manifest()
-    capture = _mapping(previous.get("capture"))
-    totals = _mapping(previous.get("totals"))
+    totals = _carried_totals(previous)
     history = previous.get("runs")
     earlier: list[Any] = list(history) if isinstance(history, list) else []
     runs = [*earlier, report.as_dict()][-_MANIFEST_RUN_HISTORY:]
@@ -1496,14 +1926,36 @@ def _manifest(store: CorpusStore, report: MirrorReport, settings: Settings) -> d
         "layout_version": _LAYOUT_VERSION,
         "jurisdiction": report.jurisdiction_code,
         "connector": report.connector,
-        "capture": _capture_block(capture, report),
-        "source": _capture_configuration(settings, report.connector),
+        "contents": survey.as_dict(),
+        "capture": _capture_block(_mapping(previous.get("capture")), report),
+        "configuration": _configuration_block(previous, settings, report),
         "totals": {
-            "cases": report.cases_on_disk if report.cases_on_disk is not None else 0,
-            "bytes_written": int(totals.get("bytes_written") or 0) + report.counters.bytes_written,
-            "runs": int(totals.get("runs") or 0) + 1,
+            "bytes_written": totals["bytes_written"] + report.counters.bytes_written,
+            "runs": totals["runs"] + 1,
         },
         "runs": runs,
+    }
+
+
+def _carried_totals(previous: Mapping[str, Any]) -> dict[str, int]:
+    """Return the cumulative run bookkeeping a previous manifest recorded.
+
+    These two are the only figures in the file that are the *runs'* rather than the corpus's:
+    how much this project's runs have written, and how many of them there have been. Version 1
+    kept the case count here too; it is dropped rather than carried, because the number of
+    cases is an observation, ``contents`` is where observations live, and one fact with two
+    homes is how the staler of them comes to be quoted.
+
+    Args:
+        previous: The manifest already on disk.
+
+    Returns:
+        The carried totals, both zero when there was no readable manifest.
+    """
+    totals = _mapping(previous.get("totals"))
+    return {
+        "bytes_written": int(totals.get("bytes_written") or 0),
+        "runs": int(totals.get("runs") or 0),
     }
 
 
@@ -1537,8 +1989,67 @@ def _capture_block(previous: Mapping[str, Any], report: MirrorReport) -> dict[st
     }
 
 
+def _configuration_block(
+    previous: Mapping[str, Any], settings: Settings, report: MirrorReport
+) -> dict[str, Any]:
+    """Record the settings a run was launched with, and say whose they are.
+
+    **A run that failed or was interrupted does not overwrite this.** It has no standing to
+    redescribe how the corpus was taken: two runs launched without
+    ``PLT_EURLEX_RESOURCE_TYPES`` set failed within minutes and left a hundred thousand cases
+    described by the four-type default. The block therefore belongs to the last run that
+    reached the end of its work, and a run that did not reach the end leaves it as it found it.
+
+    A store that has never recorded one gets this run's, whatever became of the run, because a
+    configuration nobody can read is worse than one labelled with the status of the run that
+    wrote it — and ``recorded_by`` carries that status.
+
+    Args:
+        previous: The manifest already on disk, whose ``configuration`` — or, in a version 1
+            file, ``source`` — is carried forward when this run may not replace it.
+        settings: The validated settings this run used.
+        report: The run that just finished.
+
+    Returns:
+        The block to write.
+    """
+    existing = _previous_configuration(previous)
+    if existing and report.status not in _CAPTURED_SOMETHING:
+        return existing
+    return {
+        "note": _CONFIGURATION_NOTE,
+        "recorded_by": {
+            "run_started_at": report.started_at.isoformat(),
+            "mode": report.mode.value,
+            "status": report.status.value,
+        },
+        "settings": _capture_configuration(settings, report.connector),
+    }
+
+
+def _previous_configuration(previous: Mapping[str, Any]) -> dict[str, Any]:
+    """Read the configuration a previous manifest recorded, whichever layout wrote it.
+
+    Args:
+        previous: The manifest already on disk.
+
+    Returns:
+        The block, or an empty mapping when there is none. A version 1 ``source`` block is
+        migrated into the current shape with ``recorded_by`` null: that layout did not record
+        which run had written it, and inventing an answer here is exactly the kind of
+        confident wrong figure this file now exists to prevent.
+    """
+    current = _mapping(previous.get("configuration"))
+    if current:
+        return dict(current)
+    legacy = _mapping(previous.get("source"))
+    if not legacy:
+        return {}
+    return {"note": _CONFIGURATION_NOTE, "recorded_by": None, "settings": dict(legacy)}
+
+
 def _capture_configuration(settings: Settings, connector: str) -> dict[str, Any]:
-    """Record the settings that shaped what was captured.
+    """Select the settings a run against this connector was launched with.
 
     Every source setting is named after the connector that reads it — ``eurlex_sparql_url``,
     ``rechtspraak_search_url`` — so the connector's own name selects them without this module

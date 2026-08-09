@@ -315,6 +315,30 @@ class TestWhatItSays:
 
         assert "Store now holds  4 cases on disk" in only_log(settings)
 
+    def test_it_describes_the_store_by_counting_it_rather_than_the_run(
+        self, settings: Settings
+    ) -> None:
+        run(settings, eu_documents(2))
+        run(settings, eu_documents(4))
+        text = logs(settings)[-1].read_text(encoding="utf-8")
+
+        # The second run fetched two cases and the store holds four; the section is about the
+        # corpus, so it says four, with the breakdown a reader would otherwise re-derive.
+        assert "What the store holds now" in text
+        assert "4 cases on disk" in text
+        assert "en 4" in text
+        # This source has no notion of a resource type, so nothing claims it has one.
+        assert "Resource types" not in text
+
+    def test_a_run_that_never_reached_the_store_describes_nothing(self, settings: Settings) -> None:
+        connector = EuConnector(
+            settings, docs=eu_documents(2), raise_on_discover=RuntimeError("boom")
+        )
+        with pytest.raises(RuntimeError):
+            mirror_jurisdiction("EU", settings=settings, connector=connector)
+
+        assert "What the store holds now" not in only_log(settings)
+
     def test_it_summarises_the_failures_and_points_at_the_full_record(
         self, settings: Settings
     ) -> None:

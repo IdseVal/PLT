@@ -496,9 +496,11 @@ class TestTheRecord:
         runs = manifest["runs"]
         assert isinstance(runs, list)
         assert [run["mode"] for run in runs] == ["mirror", "repair"]
-        totals = manifest["totals"]
-        assert isinstance(totals, dict)
-        assert totals["cases"] == 5
+        contents = manifest["contents"]
+        assert isinstance(contents, dict)
+        # A repair leaves the capture's claims alone and re-counts what is on disk, so the
+        # cases it fetched are in the corpus's description without being in its window.
+        assert contents["cases"] == 5
 
     def test_the_summary_line_names_the_mode(self, settings: Settings) -> None:
         docs = partial_store(settings, held=3, total=5)
