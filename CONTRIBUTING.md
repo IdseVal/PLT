@@ -368,12 +368,40 @@ verbatim. It is not an ingestion: it writes no database row and reads no keyword
 cd backend
 python -m plt.cli mirror -j EU --limit 5 --store ./scratch-store   # a rehearsal
 python -m plt.cli mirror -j EU                                     # the real thing
+python -m plt.cli mirror -j EU --repair                            # close a gap in one
 ```
 
 The store is `PLT_CORPUS_STORE_DIR`; `--store PATH` overrides it for one run, which is how you
 rehearse without touching the real corpus. Run without `--since` — the store's own checkpoint
 supplies the window, so a run resumes rather than starting over, and a case already on disk
 costs no request.
+
+**When the store is missing cases, reach for `--repair` rather than `--since`.** A capture
+that was interrupted leaves a partial corpus, and the obvious repair — walk the whole thing
+again, everything on disk gets skipped — re-runs every discovery query in the process. For
+CELLAR that is a counting query per date window since 1952 and a grouped, join-carrying page
+query for every window that holds anything: 19,524 requests and 3h 23m on 8 August 2026, and
+then `Retry-After: 1800`. `--repair` lists the source's identifiers by the cheapest route the
+connector has, compares them with the folders on disk, and fetches only what is absent
+(`docs/architecture.md` rule 2.10 and §9).
+
+```bash
+python -m plt.cli mirror -j EU --repair                            # compare the whole corpus
+python -m plt.cli mirror -j NL --repair \
+    --since 2026-02-19 --until 2026-03-10                          # compare one band
+python -m plt.cli mirror -j EU --repair --limit 20                 # a first, small contact
+```
+
+`--since/--until` narrow the *listing*, not the repair: within whatever is listed, exactly the
+missing cases are fetched, which is why a repair is more precise than a date window even when
+you know roughly where the gap is. Give the EU no bounds — a plain `SELECT DISTINCT ?celex`
+over the whole of sector 6 is about a hundred requests. Give the Netherlands the band you care
+about: there the feed *is* the listing, so listing the whole corpus costs the whole walk.
+
+A repair reads and writes `_repair_checkpoint.json` and never touches `_checkpoint.json`, so
+the capture still resumes where it did. What makes a repair resumable is the store itself: run
+it again and the cases it already fetched are on disk and skipped. Its log is headed `corpus
+repair` and counts *listed*, *already held* and *missing* rather than a window's *discovered*.
 
 **Every run writes one log**, whether it finished, failed or was interrupted:
 

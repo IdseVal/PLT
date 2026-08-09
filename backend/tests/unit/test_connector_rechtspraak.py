@@ -483,6 +483,30 @@ def test_the_page_size_is_clamped_to_what_the_endpoint_serves() -> None:
     assert endpoint.searches[0]["max"] == "1000"
 
 
+def test_the_identifier_listing_is_the_feed_itself_and_costs_no_extra_request() -> None:
+    """Rule 2.10 asks for the cheapest route, and here discovery already is it.
+
+    The Atom feed hands over a thousand ECLIs per request with the revision marker attached;
+    there is no count pass to skip and no aggregate to drop. A second walk would send the
+    identical requests to the identical endpoint, so the listing delegates — and this pins
+    that it stays a delegation rather than drifting into a copy of the window arithmetic.
+    """
+    corpus = spread(
+        datetime(2026, 6, 1, 8, tzinfo=UTC), groups=4, per_group=2, apart=timedelta(hours=1)
+    )
+    endpoint = Endpoint(corpus=corpus, unstable_ties=True)
+    connector = build(endpoint, rechtspraak_page_size=50, rechtspraak_window_days=1)
+    try:
+        listed = list(connector.enumerate_identifiers(WINDOW_START, WINDOW_END))
+        walked = list(connector.discover(WINDOW_START, WINDOW_END))
+    finally:
+        connector.close()
+
+    assert sorted(c.source_id for c in listed) == sorted(e.ecli for e in corpus)
+    assert len(endpoint.searches) == 2, "listing a window cost exactly what walking it costs"
+    assert sorted(c.source_id for c in listed) == sorted(c.source_id for c in walked)
+
+
 # -- Discovery: the windows, and why the walk does not page ---------------------------
 
 

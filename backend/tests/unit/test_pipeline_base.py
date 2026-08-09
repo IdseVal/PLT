@@ -18,6 +18,7 @@ import pytest
 from plt.db.models import DocumentType
 from plt.pipeline.base import (
     Candidate,
+    IdentifierListUnavailableError,
     NormalisedCase,
     NormalisedDocument,
     RawDocument,
@@ -170,6 +171,20 @@ def test_a_connector_is_a_context_manager_that_closes_itself() -> None:
         assert opened is connector
 
     assert connector.closed
+
+
+def test_a_connector_that_cannot_list_cheaply_says_so_rather_than_walking() -> None:
+    """A repair that fell back to discovery would cost more than the walk it replaces."""
+
+    class Silent(FakeConnector):
+        """A connector that inherits the default listing, i.e. offers none."""
+
+        name = "silent"
+
+    connector = Silent(docs=[FakeDocument(source_id="ECLI:NL:RBTEST:2026:1")])
+
+    with pytest.raises(IdentifierListUnavailableError, match="without walking discovery"):
+        list(connector.enumerate_identifiers())
 
 
 def test_the_fake_connector_implements_the_interface() -> None:

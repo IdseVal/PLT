@@ -28,6 +28,12 @@ exactly the failure it exists to catch, so the interrupted and failed paths writ
 and a log that cannot be written is reported and swallowed: it is the record of the work, not
 the work.
 
+**A repair is logged as a repair.** ``plt mirror --repair`` leaves the same counters behind as
+a capture and means something else by them: what it offered was an identifier listing rather
+than a discovery window, and the number that matters is the difference between the listing and
+the store. A log that presented the two identically would let a reader conclude a repair had
+walked a window it never asked for, so :class:`RunMode` decides the headings and the wording.
+
 **It is additive.** ``manifest.json``, ``_checkpoint.json`` and ``_failures.jsonl`` keep their
 meanings exactly (``docs/architecture.md`` section 9). This file summarises the run's failures
 and points at ``_failures.jsonl`` rather than reproducing it, because that file is the
@@ -36,6 +42,7 @@ store's whole history and this one is one night of it.
 
 from __future__ import annotations
 
+import enum
 import re
 import textwrap
 from collections.abc import Sequence
@@ -54,11 +61,32 @@ if TYPE_CHECKING:  # pragma: no cover - imported for typing only
 
 __all__ = [
     "LOG_DIR_NAME",
+    "RunMode",
     "prune_run_logs",
     "render_run_log",
     "run_log_name",
     "write_run_log",
 ]
+
+
+class RunMode(enum.StrEnum):
+    """How a run against a corpus store got its list of cases.
+
+    It lives here, beside the log, rather than beside the runs themselves because the log is
+    what has to *read* it: a repair and a capture leave the same counters behind and mean
+    different things by them, and a reader who cannot tell which they are looking at will
+    misread both. :mod:`plt.pipeline.mirror` already imports this module for the log
+    directory, so this costs no new dependency in either direction.
+
+    Attributes:
+        MIRROR: The capture: walk the source's discovery window and store what is new.
+        REPAIR: The repair: list the source's identifiers, diff against the store, and fetch
+            only what is missing (``docs/architecture.md`` rule 2.10).
+    """
+
+    MIRROR = "mirror"
+    REPAIR = "repair"
+
 
 log = get_logger(__name__)
 
@@ -98,6 +126,18 @@ _OUTCOMES: Final[dict[IngestStatus, str]] = {
     ),
     IngestStatus.FAILED: "failed - the run stopped before the end of its window",
     IngestStatus.RUNNING: "unknown - the run never recorded an outcome, which is a defect",
+}
+
+#: How a repair's terminal states are explained, where the capture's wording would be wrong:
+#: a repair has no window to walk to the end of, and a case that failed does not hold a
+#: position back, because the next repair re-derives the difference from the disk.
+_REPAIR_OUTCOMES: Final[dict[IngestStatus, str]] = {
+    IngestStatus.SUCCESS: "success - the whole identifier listing was compared with the store",
+    IngestStatus.PARTIAL: (
+        "partial - the whole listing was compared, but cases failed to come down; they are "
+        "still missing, and the next repair will offer them again"
+    ),
+    IngestStatus.FAILED: "failed - the run stopped before the listing had been read to the end",
 }
 
 
@@ -207,17 +247,36 @@ def render_run_log(report: MirrorReport, settings: Settings) -> str:
     Returns:
         The whole file, as plain ASCII text with Unix line endings.
     """
-    heading = f"{report.jurisdiction_code} corpus mirror - {iso_week(report.started_at)}"
+    repairing = report.mode is RunMode.REPAIR
+    heading = (
+        f"{report.jurisdiction_code} corpus {'repair' if repairing else 'mirror'} - "
+        f"{iso_week(report.started_at)}"
+    )
     blocks = [
         f"{heading}\n{'=' * len(heading)}\n\n{_verdict(report)}",
         _section("The run", _run_rows(report)),
-        _section("The window it covered", _window_rows(report)),
+        _section(
+            "What it compared" if repairing else "The window it covered", _window_rows(report)
+        ),
         _section("What it did", _work_rows(report)),
         _section("Traffic to the source", _traffic_rows(report, settings)),
         _failures(report),
-        _section("Where the rest of the record is", _neighbours()),
+        _section("Where the rest of the record is", _neighbours(report)),
     ]
     return "\n\n".join(block for block in blocks if block) + "\n"
+
+
+def _missing(report: MirrorReport) -> int:
+    """Return how many listed cases a repair found the store did not hold.
+
+    Args:
+        report: The run.
+
+    Returns:
+        The identifiers listed, less the ones already on disk. Derived rather than counted,
+        so it cannot disagree with the two numbers printed beside it.
+    """
+    return max(report.counters.discovered - report.counters.skipped, 0)
 
 
 def _verdict(report: MirrorReport) -> str:
@@ -236,6 +295,8 @@ def _verdict(report: MirrorReport) -> str:
         return f"FAILED after {got}{failed}: {report.error_message or 'no reason was recorded'}"
     if report.status is IngestStatus.INTERRUPTED:
         return f"INTERRUPTED after {got}{failed}. Nothing is lost; the next run resumes."
+    if report.mode is RunMode.REPAIR:
+        return _repair_verdict(report)
     if not counters.discovered:
         return "Nothing at all was offered in this window. Read the window below before the counts."
     if not counters.mirrored and not counters.errors:
@@ -244,6 +305,35 @@ def _verdict(report: MirrorReport) -> str:
             "held, nothing new to fetch."
         )
     return f"{got.capitalize()}{failed}."
+
+
+def _repair_verdict(report: MirrorReport) -> str:
+    """Summarise a repair, whose counts mean something else.
+
+    Args:
+        report: The finished repair.
+
+    Returns:
+        The sentence. A repair is judged on the gap it closed rather than on what was new at
+        the source, so the number to lead with is how much of the difference came down.
+    """
+    counters = report.counters
+    if not counters.discovered:
+        return (
+            "The source listed no identifiers at all, so nothing could be compared. Read the "
+            "listing below before the counts."
+        )
+    missing = _missing(report)
+    if not missing:
+        return (
+            f"Nothing to repair: {_count(counters.discovered, 'identifier')} listed, and the "
+            "store already held every one."
+        )
+    failed = f", {counters.errors:,} failed" if counters.errors else ""
+    return (
+        f"{counters.mirrored:,} of {_count(missing, 'missing case')} fetched{failed}, out of "
+        f"{_count(counters.discovered, 'identifier')} the source listed."
+    )
 
 
 def _run_rows(report: MirrorReport) -> list[tuple[str, str]]:
@@ -264,8 +354,17 @@ def _run_rows(report: MirrorReport) -> list[tuple[str, str]]:
             else "not recorded - the process did not reach the end of the run",
         ),
         ("Took", _duration(_seconds(report))),
-        ("Outcome", _OUTCOMES[report.status]),
+        ("Outcome", _outcome(report)),
     ]
+    if report.mode is RunMode.REPAIR:
+        rows.append(
+            (
+                "Mode",
+                "repair - the source's identifiers were listed and compared with the store, "
+                "and only the cases missing from it were fetched. The discovery walk was not "
+                "run, and the capture's own resume position was not touched",
+            )
+        )
     if report.error_message:
         rows.append(("Reason", report.error_message))
     if report.limit is not None:
@@ -278,6 +377,21 @@ def _run_rows(report: MirrorReport) -> list[tuple[str, str]]:
     return rows
 
 
+def _outcome(report: MirrorReport) -> str:
+    """Explain the terminal state in the vocabulary of the run that reached it.
+
+    Args:
+        report: The finished run.
+
+    Returns:
+        The sentence. A repair borrows the capture's wording wherever the two mean the same
+        thing — an interruption does — and overrides it where they do not.
+    """
+    if report.mode is RunMode.REPAIR:
+        return _REPAIR_OUTCOMES.get(report.status, _OUTCOMES[report.status])
+    return _OUTCOMES[report.status]
+
+
 def _window_rows(report: MirrorReport) -> list[tuple[str, str]]:
     """Return what the run asked the source for, and where it left the position.
 
@@ -288,6 +402,8 @@ def _window_rows(report: MirrorReport) -> list[tuple[str, str]]:
         Label and value pairs. The pair of checkpoints is the part that says how much of the
         source the run actually looked at, and whether the window moved at all.
     """
+    if report.mode is RunMode.REPAIR:
+        return _repair_rows(report)
     since = report.window_since
     before = _position(report.checkpoint_before)
     after = _position(report.checkpoint_after)
@@ -310,6 +426,64 @@ def _window_rows(report: MirrorReport) -> list[tuple[str, str]]:
     if before == after:
         rows.append(("Note", "the position did not move: nothing new was successfully stored"))
     return rows
+
+
+def _repair_rows(report: MirrorReport) -> list[tuple[str, str]]:
+    """Return what a repair listed, and how far through the listing it got.
+
+    Args:
+        report: The finished repair.
+
+    Returns:
+        Label and value pairs. A repair has no window in the capture's sense: it is not
+        resumed from a stored instant, and the position it records is a place in an
+        identifier listing rather than a high-water mark, so the rows say which of the two
+        this reader is looking at.
+    """
+    since, until = report.window_since, report.window_until
+    listed = (
+        f"identifiers modified from {since.isoformat()} onwards"
+        if since
+        else "every identifier the source lists"
+    )
+    rows = [
+        ("Listed", listed),
+        (
+            "Up to",
+            until.isoformat() if until else "the end of the listing, with no upper bound given",
+        ),
+        (
+            "Compared with",
+            "the case folders on disk - a case whose metadata.json is present was skipped "
+            "without a request",
+        ),
+        ("Got as far as", _listing_position(report.checkpoint_after)),
+        (
+            "Note",
+            "a repair reads and writes _repair_checkpoint.json and never _checkpoint.json, so "
+            "the capture resumes exactly where it did before this run",
+        ),
+    ]
+    return rows
+
+
+def _listing_position(checkpoint: Checkpoint | None) -> str:
+    """Render how far through an identifier listing a repair got.
+
+    Args:
+        checkpoint: The repair's position, or ``None``.
+
+    Returns:
+        The last identifier compared, or a phrase saying none was. Deliberately not
+        :func:`_position`: that one leads with an instant, and a listing has none.
+    """
+    if checkpoint is None or checkpoint.last_source_id is None:
+        return "no identifier was compared"
+    return (
+        f"{checkpoint.last_source_id} - what makes the next repair resume is the store itself, "
+        "not this position: a case on disk is skipped locally, so the difference is derived "
+        "again rather than remembered"
+    )
 
 
 def _position(checkpoint: Checkpoint | None) -> str:
@@ -340,16 +514,28 @@ def _work_rows(report: MirrorReport) -> list[tuple[str, str]]:
 
     Returns:
         Label and value pairs. ``Already held`` is kept beside ``Newly mirrored`` on purpose:
-        the two together are what separate a quiet week from a run that did nothing.
+        the two together are what separate a quiet week from a run that did nothing. A repair
+        reads the same counters differently — what it offered is a listing rather than a
+        window, and the gap it set out to close is the difference between the two — so it
+        gains a ``Missing`` row and says ``Listed`` where a capture says ``Discovered``.
     """
     counters = report.counters
+    listed = (
+        ("Listed", f"{_count(counters.discovered, 'identifier')} the source holds")
+        if report.mode is RunMode.REPAIR
+        else ("Discovered", f"{_count(counters.discovered, 'case')} offered in that window")
+    )
     rows = [
-        ("Discovered", f"{_count(counters.discovered, 'case')} offered in that window"),
-        ("Newly mirrored", f"{counters.mirrored:,} fetched and written"),
+        listed,
         (
             "Already held",
             f"{counters.skipped:,} skipped without a single request, the store had them",
         ),
+    ]
+    if report.mode is RunMode.REPAIR:
+        rows.append(("Missing", f"{_missing(report):,} the store did not hold"))
+    rows += [
+        ("Newly mirrored", f"{counters.mirrored:,} fetched and written"),
         ("Failed", f"{counters.errors:,} - see below" if counters.errors else "0"),
         ("Written", _size(counters.bytes_written)),
     ]
@@ -434,20 +620,29 @@ def _failures(report: MirrorReport) -> str:
     return _section("Failures", lines)
 
 
-def _neighbours() -> list[tuple[str, str]]:
+def _neighbours(report: MirrorReport) -> list[tuple[str, str]]:
     """Return the guide to the other files in the store.
+
+    Args:
+        report: The finished run, which decides whether the repair's own position file is
+            worth naming — a store no repair has run against does not hold one.
 
     Returns:
         Label and value pairs naming each file and what it is for, so a reader who has never
         seen this store can find the rest without reading any code.
     """
-    return [
+    rows = [
         ("manifest.json", "what this corpus is: capture window, connector settings, totals"),
-        ("_checkpoint.json", "where the next run resumes"),
+        ("_checkpoint.json", "where the next capture resumes"),
+    ]
+    if report.mode is RunMode.REPAIR:
+        rows.append(("_repair_checkpoint.json", "how far the last repair read the listing"))
+    rows += [
         ("_failures.jsonl", "every case that has ever failed, one JSON object per line"),
         (f"{LOG_DIR_NAME}/", "one file per run, this one included, oldest name first"),
         ("<case>/", "one folder per case: metadata.json, and the payloads verbatim"),
     ]
+    return rows
 
 
 def _section(title: str, rows: Sequence[tuple[str, str] | str]) -> str:

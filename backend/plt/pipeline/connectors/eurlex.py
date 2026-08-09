@@ -52,6 +52,13 @@ none of the preferred ones exists, and the choice is recorded on the document ro
 own goes into ``source_metadata``, so a later reclassification never has to go back to the
 Publications Office (``docs/architecture.md`` rule 2.6).
 
+**Listing is not discovery.** :meth:`EurLexConnector.enumerate_identifiers` answers the much
+cheaper question "which CELEX numbers does sector 6 hold" with a ``SELECT DISTINCT ?celex``:
+no counting pass, no ``GROUP BY``, no optional joins. It exists because repairing a partial
+corpus by re-running the walk means replaying the most expensive queries in the project over
+the cases already on disk, which is what got this connector refused with ``Retry-After: 1800``
+on 9 August 2026 (``docs/architecture.md`` rule 2.10).
+
 Two things this connector deliberately does *not* do. It does not guess ``law_domain`` or
 ``law_subfield``: the CDM classification is a policy tree ("Internal policy of the European
 Union → Chemicals → Plant protection products"), not the public/private/criminal distinction
@@ -458,6 +465,31 @@ def _paging_key(row: Mapping[str, Mapping[str, str]], window: Window) -> str:
     return value
 
 
+def _listing_key(row: Mapping[str, Mapping[str, str]]) -> str:
+    """Return the CELEX number the next page of the identifier listing starts above.
+
+    Args:
+        row: The last binding set of the page just read.
+
+    Returns:
+        The row's CELEX number.
+
+    Raises:
+        SourceUnavailableError: If the row carries nothing that can be paged past. As in
+            :func:`_paging_key`: a malformed row in the *last* position of a full page leaves
+            the rest of the listing unreachable, and a listing enumerated to an unknown depth
+            would make a repair conclude that everything beyond it is already held.
+    """
+    value = (row.get("celex", {}).get("value") or "").strip()
+    if not _CELEX.fullmatch(value):
+        message = (
+            f"the identifier listing ended a page on {value[:64]!r}, which is not a CELEX "
+            f"number; the rest of the listing cannot be paged"
+        )
+        raise SourceUnavailableError(message)
+    return value
+
+
 def _discovery_order(row: Mapping[str, Mapping[str, str]]) -> tuple[datetime, str]:
     """Return the sort key that puts a window's rows in the order the checkpoint expects.
 
@@ -722,7 +754,169 @@ class EurLexConnector(SourceConnector):
             },
         )
 
+    # -- identifier listing --------------------------------------------------------------
+
+    def enumerate_identifiers(
+        self, since: datetime | None = None, until: datetime | None = None
+    ) -> Iterator[Candidate]:
+        """List the CELEX numbers of sector 6, as cheaply as CELLAR will state them.
+
+        This is the listing a repair diffs against the store (``docs/architecture.md`` rule
+        2.10), and it is a different question from discovery. Discovery asks what changed and
+        what each case looks like; this asks only what exists, which CELLAR answers with a
+        ``SELECT DISTINCT ?celex`` over the same graph pattern minus everything expensive —
+        no ``COUNT`` pass per window, no ``GROUP BY``, no aggregate alias, and neither of the
+        two ``OPTIONAL`` expression joins that fetch a title.
+
+        **Measured against the walk it replaces.** Both figures are from the live endpoint,
+        the walk's from the store's own run logs on 8 and 9 August 2026 and the listing's from
+        a probe taken on 9 August, half an hour after that same endpoint had refused the walk
+        for the second time with ``Retry-After: 1800``:
+
+        ======================================  ==========  ===================================
+        Query                                   Requests    Measured
+        ======================================  ==========  ===================================
+        The discovery walk, 1952 to now         19,524      3h 23m, then refused; refused again
+                                                            the next morning after 206
+        This listing, the whole of sector 6     107         137s, 104,088 identifiers, one
+                                                            retry and no ``Retry-After``
+        ======================================  ==========  ===================================
+
+        **182 times fewer requests for the same question**, on an endpoint that had refused the
+        expensive form of it twice that morning. A 1,000-row page took 0.64s and a 10-row page
+        0.55s, so the cost is the scan rather than the rows — which is why the page size is
+        ``eurlex_identifier_page_size`` and not the discovery page size, and why a small page
+        would spend ten times the requests to save nothing.
+
+        The listing is paged by keyset on ``?celex`` for the same reason discovery is: it is
+        the only column that is a total order on this endpoint, and a deep ``OFFSET`` over a
+        sorted result is both unstable and expensive. Peak memory is one page. It ends on an
+        **empty** page rather than a short one: a short page would also be what a server-side
+        row cap looks like, and a listing truncated by a cap would tell a repair that
+        everything past the cut is already held — an absence nobody could audit, silently.
+
+        Args:
+            since: Narrow the listing to works modified at or after this instant. Costs one
+                further triple pattern and a filter, which is still no aggregate and no join;
+                ``None`` — the usual case for a repair — lists the whole sector.
+            until: Upper bound, on the same terms.
+
+        Yields:
+            One candidate per CELEX number, in ascending CELEX order. They carry the
+            identifier and the REST URL and deliberately nothing else: the listing states no
+            modification date, so a candidate from here can never be mistaken for a discovery
+            result that says something about revisions.
+
+        Raises:
+            SourceUnavailableError: If CELLAR cannot be listed at all.
+        """
+        page_size = self.settings.eurlex_identifier_page_size
+        log.info(
+            "listing EU case-law identifiers",
+            extra={
+                "context": {
+                    "connector": self.name,
+                    "since": since.isoformat() if since else None,
+                    "until": until.isoformat() if until else None,
+                    "page_size": page_size,
+                }
+            },
+        )
+        after: str | None = None
+        listed = 0
+        while True:
+            rows = self._query(self._identifier_query(page_size, after, since, until))
+            if not rows:
+                log.info(
+                    "identifier listing complete",
+                    extra={"context": {"connector": self.name, "identifiers": listed}},
+                )
+                return
+            for row in rows:
+                candidate = self._listed(row)
+                if candidate is not None:
+                    yield candidate
+            listed += len(rows)
+            after = _listing_key(rows[-1])
+
+    def _listed(self, row: Mapping[str, Mapping[str, str]]) -> Candidate | None:
+        """Turn one row of the identifier listing into a candidate.
+
+        Args:
+            row: The binding set, in SPARQL JSON results form.
+
+        Returns:
+            The candidate, or ``None`` when the row carries no usable CELEX number — logged
+            and skipped, exactly as in discovery, because one malformed row must not end a
+            listing of a hundred thousand.
+        """
+        celex = (row.get("celex", {}).get("value") or "").strip()
+        if not _CELEX.fullmatch(celex):
+            log.warning(
+                "skipping a listed identifier that is not a CELEX number",
+                extra={"context": {"celex": celex[:64]}},
+            )
+            return None
+        return Candidate(
+            source_id=celex,
+            jurisdiction_code=self.jurisdiction_code,
+            source_url=self._celex_url(celex),
+        )
+
     # -- SPARQL ------------------------------------------------------------------------
+
+    def _identifier_query(
+        self,
+        limit: int,
+        after: str | None,
+        since: datetime | None,
+        until: datetime | None,
+    ) -> str:
+        """Build one page of the identifier listing.
+
+        The cheapest query that answers "which cases does sector 6 hold": one triple pattern
+        per restriction the corpus is defined by, ``DISTINCT`` rather than ``GROUP BY``, and
+        no ``OPTIONAL``. The resource-type restriction stays, because it is what the corpus
+        *is* — ``eurlex_resource_types`` decides which works discovery would have offered, and
+        a listing that ignored it would hand a repair identifiers the mirror never meant to
+        hold.
+
+        Args:
+            limit: Page size.
+            after: CELEX number the previous page ended on, or ``None`` for the first page.
+                It comes from a source payload, so it is checked twice before it reaches the
+                query — :func:`_listing_key` refuses anything that is not a CELEX number and
+                :func:`_celex_literal` refuses it again here.
+            since: Lower bound on the work's modification date, or ``None`` for no bound.
+            until: Upper bound, or ``None``.
+
+        Returns:
+            The SPARQL query.
+        """
+        types = " ".join(
+            _authority_uri("resource-type", code) for code in self.settings.eurlex_resource_types
+        )
+        gate = f'  FILTER(STR(?celex) > "{_celex_literal(after)}")\n' if after else ""
+        bounds = ""
+        if since is not None or until is not None:
+            lower = f"?modified >= {_instant_literal(since)}" if since is not None else ""
+            upper = f"?modified < {_instant_literal(until)}" if until is not None else ""
+            joined = " && ".join(part for part in (lower, upper) if part)
+            bounds = f"  ?work cmr:lastModificationDate ?modified .\n  FILTER({joined})\n"
+        return (
+            f"{_PREFIXES}"
+            "SELECT DISTINCT ?celex\n"
+            "WHERE {\n"
+            "  ?work cdm:resource_legal_id_celex ?celex .\n"
+            f'  ?work cdm:resource_legal_id_sector "{_CASE_LAW_SECTOR}"^^xsd:string .\n'
+            f"  VALUES ?resource_type {{ {types} }}\n"
+            "  ?work cdm:work_has_resource-type ?resource_type .\n"
+            f"{bounds}"
+            f"{gate}"
+            "}\n"
+            "ORDER BY ?celex\n"
+            f"LIMIT {int(limit)}\n"
+        )
 
     def _page_query(self, window: Window, limit: int, after: str | None) -> str:
         """Build the query listing one page of a window.

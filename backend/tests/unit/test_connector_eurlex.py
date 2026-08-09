@@ -160,6 +160,7 @@ class FakeCellar:
         content_type: str = "application/xhtml+xml;charset=UTF-8",
         redirect_notices: bool = False,
         broken: set[tuple[str, str]] | None = None,
+        short_pages: bool = False,
     ) -> None:
         """Build the fake source.
 
@@ -172,6 +173,8 @@ class FakeCellar:
                 the live route does.
             broken: ``(celex, language)`` pairs whose manifestation answers 500 however often
                 it is asked, as CELLAR does for the English version of 62022TJ0371.
+            short_pages: Whether the identifier listing returns one row fewer than asked for,
+                which is what a server-side row cap looks like from the outside.
         """
         self.rows = rows or []
         self.notices = notices or {}
@@ -179,6 +182,7 @@ class FakeCellar:
         self.content_type = content_type
         self.redirect_notices = redirect_notices
         self.broken = broken or set()
+        self.short_pages = short_pages
         self.queries: list[str] = []
         self.requests: list[tuple[str, str, str | None]] = []
         self._unstable = 0
@@ -244,6 +248,8 @@ class FakeCellar:
         """
         query = _form_field(request.content.decode("utf-8"), "query")
         self.queries.append(query)
+        if "SELECT DISTINCT ?celex" in query:
+            return self._listing(query)
         start, stop = window_of(query)
         inside = sorted(
             (row for row in self.rows if start <= row.instant < stop),
@@ -261,6 +267,28 @@ class FakeCellar:
             turn = self._unstable % max(len(inside), 1)
             page = (inside[turn:] + inside[:turn])[_page_offset(query) :][:limit]
         return _json(*(row.binding() for row in page))
+
+    def _listing(self, query: str) -> httpx.Response:
+        """Answer the identifier listing, which is a different query from discovery.
+
+        Modelled as unkindly as ``_sparql`` models discovery, in the one way that matters
+        here: a source may return **fewer rows than asked for** without the listing being
+        over — a cap, a timeout budget, a whim. ``short_pages`` makes it do so, so the
+        connector cannot get away with treating a short page as the end.
+
+        Args:
+            query: The listing query.
+
+        Returns:
+            One page of CELEX numbers, in ascending order, as a SPARQL JSON result set.
+        """
+        after = _page_after(query)
+        limit = _page_limit(query)
+        distinct = sorted({row.celex for row in self.rows})
+        page = [celex for celex in distinct if after is None or celex > after][:limit]
+        if self.short_pages and len(page) > 1:
+            page = page[: len(page) - 1]
+        return _json(*({"celex": {"type": "literal", "value": celex}} for celex in page))
 
     def _celex_in(self, raw_url: str) -> str:
         """Return the CELEX number a REST URL refers to.
@@ -710,6 +738,110 @@ def test_a_rejected_query_ends_the_run() -> None:
 
     with connector, pytest.raises(SourceUnavailableError, match="rejected a discovery query"):
         list(connector.discover(datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 1, 2, tzinfo=UTC)))
+
+
+# -- the identifier listing a repair diffs against the store ----------------------------
+
+
+def test_the_listing_is_the_cheap_query_and_not_the_discovery_one() -> None:
+    """Rule 2.10: the listing exists because the walk it replaces is the expensive query."""
+    source = FakeCellar(rows=rows(5))
+
+    with source.connector() as connector:
+        list(connector.enumerate_identifiers())
+
+    assert source.queries
+    for query in source.queries:
+        assert "SELECT DISTINCT ?celex" in query
+        assert "GROUP BY" not in query, "a listing must not group"
+        assert "OPTIONAL" not in query, "a listing must not join for a title"
+        assert "COUNT(" not in query, "a listing must not be counted first"
+        assert "MAX(" not in query and "SAMPLE(" not in query, "a listing has no aggregates"
+        assert "OFFSET" not in query, "a listing page is taken by key, not by offset"
+        assert "ORDER BY ?celex\n" in query
+
+
+def test_the_listing_states_the_corpus_the_capture_defined() -> None:
+    """A listing bound by different resource types would compare two different corpora."""
+    source = FakeCellar(rows=rows(1))
+
+    with source.connector(settings(eurlex_resource_types=["JUDG", "INFO_JUDICIAL"])) as connector:
+        list(connector.enumerate_identifiers())
+
+    query = source.queries[0]
+    assert 'cdm:resource_legal_id_sector "6"^^xsd:string' in query
+    assert "resource-type/JUDG>" in query
+    assert "resource-type/INFO_JUDICIAL>" in query
+
+
+def test_the_listing_pages_by_key_and_yields_every_identifier_once() -> None:
+    source = FakeCellar(rows=rows(25))
+
+    with source.connector(settings(eurlex_identifier_page_size=10)) as connector:
+        listed = [candidate.source_id for candidate in connector.enumerate_identifiers()]
+
+    expected = sorted({row.celex for row in rows(25)})
+    assert listed == expected, "the listing must be complete, in order, and without repeats"
+    assert [_page_after(query) for query in source.queries][:2] == [None, expected[9]]
+
+
+def test_a_short_page_does_not_end_the_listing() -> None:
+    """A page shorter than asked for is what a server-side row cap looks like.
+
+    Ending there would tell a repair that everything past the cut is already held, which is
+    the one failure this whole mode exists to avoid: an absence nobody can audit.
+    """
+    source = FakeCellar(rows=rows(25), short_pages=True)
+
+    with source.connector(settings(eurlex_identifier_page_size=10)) as connector:
+        listed = [candidate.source_id for candidate in connector.enumerate_identifiers()]
+
+    assert listed == sorted({row.celex for row in rows(25)})
+
+
+def test_a_listed_identifier_carries_no_revision_claim() -> None:
+    """A listing says a case exists. It must not be readable as saying one has changed."""
+    source = FakeCellar(rows=rows(1))
+
+    with source.connector() as connector:
+        listed = list(connector.enumerate_identifiers())
+
+    assert [candidate.source_id for candidate in listed] == ["62020CJ0000"]
+    assert listed[0].modified_at is None
+    assert listed[0].content_hash is None
+    assert listed[0].source_url == f"{CELLAR_URL}/62020CJ0000"
+
+
+def test_the_listing_can_be_narrowed_without_growing_a_join() -> None:
+    source = FakeCellar(rows=rows(3))
+
+    with source.connector() as connector:
+        list(
+            connector.enumerate_identifiers(
+                datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 2, 1, tzinfo=UTC)
+            )
+        )
+
+    query = source.queries[0]
+    assert "cmr:lastModificationDate" in query
+    assert len(_BOUNDS.findall(query)) == 2
+    assert "OPTIONAL" not in query and "GROUP BY" not in query
+
+
+def test_a_listing_page_ending_on_a_non_celex_row_stops_the_listing() -> None:
+    """The rest of the listing is unreachable, and a short listing is a silent gap."""
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        del request
+        return _json(*({"celex": {"type": "literal", "value": "not a celex"}},) * 2)
+
+    config = settings(eurlex_identifier_page_size=2)
+    connector = EurLexConnector(
+        config, client=PoliteClient(config, transport=httpx.MockTransport(handle))
+    )
+
+    with connector, pytest.raises(SourceUnavailableError, match="cannot be paged"):
+        list(connector.enumerate_identifiers())
 
 
 # -- query construction and injection ---------------------------------------------------

@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import signal
 from collections.abc import Iterator
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -20,7 +21,7 @@ import pytest
 from plt.cli import main
 from plt.config import Settings
 from plt.pipeline import registry
-from plt.pipeline.base import SourceUnavailableError
+from plt.pipeline.base import Candidate, SourceConnector, SourceUnavailableError
 from plt.pipeline.runlog import LOG_DIR_NAME
 from tests.conftest import build_settings
 from tests.fakes import FakeConnector, FakeDocument, documents
@@ -46,6 +47,22 @@ class MirrorCliConnector(FakeConnector):
     def __init__(self, settings: Settings | None = None) -> None:
         """Publish a fixed set of documents."""
         super().__init__(settings, docs=EU_DOCS)
+
+    def enumerate_identifiers(
+        self, since: datetime | None = None, until: datetime | None = None
+    ) -> Iterator[Candidate]:
+        """State what the fake source holds, without walking anything.
+
+        Args:
+            since: Ignored; the fake's corpus is small enough to state whole.
+            until: Ignored, for the same reason.
+
+        Yields:
+            One bare candidate per document.
+        """
+        del since, until
+        for document in self.docs:
+            yield Candidate(source_id=document.source_id, jurisdiction_code=self.jurisdiction_code)
 
 
 class BrokenConnector(MirrorCliConnector):
@@ -183,6 +200,34 @@ def test_a_jurisdiction_with_no_connector_exits_one(store_root: Path) -> None:
     assert store_root.parent.is_dir()
 
     assert main(["mirror", "--jurisdiction", "ZZ"]) == 1
+
+
+def test_repair_fills_a_gap_without_walking_discovery(store_root: Path) -> None:
+    main(["mirror", "--jurisdiction", "EU", "--limit", "1"])
+    assert len(case_folders(store_root)) == 1
+
+    code = main(["mirror", "--jurisdiction", "EU", "--repair"])
+
+    assert code == 0
+    assert case_folders(store_root) == [document.source_id for document in EU_DOCS]
+    logs = sorted((store_root / "EU" / LOG_DIR_NAME).iterdir())
+    assert logs[-1].read_text(encoding="utf-8").startswith("EU corpus repair - ")
+
+
+def test_a_repair_cannot_be_asked_of_a_source_that_has_no_cheap_listing(
+    store_root: Path,
+) -> None:
+    """Better a one-line refusal than the expensive walk the mode exists to avoid."""
+
+    class Unlistable(MirrorCliConnector):
+        """A connector that keeps the default listing, which is to have none."""
+
+        enumerate_identifiers = SourceConnector.enumerate_identifiers
+
+    registry.reset_registry(Unlistable)
+
+    assert main(["mirror", "--jurisdiction", "EU", "--repair"]) == 1
+    assert not case_folders(store_root)
 
 
 def test_a_store_that_cannot_be_opened_exits_one(tmp_path: Path, store_root: Path) -> None:
