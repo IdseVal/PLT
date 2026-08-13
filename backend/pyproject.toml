@@ -99,6 +99,9 @@ ignore = [
 # rejects real ones.
 "tests/**" = ["S101", "S105", "S106", "D102", "D103"]
 "migrations/env.py" = ["D103"]
+# A curation tool run by hand reports to the terminal; a logger would be the wrong instrument
+# for output whose whole purpose is to be read and judged on the spot.
+"scripts/**" = ["T201"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

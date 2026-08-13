@@ -83,11 +83,21 @@ Two mechanisms, used together:
    inflection — *biocidenverordening*, *bestrijdingsmiddelenresiduen*, *glyfosaathoudend* —
    which is what `substring` exists for.
 
-   > The floor is a floor, not a guarantee. Two six-character literals in the shipped lists
-   > are still reached inside unrelated words — `aldrin` inside the surname *Maaldrink*, 12
-   > documents in the same sample, and `captan` inside *mercaptanen*. A length rule cannot
-   > see that; only measuring a candidate literal against the corpus can. Do that for any
-   > short name before giving it `substring`.
+   > The floor is a floor, not a guarantee. A length rule cannot see that `aldrin` sits
+   > inside the surname *Maaldrink* or `captan` inside *mercaptanen*; only measuring a
+   > candidate literal against the corpus can. Do that for any short name before giving it
+   > `substring` — `scripts/substring_traps.py` is the measurement, and it reads the corpus
+   > store rather than the network, so it costs nothing to run.
+
+   That measurement is not optional, and leaving it undone is not cheap. `aldrin` was
+   carried as a `substring` literal into the first full EU run, where it matched inside
+   **Aldringen** and **Aldringer** — the Luxembourg street at which litigants of the 1950s to
+   1970s gave their address for service. It selected 41 ECSC and EEC judgments about coal,
+   steel and pricing, each scoring exactly 3.0 on that one term, before anything else in the
+   corpus had been read. `en-aldrin` and `nl-captan` are therefore `word`, and `nl-aldrin` is
+   `word` with its real Dutch compounds spelled out as aliases. `en-captan` stays `substring`:
+   the same scan over 20,000 EU judgments and 214,614 distinct word forms found no English
+   word containing it. Each of those is a measurement, not a rule.
 
 2. **`requires`.** Match mode cannot save `beer`. A name that is an ordinary word in the
    jurisdiction's language keeps its weight and its place in the list but is gated on a
