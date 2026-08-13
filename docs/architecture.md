@@ -994,3 +994,38 @@ Four rules of its own:
    discovered. Nothing is lost either — the source's modification date is in the notice stored
    beside it and in `source_metadata`, verbatim — and the next capture whose window reaches
    the case fills the fields in.
+
+### 9.1 Ingesting from the store (`plt ingest --from-store`)
+
+Filtering a corpus the mirror already holds is a decision about text on our disk. Asking the
+courts to serve a million judgments again so the same bytes can be scored a second time is
+rule 2.10's mistake at its largest scale, and it is what a backfill would otherwise be.
+
+`plt.pipeline.store_source.StoredCorpusConnector` wraps a real connector and replaces only the
+two stages that touch the network:
+
+- **`discover`** walks the case folders and yields one candidate each, carrying the identifier,
+  the modification instant and the revision the store recorded.
+- **`fetch`** reads `raw_content.<format>` as the payload and rebuilds the language versions
+  from the `fulltext.*` files beside it, joined to `retrieved_languages` on the URL both record,
+  so a version keeps the source's own language code.
+- **`normalise` is the wrapped connector's, untouched.**
+
+That last point is the whole design, and it is a property of the two shipped connectors rather
+than an assumption about them: both derive everything from the payload they are handed, so a
+payload read off disk normalises into exactly the case the network run produced. A connector
+that normalised from anything else — a second request, its own memory — could not be read back
+from a mirror, and the round-trip test in `tests/unit/test_store_source.py` is what says so.
+
+Three consequences worth stating:
+
+1. **It reports the source's connector name**, so a backfill and the weekly run share one
+   `ingest_checkpoint` row. The checkpoint's timestamp is a high-water mark, so a full pass in
+   filesystem order still ends on the newest case the corpus holds, and the next scheduled run
+   asks the source only for what changed after it.
+2. **The order is the filesystem's**, not the source's. Nothing resumes mid-window from it;
+   an interrupted store run is simply run again, and deduplication skips what was already
+   stored without opening a payload.
+3. **Provenance stays true.** The case really did come from Rechtspraak or CELLAR, and is
+   recorded that way; that a particular run read it from the mirror is recorded per document,
+   under `read_from_store`.

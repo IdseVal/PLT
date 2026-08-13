@@ -98,7 +98,7 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
@@ -1076,6 +1076,33 @@ class CorpusStore:
         except OSError:
             return 0
         return sum(1 for entry in entries if (entry / _METADATA_NAME).is_file())
+
+    def iter_cases(self) -> Iterator[tuple[Path, Mapping[str, Any]]]:
+        """Yield every complete case folder on disk, with the metadata beside it.
+
+        The order is the filesystem's, not the source's: this walks a corpus, and a corpus
+        has no window. A caller that needs the cases in modification order has to sort them,
+        which is why nothing here pretends to.
+
+        Only folders holding a readable ``metadata.json`` are yielded, on the same rule
+        :meth:`holds` uses — the file is written last, so its presence is what makes a folder
+        a case rather than a half-written one.
+
+        Yields:
+            The folder and its metadata record, one pair per case.
+        """
+        try:
+            entries = self._path.iterdir()
+        except OSError as error:
+            log.warning(
+                "the store could not be listed; nothing will be read from it",
+                extra={"context": {"path": str(self._path), "error": str(error)}},
+            )
+            return
+        for entry in entries:
+            record = self._read_case_metadata(entry)
+            if record is not None:
+                yield entry, record
 
     def survey(self) -> CorpusSurvey:
         """Describe the corpus by reading it: what kinds of case, in what languages, how many.

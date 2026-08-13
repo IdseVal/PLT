@@ -38,6 +38,7 @@ from __future__ import annotations
 import json
 import sys
 from collections.abc import Sequence
+from contextlib import ExitStack
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
@@ -58,6 +59,7 @@ from plt.pipeline.persistence import resolve_court
 from plt.pipeline.registry import available_jurisdictions, connector_classes, connector_for
 from plt.pipeline.repair import repair_jurisdiction
 from plt.pipeline.runner import IngestReport, run_jurisdiction
+from plt.pipeline.store_source import StoredCorpusConnector, stored_corpus_connector
 from plt.utils.logging import configure_logging, get_logger
 
 __all__ = ["main", "plt_cli"]
@@ -173,6 +175,12 @@ def plt_cli() -> None:
     is_flag=True,
     help="Do not email PLT_ADMIN_EMAIL about the review items this scan flagged.",
 )
+@click.option(
+    "--from-store",
+    is_flag=True,
+    help="Read the cases from the local corpus store instead of asking the source for them. "
+    "Use this to filter a corpus 'plt mirror' already holds, which is every backfill.",
+)
 def ingest(
     jurisdictions: tuple[str, ...],
     every_jurisdiction: bool,
@@ -183,11 +191,16 @@ def ingest(
     batch_size: int | None,
     fail_on_partial: bool,
     no_notify: bool,
+    from_store: bool,
 ) -> None:
     """Fetch, filter and store one or more jurisdictions' case law.
 
     Run without ``--since`` — as the weekly job does — the stored checkpoint supplies the
     window, so each run picks up where the last one left off.
+
+    With ``--from-store`` the payloads come off local disk instead of the network. That is how
+    a corpus already mirrored is filtered: the cases are the same cases, so asking the source
+    to serve a million of them again buys nothing (``docs/architecture.md`` rule 2.10).
 
     When the scan flags cases for review and ``PLT_ADMIN_EMAIL`` is set, one message goes out
     afterwards listing them (core document 2.7): the queue is not public, so without this
@@ -208,15 +221,24 @@ def ingest(
 
     reports: list[IngestReport] = []
     for code in codes:
-        report = run_jurisdiction(
-            code,
-            since,
-            until,
-            dry_run,
-            settings=settings,
-            batch_size=batch_size,
-            report_path=report_path,
-        )
+        with ExitStack() as stack:
+            source: StoredCorpusConnector | None = None
+            if from_store:
+                source = stored_corpus_connector(code, settings=settings)
+                # run_jurisdiction only closes a connector it built itself, so an injected one
+                # is this command's to close, on every way out of the loop.
+                stack.callback(source.close)
+                click.echo(f"{code}: reading the corpus from {source.store_path}")
+            report = run_jurisdiction(
+                code,
+                since,
+                until,
+                dry_run,
+                connector=source,
+                settings=settings,
+                batch_size=batch_size,
+                report_path=report_path,
+            )
         reports.append(report)
         click.echo(report.summary())
         if report.report_path is not None:
