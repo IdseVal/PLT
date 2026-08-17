@@ -76,6 +76,18 @@
       "type": "object",
       "required": ["id", "term", "lang", "category"],
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": { "match": { "const": "regex" } },
+            "required": ["match"]
+          },
+          "then": {
+            "required": ["label"],
+            "$comment": "A regex term's 'term' is a pattern, and a pattern is not a name. Since every match is shown to the public as a label, a regex term has to say what to call it."
+          }
+        }
+      ],
       "properties": {
         "id": {
           "type": "string",
@@ -85,7 +97,12 @@
         "term": {
           "type": "string",
           "minLength": 2,
-          "description": "The term as it appears in court documents, in the source language. This is the label a case carries when the term matches, so it is written to be read by the public."
+          "description": "The term as it appears in court documents, in the source language. Also the public label a case carries when it matches, unless 'label' overrides it."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 2,
+          "description": "What to call this term where a reader sees it: on the case page, in the keyword filter, in a match report. Defaults to 'term'. Required when 'match' is 'regex', because a pattern such as '(?<!\\\\w)Ctgb(?!\\\\w)' is not a name and must never reach the public as one."
         },
         "lang": {
           "type": "string",

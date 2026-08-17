@@ -2,7 +2,7 @@
   "schema_version": "2.0.0",
   "jurisdiction": "NL",
   "jurisdiction_name": "Netherlands",
-  "list_version": "2.0.0",
+  "list_version": "2.2.0",
   "updated": "2026-08-17",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": [
@@ -41,6 +41,7 @@
     {
       "id": "nl-bestrijdingsmiddel",
       "term": "(?<!drugs\\sen/of\\s)(?<!drugs\\sen\\s)(?<!drugs\\sof\\s)bestrijdingsmiddel",
+      "label": "bestrijdingsmiddel",
       "lang": "nl",
       "category": "product_class",
       "match": "regex",
@@ -339,6 +340,7 @@
     {
       "id": "nl-ctgb",
       "term": "(?<!\\w)Ctgb(?!\\w)",
+      "label": "Ctgb",
       "lang": "nl",
       "category": "authority",
       "match": "regex",
@@ -2486,10 +2488,13 @@
       "term": "cyanuurzuur",
       "lang": "nl",
       "category": "active_substance",
-      "match": "substring",
+      "match": "word",
       "aliases": [
-        "cyanuric acid"
-      ]
+        "cyanuric acid",
+        "cyanuurzuurhoudend",
+        "cyanuurzuurhoudende"
+      ],
+      "note": "Word-matched: as a substring 'cyanuurzuur' is reached inside 'trichloorisocyanuurzuur', a different substance."
     },
     {
       "id": "nl-cyazofamide",
@@ -6081,10 +6086,14 @@
       "term": "permethrine",
       "lang": "nl",
       "category": "active_substance",
-      "match": "substring",
+      "match": "word",
       "aliases": [
-        "permethrin"
-      ]
+        "permethrin",
+        "permethrinen",
+        "permethrineproducten",
+        "permethrinproducten"
+      ],
+      "note": "Word-matched: as a substring 'permethrin' is reached inside 'cypermethrin' and 'deltamethrin', which are different active substances."
     },
     {
       "id": "nl-peroctaanzuur",
@@ -7843,11 +7852,13 @@
       "term": "asulam",
       "lang": "nl",
       "category": "active_substance",
-      "match": "substring",
+      "match": "word",
       "aliases": [
-        "asulox"
+        "asulox",
+        "asulamhoudend",
+        "asulamhoudende"
       ],
-      "note": "Split out of nl-prosulfocarb on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
+      "note": "Split out of nl-prosulfocarb on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed. Word-matched: as a substring 'asulam' is reached inside 'florasulam', an unrelated herbicide, and labelled those cases with the wrong substance."
     },
     {
       "id": "nl-metolachloor",

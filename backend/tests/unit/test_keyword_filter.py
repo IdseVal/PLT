@@ -311,7 +311,7 @@ def test_a_regex_term_is_read_as_an_expression_and_not_as_a_literal(tmp_path: Pa
     # nl-ctgb is case_sensitive and match=regex; the lowercase characters of its pattern are
     # syntax, not prose, so the acronym rule does not apply to it.
     document = make_list(
-        [term("nl-ctgb", r"(?<!\w)Ctgb(?!\w)", match="regex", case_sensitive=True)]
+        [term("nl-ctgb", r"(?<!\w)Ctgb(?!\w)", label="Ctgb", match="regex", case_sensitive=True)]
     )
 
     assert load_keyword_list(write_list(tmp_path, document)).term_count == 1
@@ -355,6 +355,7 @@ def test_an_exception_on_a_regex_term_is_rejected_as_well(tmp_path: Path) -> Non
             term(
                 "nl-ctgb",
                 r"(?<!\w)Ctgb(?!\w)",
+                label="Ctgb",
                 match="regex",
                 case_sensitive=True,
                 case_sensitive_exception=True,
@@ -383,7 +384,7 @@ def test_a_short_literal_is_only_refused_where_substring_would_reach_inside_a_wo
 
 
 def test_an_uncompilable_regex_term_is_named(tmp_path: Path) -> None:
-    document = make_list([term("nl-bad-regex", "gewas(", match="regex")])
+    document = make_list([term("nl-bad-regex", "gewas(", label="gewas", match="regex")])
 
     with pytest.raises(KeywordListValidationError, match=r"nl-bad-regex.*invalid regular"):
         load_keyword_list(write_list(tmp_path, document))
@@ -713,7 +714,16 @@ def test_substring_mode_matches_inside_a_compound(tmp_path: Path) -> None:
 def test_regex_mode_matches_what_the_other_modes_cannot(tmp_path: Path) -> None:
     stage = build_filter(
         tmp_path,
-        make_list([term("nl-artikel", r"artikel\s+5[0-9] van de verordening", match="regex")]),
+        make_list(
+            [
+                term(
+                    "nl-artikel",
+                    r"artikel\s+5[0-9] van de verordening",
+                    label="artikel 50-59 van de verordening",
+                    match="regex",
+                )
+            ]
+        ),
     )
 
     matching = stage.evaluate(Doc(full_text="op grond van artikel 53 van de verordening"))
@@ -839,12 +849,38 @@ def test_a_term_found_in_two_fields_is_still_one_label(tmp_path: Path) -> None:
     assert by_field["full_text"].occurrences == 3, "occurrences stay visible for tuning"
 
 
-def test_terms_written_alike_in_several_languages_are_all_credited() -> None:
+def test_a_word_spelled_alike_in_several_languages_is_one_label() -> None:
+    """``pesticide`` is spelled identically in English, French and Dutch.
+
+    Three terms carrying it cost nothing while a match was only a score. As a label it listed
+    one case under the same word three times, so the variants are aliases of one term now.
+    """
     eu_filter = KeywordFilter(load_keyword_list(KEYWORDS_DIR / "eu.json"))
 
     result = eu_filter.evaluate(Doc(jurisdiction_code="EU", full_text="the word pesticide here"))
 
-    assert {"en-pesticide", "fr-pesticide", "nl-eu-pesticide"} <= matched(result)
+    assert result.passed
+    assert matched(result) == {"en-pesticide"}
+    assert [match.term for match in result.labels] == ["pesticide"]
+
+
+def test_a_substance_is_never_labelled_with_a_different_substances_name() -> None:
+    """Three Dutch names are reached inside the name of an unrelated substance.
+
+    ``asulam`` sits in ``florasulam``, ``cyanuurzuur`` in ``trichloorisocyanuurzuur`` and
+    ``permethrin`` in ``cypermethrin``. As a score that was noise; as a label it told the
+    reader the case was about a chemical it never mentions.
+    """
+    nl_filter = KeywordFilter(load_keyword_list(KEYWORDS_DIR / "nl.json"))
+
+    for text, wrong in (
+        ("Het middel florasulam is toegepast.", "nl-asulam"),
+        ("Er is trichloorisocyanuurzuur aangetroffen.", "nl-cyanuurzuur"),
+        ("Het gaat om cypermethrin.", "nl-permethrine"),
+    ):
+        result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} {text}"))
+        assert result.passed, f"the substance itself must still select: {text!r}"
+        assert wrong not in matched(result), f"{wrong} must not label {text!r}"
 
 
 # ----------------------------------------------------------------------------------------
@@ -1058,3 +1094,39 @@ def test_cost_does_not_grow_with_the_number_of_terms(
     assert large_time < 4 * small_time, (
         f"500 terms cost {large_time / small_time:.1f}x the time of 25"
     )
+
+
+def test_a_regex_term_must_say_what_to_call_it(tmp_path: Path) -> None:
+    r"""A pattern is not a name, and every match is shown to a reader as one.
+
+    The first full run under the word-search model published
+    ``(?<!drugs\sen/of\s)(?<!drugs\sen\s)(?<!drugs\sof\s)bestrijdingsmiddel`` as the
+    label on 1,429 cases. The schema now refuses a regex term that carries no ``label``.
+    """
+    document = make_list([term("nl-rx", r"bestrijdings\w+", match="regex")])
+
+    with pytest.raises(KeywordListValidationError, match=r"terms/0"):
+        load_keyword_list(write_list(tmp_path, document))
+
+
+def test_a_labelled_term_reports_its_label_and_matches_on_its_pattern(tmp_path: Path) -> None:
+    document = make_list(
+        [term("nl-rx", r"bestrijdings\w+", label="bestrijdingsmiddel", match="regex")]
+    )
+    stage = build_filter(tmp_path, document)
+
+    result = stage.evaluate(Doc(full_text="Het bestrijdingsmiddel is toegepast."))
+
+    assert result.passed
+    assert [match.term for match in result.labels] == ["bestrijdingsmiddel"]
+
+
+@pytest.mark.parametrize("code", ["nl", "eu"])
+def test_no_shipped_label_is_a_pattern(code: str) -> None:
+    """Nothing a reader sees may look like machine syntax."""
+    keyword_list = load_keyword_list(KEYWORDS_DIR / f"{code}.json")
+
+    for curated in keyword_list.terms.values():
+        label = curated.public_label
+        assert "(?" not in label, f"{curated.term_id} publishes a pattern: {label!r}"
+        assert "\\" not in label, f"{curated.term_id} publishes an escape: {label!r}"

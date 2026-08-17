@@ -228,6 +228,9 @@ class KeywordTerm:
     Attributes:
         term_id: Stable id, e.g. ``nl-drift``. Match provenance is stored against it.
         term: The term as it appears in court documents, in the source language.
+        label: What a reader is shown when this term matches. Defaults to :attr:`term`, and
+            exists for the case where the two cannot be the same thing: a ``regex`` term's
+            ``term`` is a pattern, and a pattern is not a name.
         lang: ISO 639-1 code of the language the term is written in.
         category: The kind of term this is. Stored on every match and shown publicly, so it
             is one of the two labels a case is listed under.
@@ -246,6 +249,7 @@ class KeywordTerm:
 
     term_id: str
     term: str
+    label: str | None
     lang: str
     category: str
     match: MatchMode
@@ -254,6 +258,17 @@ class KeywordTerm:
     aliases: tuple[str, ...]
     requires: tuple[str, ...]
     note: str | None
+
+    @property
+    def public_label(self) -> str:
+        """Return what a reader is shown when this term matches.
+
+        Returns:
+            The curated ``label`` where there is one, and the term itself otherwise. Every
+            match carries this rather than the matched text, so a case is listed under one
+            name however many spellings of it the judgment used.
+        """
+        return self.label or self.term
 
     @property
     def patterns(self) -> tuple[str, ...]:
@@ -654,6 +669,7 @@ def _term_from_raw(raw: Mapping[str, Any]) -> KeywordTerm:
     return KeywordTerm(
         term_id=str(raw["id"]),
         term=str(raw["term"]),
+        label=str(raw["label"]) if raw.get("label") else None,
         lang=str(raw["lang"]),
         category=str(raw["category"]),
         match=cast(MatchMode, match_mode),
@@ -1242,7 +1258,7 @@ class KeywordFilter(Filter):
                 matches.append(
                     TermMatch(
                         term_id=term_id,
-                        term=term.term,
+                        term=term.public_label,
                         category=term.category,
                         list_version=self._list.list_version,
                         field=field_name,

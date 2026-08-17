@@ -2,7 +2,7 @@
   "schema_version": "2.0.0",
   "jurisdiction": "EU",
   "jurisdiction_name": "European Union",
-  "list_version": "2.0.0",
+  "list_version": "2.1.0",
   "updated": "2026-08-17",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": [
@@ -26,8 +26,10 @@
       "category": "product_class",
       "match": "substring",
       "aliases": [
-        "pesticides"
-      ]
+        "pesticides",
+        "pesticiden"
+      ],
+      "note": "Carries the other working languages' spellings as aliases. They were separate terms until 17 August 2026, which cost nothing under weighting and, once a match became a public label, listed one case under the same word three times."
     },
     {
       "id": "en-plant-protection-product",
@@ -49,8 +51,12 @@
       "aliases": [
         "biocidal products",
         "biocide",
-        "biocides"
-      ]
+        "biocides",
+        "biociden",
+        "produit biocide",
+        "produits biocides"
+      ],
+      "note": "Carries the other working languages' spellings as aliases. They were separate terms until 17 August 2026, which cost nothing under weighting and, once a match became a public label, listed one case under the same word three times."
     },
     {
       "id": "en-herbicide",
@@ -108,8 +114,14 @@
       "category": "active_substance",
       "match": "substring",
       "aliases": [
-        "neonicotinoids"
-      ]
+        "neonicotinoids",
+        "néonicotinoïde",
+        "néonicotinoïdes",
+        "Neonicotinoide",
+        "neonicotinoïde",
+        "neonicotinoïden"
+      ],
+      "note": "Carries the other working languages' spellings as aliases. They were separate terms until 17 August 2026, which cost nothing under weighting and, once a match became a public label, listed one case under the same word three times."
     },
     {
       "id": "en-imidacloprid",
@@ -313,16 +325,6 @@
       ]
     },
     {
-      "id": "fr-pesticide",
-      "term": "pesticide",
-      "lang": "fr",
-      "category": "product_class",
-      "match": "substring",
-      "aliases": [
-        "pesticides"
-      ]
-    },
-    {
       "id": "fr-produit-phytopharmaceutique",
       "term": "produit phytopharmaceutique",
       "lang": "fr",
@@ -333,33 +335,6 @@
         "produit phytosanitaire",
         "produits phytosanitaires"
       ]
-    },
-    {
-      "id": "fr-produit-biocide",
-      "term": "produit biocide",
-      "lang": "fr",
-      "category": "product_class",
-      "match": "substring",
-      "aliases": [
-        "produits biocides"
-      ]
-    },
-    {
-      "id": "fr-herbicide",
-      "term": "herbicide",
-      "lang": "fr",
-      "category": "product_class",
-      "match": "substring",
-      "aliases": [
-        "herbicides"
-      ]
-    },
-    {
-      "id": "fr-glyphosate",
-      "term": "glyphosate",
-      "lang": "fr",
-      "category": "active_substance",
-      "match": "substring"
     },
     {
       "id": "fr-lmr",
@@ -477,16 +452,6 @@
       "match": "substring",
       "aliases": [
         "gewasbeschermingsmiddelen"
-      ]
-    },
-    {
-      "id": "nl-eu-pesticide",
-      "term": "pesticide",
-      "lang": "nl",
-      "category": "product_class",
-      "match": "substring",
-      "aliases": [
-        "pesticiden"
       ]
     },
     {
@@ -4346,39 +4311,6 @@
       "note": "Split out of en-copper-compounds on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
     {
-      "id": "fr-neonicotinoide",
-      "term": "néonicotinoïde",
-      "lang": "fr",
-      "category": "product_class",
-      "match": "substring",
-      "aliases": [
-        "néonicotinoïdes"
-      ],
-      "note": "Split out of fr-glyphosate on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
-    },
-    {
-      "id": "de-neonicotinoid",
-      "term": "Neonicotinoid",
-      "lang": "de",
-      "category": "product_class",
-      "match": "substring",
-      "aliases": [
-        "Neonicotinoide"
-      ],
-      "note": "Split out of de-glyphosat on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
-    },
-    {
-      "id": "nl-eu-neonicotinoide",
-      "term": "neonicotinoïde",
-      "lang": "nl",
-      "category": "product_class",
-      "match": "substring",
-      "aliases": [
-        "neonicotinoïden"
-      ],
-      "note": "Split out of nl-eu-glyfosaat on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
-    },
-    {
       "id": "en-nematicide",
       "term": "nematicide",
       "lang": "en",
@@ -4404,17 +4336,6 @@
       "category": "product_class",
       "match": "substring",
       "note": "Its own term rather than an alias of en-fungicide: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
-    },
-    {
-      "id": "fr-insecticide",
-      "term": "insecticide",
-      "lang": "fr",
-      "category": "product_class",
-      "match": "substring",
-      "aliases": [
-        "insecticides"
-      ],
-      "note": "Its own term rather than an alias of fr-herbicide: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
     },
     {
       "id": "fr-fongicide",
@@ -4448,17 +4369,6 @@
         "Fungizide"
       ],
       "note": "Its own term rather than an alias of de-herbizid: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
-    },
-    {
-      "id": "nl-eu-biocide",
-      "term": "biocide",
-      "lang": "nl",
-      "category": "product_class",
-      "match": "substring",
-      "aliases": [
-        "biociden"
-      ],
-      "note": "Its own term rather than an alias of nl-eu-pesticide: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
     }
   ],
   "exclusions": []
