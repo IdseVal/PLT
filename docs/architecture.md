@@ -183,12 +183,12 @@ add source-specific fields to `source_metadata`.
 | --- | --- | --- |
 | `jurisdiction` | One row per jurisdiction, EU included as its own row | `code` (PK, `NL`/`EU`), `name`, `type` (`state`\|`supranational`), `iso_alpha2`, `map_feature_id`, `is_active` |
 | `court` | Courts/instances, seeded from source vocabularies | `id`, `jurisdiction_code` (FK), `source_identifier` (unique per jurisdiction), `name`, `level`, `domain`, `source_type` |
-| `case` | The central entity, one row per decision | `id`, `jurisdiction_code` (FK), `source_id` (**unique with jurisdiction**: ECLI or CELEX), `source_system`, `court_id` (FK), `title`, `abstract`, `decision_date`, `filing_date`, `publication_date`, `case_numbers` (JSON), `language`, `law_domain`, `law_subfield`, `procedure_type`, `outcome`, `source_url`, `content_hash`, `first_seen_at`, `last_seen_at`, `updated_at`, `source_metadata` (JSON), `is_published`, `filter_score`, `needs_review` |
+| `case` | The central entity, one row per decision | `id`, `jurisdiction_code` (FK), `source_id` (**unique with jurisdiction**: ECLI or CELEX), `source_system`, `court_id` (FK), `title`, `abstract`, `decision_date`, `filing_date`, `publication_date`, `case_numbers` (JSON), `language`, `law_domain`, `law_subfield`, `procedure_type`, `outcome`, `source_url`, `content_hash`, `first_seen_at`, `last_seen_at`, `updated_at`, `source_metadata` (JSON), `is_published`, `matched_term_count`, `needs_review` |
 | `case_document` | Full texts and attachments per case, per language | `id`, `case_id` (FK), `language`, `doc_type` (`judgment`\|`opinion`\|`summary`), `format`, `full_text`, `raw_payload`, `retrieved_at` |
 | `party` | Litigating parties | `id`, `case_id` (FK), `name`, `role` (`applicant`\|`defendant`\|`intervener`\|`other`), `party_type` |
 | `topic` + `case_topic` | Topic classification (§2.2 label 6), extensible | `id`, `slug`, `label`, `parent_id` |
-| `keyword_match` | Which term ids matched a case, and where | `id`, `case_id` (FK), `term_id`, `list_version`, `field`, `weight_applied`, `snippet` |
-| `case_review` | One row per case flagged for review, and the standing decision on it | `id`, `case_id` (**unique**, FK), `status` (`pending`\|`confirmed`\|`rejected`\|`withdrawn`), `score`, `min_score`, `band_ceiling`, `list_version`, `reason`, `flagged_at`, `flagged_revision`, `flagged_content_hash`, `decision` (`confirmed`\|`rejected`), `decided_by`, `decided_at`, `decided_revision`, `decision_note`, `suppressed_publication` |
+| `keyword_match` | The terms that selected a case — its **public labels** | `id`, `case_id` (FK), `term_id`, `term`, `category`, `list_version`, `field`, `match_count`, `snippet` |
+| `case_review` | One row per case flagged for review, and the standing decision on it | `id`, `case_id` (**unique**, FK), `status` (`pending`\|`confirmed`\|`rejected`\|`withdrawn`), `list_version`, `reason`, `flagged_at`, `flagged_revision`, `flagged_content_hash`, `decision` (`confirmed`\|`rejected`), `decided_by`, `decided_at`, `decided_revision`, `decision_note`, `suppressed_publication` |
 | `case_review_decision` | Append-only history of decisions taken on a review item | `id`, `review_id` (FK), `decision`, `decided_by`, `decided_at`, `note`, `case_revision`, `content_hash` |
 | `citation` | Instruments and cases cited (CELEX/ECLI) | `id`, `case_id` (FK), `target_identifier`, `citation_type` |
 | `ingest_run` | One row per pipeline execution | `id`, `jurisdiction_code`, `connector`, `started_at`, `finished_at`, `status`, `fetched_count`, `matched_count`, `inserted_count`, `updated_count`, `skipped_duplicate_count`, `error_count`, `checkpoint_before`, `checkpoint_after` |
@@ -203,12 +203,13 @@ source identifier.
 **`keyword_match` matters:** it is how the content manager evaluates and tunes the keyword
 lists. Do not treat it as optional.
 
-**The review queue (core document §2.7).** A case that passes its list's `min_score` but
-scores below `min_score + review_band` is stored, published and *additionally* queued. The
-rules the schema enforces:
+**The review queue (core document §2.7).** A queued case is stored and published exactly
+like any other; the flag adds a review, it never withholds a case. **Nothing raises the flag
+automatically** — that was the score band, and §2.13 removed it — so a content manager raises
+it. The rules the schema enforces:
 
-- `case.needs_review` and `case.filter_score` are the filter's own output and are rewritten
-  by every evaluation. They are never changed by a decision: re-running a window must produce
+- `case.needs_review` and `case.matched_term_count` are the filter's own output and are
+  rewritten by every evaluation. They are never changed by a decision: re-running a window must produce
   the same flags whether or not anyone has reviewed in the meantime (§2.8). The workflow
   lives in `case_review.status`.
 - **A decision survives re-ingestion.** `case_review` is not among the child rows a run
@@ -414,9 +415,9 @@ Two properties of `NormalisedCase` matter to every connector:
   passes that document's text through by reference rather than copying it. Consequently the
   members of `FilterableDocument` are declared **read-only**: a stage only reads them, and a
   settable-attribute protocol would reject a computed one.
-- **`subject` is scored.** The *rechtsgebied* for the Netherlands, the subject-matter heading
-  for the EU. Both shipped keyword lists weight it — the EU list at 1.2, above plain full
-  text — so a connector that leaves it `None` throws away a strong signal. It has no column
+- **`subject` is scanned.** The *rechtsgebied* for the Netherlands, the subject-matter
+  heading for the EU. Both shipped keyword lists name it in `fields`, so a connector that
+  leaves it `None` throws away a strong signal. It has no column
   of its own in section 3 and is persisted under `case.source_metadata["subject"]`.
 
 **Content hash.** `case.content_hash` is resolved in this order: the hash the connector set
@@ -434,24 +435,24 @@ class Filter(ABC):
 
     @abstractmethod
     def evaluate(self, case: FilterableDocument) -> FilterResult:
-        """FilterResult carries passed: bool, score: float, matches: list[TermMatch],
-        needs_review: bool, threshold and review_ceiling, and a human-readable reason
-        for the pipeline report."""
+        """FilterResult carries passed: bool, matches: tuple[TermMatch, ...],
+        needs_review: bool, and a human-readable reason for the pipeline report.
+        `labels` and `matched_term_count` derive from matches."""
 ```
 
 `FilterableDocument` is a structural protocol over `jurisdiction_code`, `title`, `abstract`,
 `subject` and `full_text`, so no import couples a stage to the connector work stream. Stage 1
 is the keyword matcher; a later stage appends to the `FilterChain` and touches no connector.
 
-**Passed, and passed confidently, are two different answers.** `passed` decides whether the
-document enters the database and is answered generously, because the PLT optimises for recall
-(core document §2.7). `needs_review` qualifies it: the document scored inside its list's
-`scoring.review_band`, the interval immediately above `min_score`, and is published like any
-other while also entering the review queue. `FilterResult.passed_confidently` is the negation
-pair, and `threshold`/`review_ceiling` state the band the verdict was measured against so a
-stored verdict stays readable after the list is re-curated. A rejection never carries the
-flag. The chain propagates a flag raised by **any** stage onto the result it returns, so
-appending a stage cannot silently empty the queue.
+**A match is a verdict and a label.** `passed` is true when **any** curated term matched:
+selection is a word search, so a term that could not carry a case alone belongs in
+`excluded_<code>.json` rather than in the list (core document §2.13). `FilterResult.labels`
+is one match per distinct selecting term — a term found in two fields is one label, and a term
+whose `requires` gate stayed shut is none — and it is what `keyword_match` is written from.
+
+`needs_review` is independent of all that: no stage raises it on its own any more, and a
+rejection never carries it. The chain still propagates a flag raised by **any** stage onto the
+result it returns, so appending a stage cannot silently empty the queue.
 
 ### 4.4 The runner
 
@@ -514,14 +515,14 @@ Base path `/api`. JSON only. All list endpoints paginate. Errors use one envelop
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/cases` | Search + filter + paginate. Query params: `q` (full text), `jurisdiction` (repeatable), `law_domain`, `law_subfield`, `topic`, `court`, `language`, `date_from`, `date_to`, `sort` (`date_desc` default, `date_asc`, `relevance`), `page`, `page_size` (default 20, max 100) |
+| `GET` | `/api/cases` | Search + filter + paginate. Query params: `q` (full text), `jurisdiction` (repeatable), `law_domain`, `law_subfield`, `topic`, `keyword` (a curated **term id**, e.g. `nl-glyfosaat`), `category` (e.g. `active_substance`), `court`, `language`, `date_from`, `date_to`, `sort` (`date_desc` default, `date_asc`, `relevance`), `page`, `page_size` (default 20, max 100) |
 | `GET` | `/api/cases/latest?limit=20` | Sidebar feed, newest first, `limit` max 50 |
 | `GET` | `/api/cases/<jurisdiction>/<source_id>` | Single case with documents, parties, topics, matched terms |
 | `GET` | `/api/cases/export` | Same filters as `/api/cases`, plus `format` (`csv` default, or `jsonl`). Not paginated: it streams every match |
 | `GET` | `/api/stats/jurisdictions` | Map payload — **one query, all jurisdictions, EU included** |
 | `GET` | `/api/filters` | Facet values for the All-cases filter UI |
 | `GET` | `/api/health` | Liveness + last successful ingest per jurisdiction |
-| `GET` | `/api/reviews` | **Authenticated.** The review queue. Query params: `status` (repeatable, `pending` default, `any` for every status), `jurisdiction` (repeatable), `list_version`, `decided_by`, `sort` (`flagged_asc` default, `flagged_desc`, `score_asc`, `score_desc`), `page`, `page_size` |
+| `GET` | `/api/reviews` | **Authenticated.** The review queue. Query params: `status` (repeatable, `pending` default, `any` for every status), `jurisdiction` (repeatable), `list_version`, `decided_by`, `sort` (`flagged_asc` default, `flagged_desc`), `page`, `page_size` |
 | `POST` | `/api/reviews/<id>/decision` | **Authenticated.** Record a confirmation or a rejection |
 | `POST` | `/api/subscriptions` | Public. Take an address and email it a confirmation link. Body `{"email": "..."}` |
 | `POST` | `/api/subscriptions/confirm` | Public. Complete the double opt-in. Body `{"token": "..."}` |
@@ -615,7 +616,7 @@ card can link to the rest of that court's cases without resolving the name first
 | `documents` | `id`, `language`, `doc_type`, `format`, `full_text`, `source_url`, `byte_size`, `retrieved_at` |
 | `parties` | `id`, `name`, `role`, `party_type`, `ordinal` |
 | `topics` | `slug`, `label`, `confidence`, `assigned_by` |
-| `keyword_matches` | `term_id`, `term`, `list_version`, `field`, `weight_applied`, `match_count`, `snippet` |
+| `keyword_matches` | `term_id`, `term`, `category`, `list_version`, `field`, `match_count`, `snippet` — the case's public labels |
 | `citations` | `target_identifier`, `target_scheme`, `citation_type`, `target_title`, `target_url` |
 
 `case_document.raw_payload` is **never** exposed: it is the verbatim source response, kept
@@ -627,13 +628,13 @@ unpublished case is reported as a 404, not as a flag a client could read.
 stands after the decision.
 
 **`ReviewItem`** — one queue entry, carrying everything a reviewer needs to decide **without
-a second request**: the case, the numbers the flag was derived from, and the matched terms
-that produced them. Nothing is recomputed; it is what the run recorded.
+a second request**: the case, and the terms that selected it. Nothing is recomputed; it is
+what the run recorded.
 
 ```json
 { "id": 12, "status": "pending",
-  "score": 3.5, "min_score": 3.0, "band_ceiling": 6.0, "list_version": "1.1.0",
-  "reason": "score 3.5 reaches min_score 3, inside the review band [3, 6) (NL list v1.1.0); matched: nl-drift",
+  "matched_term_count": 2, "list_version": "2.0.0",
+  "reason": "matched 2 curated term(s) (NL list v2.0.0): nl-glyfosaat, nl-spuitzone",
   "flagged_at": "2026-08-05T06:00:00+00:00", "flagged_revision": 1,
   "flagged_content_hash": "9f2c…",
   "decision": null, "decided_by": null, "decided_at": null, "decided_revision": null,
@@ -712,10 +713,20 @@ published case silently, and a whole payload failing it would otherwise be indis
 from an unreadable response.
 
 **`/api/filters`** — `jurisdictions: [{code, name}]`, `courts: [{id, name}]`,
-`topics: [{slug, label}]`, the string lists `law_domains`, `law_subfields`, `languages`,
-`sorts` and `export_formats`, `decision_date_range: {from, to}`, and the bounds the server
-enforces (`page_size_default`, `page_size_max`, `latest_limit_max`) so the filter UI reads
-them rather than repeating them.
+`topics: [{slug, label}]`, `keywords: [{id, term, category, jurisdiction, case_count}]`,
+the string lists `law_domains`, `law_subfields`, `languages`, `categories`, `sorts` and
+`export_formats`, `decision_date_range: {from, to}`, and the bounds the server enforces
+(`page_size_default`, `page_size_max`, `latest_limit_max`) so the filter UI reads them rather
+than repeating them.
+
+**`keywords` is the only facet not derived from the cases.** It is read from the curated
+lists, so a term that has selected nothing appears with `case_count: 0`. That is deliberate:
+a curator has to be able to see that a substance is in the list and has never been litigated,
+which an empty facet would hide. `categories`, by contrast, lists only what is on a case — a
+category with nothing behind it is a dead end rather than a finding.
+
+`keyword` filters on the term **id** rather than the term text, because the text is a label
+written to be read and may be re-worded, while a cited link has to keep working.
 
 **`/api/health`** — `{ "status": "ok", "service": "plt-api", "version": "0.1.0",
 "database": "ok" | "unavailable", "ingest": { "NL": "2026-07-01T09:30:00+00:00" } }`.

@@ -14,10 +14,46 @@
  * Every value is untrusted source data and is rendered as text.
  */
 
+import { Link } from 'react-router-dom'
+
 import { CHIP } from '@/components/cases/controls'
-import { cleanInlineText } from '@/utils/caseText'
+import { categoryLabel, cleanInlineText } from '@/utils/caseText'
 import { formatDecisionDate } from '@/utils/dates'
-import type { CaseRecord, PartyRef } from '@/types/api'
+import type { CaseRecord, KeywordMatchRef, PartyRef } from '@/types/api'
+
+/** The keyword and category labels of a case, deduplicated and ordered for display. */
+interface CaseLabels {
+  readonly keywords: readonly { readonly term_id: string; readonly term: string }[]
+  readonly categories: readonly string[]
+}
+
+/**
+ * Reduce a case's matches to the labels it is listed under.
+ *
+ * The API returns one match per selecting term already, but a term with no text and a
+ * repeated category are both possible, so this deduplicates rather than trusting the shape.
+ * Keywords keep the order they were found in; categories are sorted, because their order
+ * carries no meaning and a stable one makes two cases comparable at a glance.
+ *
+ * @param matches - The case's keyword matches.
+ * @returns The labels to render.
+ */
+function caseLabels(matches: readonly KeywordMatchRef[]): CaseLabels {
+  const keywords = new Map<string, string>()
+  const categories = new Set<string>()
+
+  for (const match of matches) {
+    const term = cleanInlineText(match.term)
+    if (term !== '' && !keywords.has(match.term_id)) keywords.set(match.term_id, term)
+    const category = cleanInlineText(match.category)
+    if (category !== '') categories.add(category)
+  }
+
+  return {
+    keywords: [...keywords].map(([term_id, term]) => ({ term_id, term })),
+    categories: [...categories].sort((a, b) => a.localeCompare(b)),
+  }
+}
 
 /** Properties of {@link CaseClassification}. */
 export interface CaseClassificationProps {
@@ -125,6 +161,7 @@ function TextRow({ label, value }: { readonly label: string; readonly value: str
 export default function CaseClassification({ item }: CaseClassificationProps): JSX.Element {
   const parties = groupParties(item.parties ?? [])
   const topics = item.topics ?? []
+  const { keywords, categories } = caseLabels(item.keyword_matches ?? [])
   const caseNumbers = (item.case_numbers ?? [])
     .map((number) => cleanInlineText(number))
     .filter((number) => number !== '')
@@ -176,6 +213,34 @@ export default function CaseClassification({ item }: CaseClassificationProps): J
             {topics.map((topic) => (
               <li key={topic.slug} className={CHIP}>
                 {cleanInlineText(topic.label)}
+              </li>
+            ))}
+          </ul>
+        </Row>
+      )}
+
+      {keywords.length === 0 ? null : (
+        <Row label={keywords.length === 1 ? 'Keyword' : 'Keywords'}>
+          <ul className="flex flex-wrap gap-2">
+            {keywords.map((keyword) => (
+              <li key={keyword.term_id}>
+                <Link className={CHIP} to={`/cases?keyword=${encodeURIComponent(keyword.term_id)}`}>
+                  {keyword.term}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Row>
+      )}
+
+      {categories.length === 0 ? null : (
+        <Row label={categories.length === 1 ? 'Category' : 'Categories'}>
+          <ul className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <li key={category}>
+                <Link className={CHIP} to={`/cases?category=${encodeURIComponent(category)}`}>
+                  {categoryLabel(category)}
+                </Link>
               </li>
             ))}
           </ul>

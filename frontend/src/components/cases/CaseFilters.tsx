@@ -28,8 +28,8 @@ import {
   SELECT,
 } from '@/components/cases/controls'
 import { activeFilterCount, type CaseFilterState } from '@/utils/caseFilters'
-import { cleanInlineText } from '@/utils/caseText'
-import type { FilterFacets } from '@/types/api'
+import { categoryLabel, cleanInlineText } from '@/utils/caseText'
+import type { FilterFacets, KeywordOption } from '@/types/api'
 
 /** Properties of {@link CaseFilters}. */
 export interface CaseFiltersProps {
@@ -123,6 +123,102 @@ function toOptions(values: readonly string[] | undefined): readonly FacetOption[
   return (values ?? []).map((value) => ({ value, label: cleanInlineText(value) }))
 }
 
+/** Properties of {@link KeywordPicker}. */
+interface KeywordPickerProps {
+  readonly id: string
+  readonly value: string
+  readonly options: readonly KeywordOption[]
+  readonly onChange: (value: string) => void
+}
+
+/**
+ * The keyword filter: a text box with typeahead over every curated term.
+ *
+ * A `<select>` is the wrong control here. The lists carry roughly fourteen hundred terms
+ * between them — almost all of them active substances with names like
+ * `natriumdichloorisocyanuraat` — and no reader scrolls to one. A `datalist` gives the
+ * browser's own typeahead over the whole roster, needs no dependency and stays usable with a
+ * keyboard and a screen reader.
+ *
+ * The reader types and sees the term; what travels in the URL is the term's stable id. A
+ * typed value that matches no term is not applied, and says so, rather than silently
+ * filtering on nothing.
+ *
+ * Terms that no case carries are listed with a count of zero rather than hidden: a curator
+ * looking for "did anything match glyfosaat" needs to see the term and the zero.
+ *
+ * @param props - Component properties.
+ * @returns The control.
+ */
+function KeywordPicker({ id, value, options, onChange }: KeywordPickerProps): JSX.Element {
+  const listId = `${id}-options`
+  const selected = options.find((option) => option.id === value)
+  // The box shows the term; the state holds the id. While the roster is still loading a
+  // selected id has no term to show, so the id itself stands in rather than an empty box.
+  const [text, setText] = useState(selected?.term ?? value)
+  const [unknown, setUnknown] = useState(false)
+
+  useEffect(() => {
+    setText(options.find((option) => option.id === value)?.term ?? value)
+    setUnknown(false)
+  }, [value, options])
+
+  /**
+   * Resolve what the reader typed to a term id, or report that it is not one.
+   *
+   * @param typed - The current contents of the box.
+   */
+  const resolve = (typed: string): void => {
+    const trimmed = typed.trim()
+    if (trimmed === '') {
+      setUnknown(false)
+      onChange('')
+      return
+    }
+    const match = options.find(
+      (option) => option.term.toLowerCase() === trimmed.toLowerCase() || option.id === trimmed,
+    )
+    setUnknown(match === undefined)
+    if (match !== undefined) onChange(match.id)
+  }
+
+  return (
+    <div className="space-y-1">
+      <label className={LABEL} htmlFor={id}>
+        Keyword
+      </label>
+      <input
+        id={id}
+        className={INPUT}
+        list={listId}
+        type="text"
+        value={text}
+        placeholder="Any term, e.g. glyfosaat"
+        disabled={options.length === 0}
+        aria-describedby={unknown ? `${id}-unknown` : undefined}
+        onChange={(event) => {
+          setText(event.target.value)
+        }}
+        onBlur={(event) => {
+          resolve(event.target.value)
+        }}
+      />
+      <datalist id={listId}>
+        {options.map((option) => (
+          <option key={`${option.jurisdiction}-${option.id}`} value={option.term}>
+            {`${categoryLabel(option.category)} · ${option.jurisdiction} · ${String(option.case_count)} case(s)`}
+          </option>
+        ))}
+      </datalist>
+      {unknown ? (
+        <p id={`${id}-unknown`} role="alert" className="text-plt-accent-deep text-sm font-medium">
+          No curated term is written exactly that way, so no keyword filter was applied.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 /**
  * The filter panel.
  *
@@ -196,6 +292,8 @@ export default function CaseFilters({
       law_domain: draft.law_domain,
       law_subfield: draft.law_subfield,
       topic: draft.topic,
+      keyword: draft.keyword,
+      category: draft.category,
       court: draft.court,
       language: draft.language,
       date_from: draft.date_from,
@@ -311,6 +409,28 @@ export default function CaseFilters({
           }))}
           onChange={(value) => {
             edit({ topic: value })
+          }}
+        />
+
+        <KeywordPicker
+          id={`${fieldId}-keyword`}
+          value={draft.keyword}
+          options={facets?.keywords ?? []}
+          onChange={(value) => {
+            edit({ keyword: value })
+          }}
+        />
+
+        <FacetSelect
+          id={`${fieldId}-category`}
+          label="Category"
+          value={draft.category}
+          options={(facets?.categories ?? []).map((category) => ({
+            value: category,
+            label: categoryLabel(category),
+          }))}
+          onChange={(value) => {
+            edit({ category: value })
           }}
         />
 

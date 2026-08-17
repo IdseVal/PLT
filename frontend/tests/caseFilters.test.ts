@@ -40,7 +40,8 @@ describe('parseCaseFilters', () => {
   it('restores every filter from the URL', () => {
     const filters = parse(
       'q=glyfosaat&jurisdiction=NL&jurisdiction=EU&law_domain=public&law_subfield=administrative' +
-        '&topic=spray-zones&court=7&language=nl&date_from=2020-01-01&date_to=2024-12-31' +
+        '&topic=spray-zones&keyword=nl-glyfosaat&category=active_substance' +
+        '&court=7&language=nl&date_from=2020-01-01&date_to=2024-12-31' +
         '&sort=date_asc&page=3&page_size=50',
     )
 
@@ -50,6 +51,8 @@ describe('parseCaseFilters', () => {
       law_domain: 'public',
       law_subfield: 'administrative',
       topic: 'spray-zones',
+      keyword: 'nl-glyfosaat',
+      category: 'active_substance',
       court: '7',
       language: 'nl',
       date_from: '2020-01-01',

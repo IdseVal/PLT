@@ -142,6 +142,8 @@ class TestPayloadContract:
             "law_subfields",
             "languages",
             "topics",
+            "keywords",
+            "categories",
             "decision_date_range",
             "sorts",
             "export_formats",

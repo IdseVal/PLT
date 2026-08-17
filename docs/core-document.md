@@ -137,9 +137,10 @@ Design consequences:
 
 1. Keyword lists are **data, not code** — one JSON file per jurisdiction in
    `data/keywords/`, validated against a shared schema, versioned in git.
-2. Terms are **weighted**. Unambiguous terms (active substances, statutory terms) qualify a
-   document on their own; contextual terms (crops, exposure, drift) only qualify in
-   combination, above a configurable score threshold.
+2. Selection is a **word search**: a document is in scope when **any** curated term matches
+   it. Every term therefore has to be specific enough to carry a case on its own, and a term
+   that is not belongs in `excluded_<code>.json` rather than in the list. See §2.13, which
+   replaced the weighted scoring this point used to describe.
 3. Lists are **curated by the content manager**, not by developers. Every ingestion run
    records which terms matched each case, so precision and recall of the lists can be
    reviewed and the lists tuned over time.
@@ -172,27 +173,21 @@ fails to contain, and a researcher cannot audit an absence.
 
 Two consequences bind the filter chain:
 
-1. **Thresholds are not raised to buy precision.** The first EU dry run (1,548 CJEU decisions
-   across 2024) selected 54 cases, distributed as `≥12: 18 | 6–12: 8 | 4–6: 7 | 3.0–3.9: 21`.
-   Raising `min_score` from 3 to 6 would remove everything below 6 — **28 of the 54**. Raising
-   it only to 4 would remove 21, of which roughly two were genuinely in scope; the seven in the
-   4–6 band were never separately assessed, so the cost of the 3→6 move is *at least* two
-   genuine cases and possibly more. That trade was declined.
-
-   Any future proposal to tighten selection must be assessed the same way: **what does it
-   lose**, counted from the distribution rather than estimated.
-2. **Precision is handled downstream, by review.** Cases that pass but score near the
-   threshold are ingested and published as normal, and additionally flagged for a content
-   manager to confirm or reject. Selection admits; review curates.
-
-This is supported by the shape of the evidence rather than assumed: in that run the false
-positives were not spread across the score range but concentrated immediately above
-`min_score`, while the high-scoring band was almost entirely genuine. A borderline flag
-therefore targets the affected population without touching the rest.
+1. **Selection is not tightened by arithmetic.** Any proposal to narrow what the tracker
+   holds must be assessed by **what it loses**, counted rather than estimated.
+2. **Precision is handled in curation.** A term that admits the wrong cases comes out of the
+   list, with the reason recorded, rather than being kept at a discount. See §2.13.
 
 **The content manager may be a person or an agent.** That is deliberately undecided, so the
 review queue must not assume either — the same queue, record and audit trail has to serve
 both.
+
+> *Amended 17 August 2026.* This section originally bought recall with a low score threshold
+> and gave the resulting false positives to a review queue, flagged automatically by their
+> distance above that threshold. §2.13 replaced the threshold, so nothing is flagged
+> automatically any more: the queue and its audit trail remain, and a content manager raises
+> the flag. The recall-first principle above is unchanged — what changed is where precision
+> is bought.
 
 ### 2.8 Methodology must be transparent, explainable and repeatable
 
@@ -205,8 +200,10 @@ requirements follow, and they bound what the filter chain may become:
 - **Transparent.** How a case was selected is public, not internal. The criteria, the term
   lists and the thresholds are published artefacts.
 - **Explainable.** For any individual case it must be possible to say *why it is in the
-  database* — which terms matched, in which field, with what weight, against which version
-  of which list. This is what `keyword_match` records, and why it is not optional.
+  database* — which terms matched, in which field, against which version of which list. This
+  is what `keyword_match` records, and why it is not optional. Since §2.13 those records are
+  also public: the terms and their categories are the labels a case is listed under, so the
+  explanation is on the case's own page rather than in an internal table.
 - **Repeatable.** Re-running the same selection over the same corpus with the same list
   version must produce the same result. Lists are versioned data in git; scores are
   deterministic; every run is recorded in `ingest_run`.
@@ -337,6 +334,45 @@ Retention of the *pseudonymised* row, and expiry of addresses that were never co
 still open and belong to the Law group. Storage limitation does not stop at
 pseudonymisation, so both are configuration rather than constants, with no default that
 quietly becomes policy.
+
+### 2.13 Selection is a word search, and a match is a public label
+
+> *Added 17 August 2026. Decision by the project owner, following the first full run.*
+
+**A case is in the tracker because a curated term appears in it. That is the whole rule.**
+There is no score, no threshold and no weighting.
+
+The weighted design that preceded this was not wrong in principle, but in practice it earned
+its keep by letting terms stay in the lists that could never have carried a case: `werkzame
+stof`, `omwonenden`, `bufferzone`, `NVWA`, `EFSA`, `Wet op de economische delicten`. Held
+below the threshold individually, they combined freely, and the first full run over both
+corpora selected thousands of judgments on nothing more than a crop name beside an exposure
+word. Precision now costs a curation decision instead of an arithmetic one: the term comes
+out of the list and into `data/keywords/excluded_<code>.json`, **with the reason it went**.
+
+One instrument survives from the weighted design and is load-bearing without it. `requires`
+gates a term on another having matched, which is what lets an active substance whose ISO
+common name is an ordinary word — `water`, `beer`, `talc`, `koper` — stay in the list without
+admitting every judgment that says it. A gated term whose gate stayed shut selects nothing.
+
+**Every match is a label, and labels are public.** A case carries the curated **term** and
+its **category** for each term that selected it. They are shown on the case page, above the
+text, and the case list is filtered by both. Three consequences:
+
+- The label is the term **as the curator wrote it**, never the inflection found in the
+  judgment, so every spelling of a substance files under one name.
+- An alias is a spelling of *its own term* and nothing else. A different substance filed as
+  an alias would label the case with the wrong chemical, which is why the twelve bundles that
+  did exactly that were split into terms of their own.
+- A term is now read by the public, so it is written to be read.
+
+This makes §2.8's explainability requirement something a reader can exercise rather than
+something the project asserts: the answer to "why is this case here" is on the case's page.
+
+**What it cost.** The Dutch list went from 877 terms to 863 and the EU list from 573 to 565;
+the removals are 17 and 16 terms respectively, offset by product classes split out of
+aliases. Almost the whole of both lists — 830 of 863, and 512 of 565 — is active substances,
+which is where the project owner placed the emphasis.
 
 ---
 

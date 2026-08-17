@@ -122,3 +122,17 @@ export function countWords(text: string): number {
   const trimmed = text.trim()
   return trimmed === '' ? 0 : trimmed.split(WHITESPACE_RUN).length
 }
+
+/**
+ * Render a keyword category for a reader.
+ *
+ * The stored values are the keyword schema's own enum members, written for the file rather
+ * than for a person: `active_substance` becomes `Active substance`.
+ *
+ * @param category - The stored category.
+ * @returns The label to show.
+ */
+export function categoryLabel(category: string): string {
+  const spaced = category.replace(/_/g, ' ')
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
+}

@@ -1,9 +1,9 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "2.0.0",
   "jurisdiction": "EU",
   "jurisdiction_name": "European Union",
-  "list_version": "1.5.0",
-  "updated": "2026-08-13",
+  "list_version": "2.0.0",
+  "updated": "2026-08-17",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": [
     "en",
@@ -12,24 +12,18 @@
     "nl"
   ],
   "notes": "Seed list for the EUR-Lex/CELLAR connector. The EU is treated as a jurisdiction in its own right. CJEU judgments exist in all official languages; the connector fetches English where available and the procedural language otherwise, so this list carries EN plus the three most common procedural languages for pesticide cases. Add further language sections as the corpus demands. Instrument numbers (1107/2009, 528/2012) are the highest-precision signals in this jurisdiction and are language-independent. Revision 1.0.1 (issue #20): DDT split out of en-paraquat into its own case-sensitive word term, mirroring nl-ddt, so acronyms and prose words never share a term. Revision 1.0.2: the exception notes claimed these authority names are always capitalised so the exposure is theoretical. Measurement refuted that - the acronym is case-sensitive too, so efsa, Efsa, nvwa and echa all score 0. Notes now point at the README, which records the measured cost. No term, weight or threshold changed. Revision 1.1.0 (issue #55): scoring.review_band added, set to 3. It flags, and does not reject: a passing case scoring in [3, 6) is ingested and published as normal and additionally queued for a content manager. The number is this corpus own: in the first EU dry run the false positives were concentrated immediately above min_score while the top band was almost entirely genuine, so the population that raising min_score would have discarded is reviewed instead. That trade was declined; see core document 2.7 for the distribution and the figures, and issue #8 for the run itself. Figures are not restated here on purpose (issue #67): a derived number copied into a second artefact is a place to drift, and this note previously carried a miscounted one. No term, weight or threshold changed. Revision 1.2.0: the active substances of the Annex to Commission Implementing Regulation (EU) No 540/2011 are now carried in full - 486 new weight-3 active_substance terms, on top of the fourteen this list already had. They were extracted from the English text of every consolidated version of that regulation published between 2011 and 2026, not only the current one, because a substance whose approval was not renewed is deleted from the Annex while remaining exactly what historic and liability litigation is about. Parts A to E are all included: approved, basic, low-risk, candidates for substitution, and everything since withdrawn. The literals are the ISO common names the Annex prints, in English only; national-language spellings belong in the national lists. A single-token name is matched on word boundaries unless it is at least ten characters long, where substring also catches compounds and inflections; a multi-word name is matched as a phrase; a micro-organism is carried as its genus and species, and a virus by its name, since a strain designation is not what a judgment prints. Sixty-six of these names are also ordinary English words or commodities - beer, vinegar, sulphur, urea, pepper, whey - and would each qualify a customs or agricultural judgment on their own, so they carry requires=[en-pesticide]: they still report their match, but only contribute weight in a document that also names a pesticide. No existing term, weight, threshold or band changed. Revision 1.3.0: metam leaves en-fipronil and becomes a term of its own matched on word boundaries. match is a property of a term and all of its aliases, so the five-character ISO name inherited the substring mode fipronil can carry and the shorter name cannot. Dutch is one of this list's languages, and in 150,000 Dutch judgments the fragment appears in 217 documents of which 214 hold metamfetamine, metamorfose or trometamol rather than the substance; at weight 3 each of those would have been selected on the fragment alone. As a whole word it still finds metam, metam-sodium and metam natrium. Adding a term can raise the score of a document naming both metam and fipronil, so this is a minor bump; no other term, weight, threshold or band changed.",
-  "scoring": {
-    "min_score": 3,
-    "review_band": 3,
-    "count_term_once": true,
-    "fields": {
-      "title": 1.5,
-      "abstract": 1.5,
-      "subject": 1.2,
-      "full_text": 1.0
-    }
-  },
+  "fields": [
+    "title",
+    "abstract",
+    "subject",
+    "full_text"
+  ],
   "terms": [
     {
       "id": "en-pesticide",
       "term": "pesticide",
       "lang": "en",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "pesticides"
@@ -40,7 +34,6 @@
       "term": "plant protection product",
       "lang": "en",
       "category": "product_class",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "plant protection products",
@@ -52,7 +45,6 @@
       "term": "biocidal product",
       "lang": "en",
       "category": "product_class",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "biocidal products",
@@ -65,7 +57,6 @@
       "term": "herbicide",
       "lang": "en",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "herbicides",
@@ -77,7 +68,6 @@
       "term": "insecticide",
       "lang": "en",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "insecticides"
@@ -88,28 +78,9 @@
       "term": "fungicide",
       "lang": "en",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
-        "fungicides",
-        "nematicide",
-        "nematicides",
-        "acaricide",
-        "rodenticide"
-      ]
-    },
-    {
-      "id": "en-active-substance",
-      "term": "active substance",
-      "lang": "en",
-      "category": "product_class",
-      "weight": 2,
-      "match": "phrase",
-      "aliases": [
-        "active substances",
-        "approval of the active substance",
-        "basic substance",
-        "candidate for substitution"
+        "fungicides"
       ]
     },
     {
@@ -117,7 +88,6 @@
       "term": "crop protection",
       "lang": "en",
       "category": "product_class",
-      "weight": 2,
       "match": "phrase",
       "aliases": [
         "agrochemical",
@@ -129,7 +99,6 @@
       "term": "glyphosate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -137,7 +106,6 @@
       "term": "neonicotinoid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "neonicotinoids"
@@ -148,7 +116,6 @@
       "term": "imidacloprid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -156,7 +123,6 @@
       "term": "chlorpyrifos",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "chlorpyrifos-methyl"
@@ -167,7 +133,6 @@
       "term": "fipronil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -175,7 +140,6 @@
       "term": "metam",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "note": "A term of its own because match is a property of the term and all of its aliases: as an alias of en-fipronil it inherited substring, and five characters reaches inside unrelated words. In 150,000 Dutch judgments - Dutch is one of this list's languages - 214 of the 217 documents holding the fragment held it inside metamfetamine, metamorfose or trometamol, and three held the substance. Matched as a whole word it still finds metam-sodium and metam natrium."
     },
@@ -184,7 +148,6 @@
       "term": "paraquat",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -192,7 +155,6 @@
       "term": "DDT",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "case_sensitive": true,
       "note": "Acronym, kept as its own case-sensitive term so it is not matched as a substring inside unrelated tokens. Mirrors nl-ddt."
@@ -202,7 +164,6 @@
       "term": "copper compounds",
       "lang": "en",
       "category": "active_substance",
-      "weight": 2,
       "match": "phrase",
       "aliases": [
         "copper sulphate"
@@ -213,7 +174,6 @@
       "term": "1107/2009",
       "lang": "en",
       "category": "statute",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "Regulation (EC) No 1107/2009",
@@ -226,7 +186,6 @@
       "term": "528/2012",
       "lang": "en",
       "category": "statute",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "Regulation (EU) No 528/2012",
@@ -238,7 +197,6 @@
       "term": "2009/128",
       "lang": "en",
       "category": "statute",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "Directive 2009/128/EC",
@@ -250,7 +208,6 @@
       "term": "396/2005",
       "lang": "en",
       "category": "statute",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "Regulation (EC) No 396/2005",
@@ -262,7 +219,6 @@
       "term": "1185/2009",
       "lang": "en",
       "category": "statute",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "statistics on pesticides"
@@ -273,7 +229,6 @@
       "term": "91/414",
       "lang": "en",
       "category": "statute",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "Directive 91/414/EEC"
@@ -281,78 +236,10 @@
       "note": "Predecessor of 1107/2009; still cited in older and transitional cases."
     },
     {
-      "id": "en-reg-1272-2008",
-      "term": "1272/2008",
-      "lang": "en",
-      "category": "statute",
-      "weight": 1,
-      "match": "substring",
-      "aliases": [
-        "CLP Regulation",
-        "classification, labelling and packaging"
-      ],
-      "note": "Contextual: CLP covers all chemicals, not only pesticides."
-    },
-    {
-      "id": "en-reach",
-      "term": "REACH",
-      "lang": "en",
-      "category": "statute",
-      "weight": 1,
-      "match": "word",
-      "case_sensitive": true,
-      "aliases": [
-        "1907/2006"
-      ],
-      "note": "Contextual: chemicals law generally."
-    },
-    {
-      "id": "en-aarhus-ppp",
-      "term": "Aarhus",
-      "lang": "en",
-      "category": "statute",
-      "weight": 1,
-      "match": "word",
-      "aliases": [
-        "access to environmental information",
-        "1367/2006"
-      ],
-      "note": "Contextual: many pesticide-transparency cases run on Aarhus grounds (e.g. disclosure of studies), but Aarhus alone is not enough."
-    },
-    {
-      "id": "en-efsa",
-      "term": "EFSA",
-      "lang": "en",
-      "category": "authority",
-      "weight": 1,
-      "match": "word",
-      "case_sensitive": true,
-      "case_sensitive_exception": true,
-      "aliases": [
-        "European Food Safety Authority"
-      ],
-      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost. Revisit under issue #24."
-    },
-    {
-      "id": "en-echa",
-      "term": "ECHA",
-      "lang": "en",
-      "category": "authority",
-      "weight": 1,
-      "match": "word",
-      "case_sensitive": true,
-      "case_sensitive_exception": true,
-      "aliases": [
-        "European Chemicals Agency"
-      ],
-      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost. Revisit under issue #24."
-    },
-    {
       "id": "en-scopaff",
       "term": "Standing Committee on Plants, Animals, Food and Feed",
       "lang": "en",
       "category": "authority",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "SCoPAFF",
@@ -364,13 +251,9 @@
       "term": "authorisation of plant protection products",
       "lang": "en",
       "category": "procedure",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
-        "marketing authorisation for a plant protection product",
-        "renewal of approval",
-        "non-renewal of approval",
-        "withdrawal of approval"
+        "marketing authorisation for a plant protection product"
       ]
     },
     {
@@ -378,7 +261,6 @@
       "term": "emergency authorisation",
       "lang": "en",
       "category": "procedure",
-      "weight": 2,
       "match": "phrase",
       "aliases": [
         "derogation under Article 53",
@@ -386,32 +268,10 @@
       ]
     },
     {
-      "id": "en-mutual-recognition-ppp",
-      "term": "mutual recognition of authorisations",
-      "lang": "en",
-      "category": "procedure",
-      "weight": 2,
-      "match": "phrase",
-      "aliases": [
-        "zonal authorisation",
-        "comparative assessment"
-      ]
-    },
-    {
-      "id": "en-precautionary-principle",
-      "term": "precautionary principle",
-      "lang": "en",
-      "category": "procedure",
-      "weight": 1,
-      "match": "phrase",
-      "note": "Contextual: central to pesticide reasoning but used across all EU risk regulation."
-    },
-    {
       "id": "en-mrl",
       "term": "maximum residue level",
       "lang": "en",
       "category": "exposure_or_harm",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "maximum residue levels",
@@ -421,65 +281,13 @@
       ]
     },
     {
-      "id": "en-endocrine-disruptor",
-      "term": "endocrine disrupt",
-      "lang": "en",
-      "category": "exposure_or_harm",
-      "weight": 2,
-      "match": "substring",
-      "aliases": [
-        "endocrine disruptor",
-        "endocrine-disrupting properties"
-      ]
-    },
-    {
-      "id": "en-bee-health",
-      "term": "bee health",
-      "lang": "en",
-      "category": "exposure_or_harm",
-      "weight": 2,
-      "match": "phrase",
-      "aliases": [
-        "pollinators",
-        "honeybee",
-        "bee guidance document"
-      ]
-    },
-    {
-      "id": "en-operator-exposure",
-      "term": "operator exposure",
-      "lang": "en",
-      "category": "exposure_or_harm",
-      "weight": 2,
-      "match": "phrase",
-      "aliases": [
-        "bystander exposure",
-        "residents and bystanders",
-        "dietary exposure"
-      ]
-    },
-    {
       "id": "en-spray-drift",
       "term": "spray drift",
       "lang": "en",
       "category": "environment",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
-        "buffer zone",
         "drift reduction"
-      ]
-    },
-    {
-      "id": "en-groundwater-contamination",
-      "term": "groundwater contamination",
-      "lang": "en",
-      "category": "environment",
-      "weight": 1,
-      "match": "phrase",
-      "aliases": [
-        "surface water contamination",
-        "water framework directive"
       ]
     },
     {
@@ -487,7 +295,6 @@
       "term": "seed treatment",
       "lang": "en",
       "category": "crop_or_practice",
-      "weight": 2,
       "match": "phrase",
       "aliases": [
         "treated seeds",
@@ -499,7 +306,6 @@
       "term": "integrated pest management",
       "lang": "en",
       "category": "crop_or_practice",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "IPM",
@@ -507,22 +313,10 @@
       ]
     },
     {
-      "id": "en-organic-farming-ppp",
-      "term": "organic production",
-      "lang": "en",
-      "category": "crop_or_practice",
-      "weight": 1,
-      "match": "phrase",
-      "aliases": [
-        "2018/848"
-      ]
-    },
-    {
       "id": "fr-pesticide",
       "term": "pesticide",
       "lang": "fr",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "pesticides"
@@ -533,7 +327,6 @@
       "term": "produit phytopharmaceutique",
       "lang": "fr",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "produits phytopharmaceutiques",
@@ -546,22 +339,9 @@
       "term": "produit biocide",
       "lang": "fr",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "produits biocides"
-      ]
-    },
-    {
-      "id": "fr-substance-active",
-      "term": "substance active",
-      "lang": "fr",
-      "category": "product_class",
-      "weight": 2,
-      "match": "phrase",
-      "aliases": [
-        "substances actives",
-        "approbation de la substance active"
       ]
     },
     {
@@ -569,14 +349,9 @@
       "term": "herbicide",
       "lang": "fr",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
-        "herbicides",
-        "insecticide",
-        "insecticides",
-        "fongicide",
-        "fongicides"
+        "herbicides"
       ]
     },
     {
@@ -584,7 +359,6 @@
       "term": "glyphosate",
       "lang": "fr",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -592,7 +366,6 @@
       "term": "limite maximale de résidus",
       "lang": "fr",
       "category": "exposure_or_harm",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "limites maximales de résidus",
@@ -604,7 +377,6 @@
       "term": "mise sur le marché des produits phytopharmaceutiques",
       "lang": "fr",
       "category": "procedure",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "autorisation de mise sur le marché phytopharmaceutique",
@@ -616,7 +388,6 @@
       "term": "utilisation durable des pesticides",
       "lang": "fr",
       "category": "statute",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -624,7 +395,6 @@
       "term": "Pestizid",
       "lang": "de",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "Pestizide",
@@ -636,7 +406,6 @@
       "term": "Pflanzenschutzmittel",
       "lang": "de",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "Pflanzenschutz",
@@ -648,7 +417,6 @@
       "term": "Biozidprodukt",
       "lang": "de",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "Biozidprodukte",
@@ -656,30 +424,13 @@
       ]
     },
     {
-      "id": "de-wirkstoff",
-      "term": "Wirkstoff",
-      "lang": "de",
-      "category": "product_class",
-      "weight": 2,
-      "match": "substring",
-      "aliases": [
-        "Wirkstoffe",
-        "Wirkstoffgenehmigung"
-      ]
-    },
-    {
       "id": "de-herbizid",
       "term": "Herbizid",
       "lang": "de",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
-        "Herbizide",
-        "Insektizid",
-        "Insektizide",
-        "Fungizid",
-        "Fungizide"
+        "Herbizide"
       ]
     },
     {
@@ -687,7 +438,6 @@
       "term": "Glyphosat",
       "lang": "de",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -695,7 +445,6 @@
       "term": "Rückstandshöchstgehalt",
       "lang": "de",
       "category": "exposure_or_harm",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "Rückstandshöchstgehalte",
@@ -707,7 +456,6 @@
       "term": "Zulassung von Pflanzenschutzmitteln",
       "lang": "de",
       "category": "procedure",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "Inverkehrbringen von Pflanzenschutzmitteln",
@@ -719,7 +467,6 @@
       "term": "nachhaltige Verwendung von Pestiziden",
       "lang": "de",
       "category": "statute",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -727,7 +474,6 @@
       "term": "gewasbeschermingsmiddel",
       "lang": "nl",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "gewasbeschermingsmiddelen"
@@ -738,24 +484,9 @@
       "term": "pesticide",
       "lang": "nl",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
-        "pesticiden",
-        "biocide",
-        "biociden"
-      ]
-    },
-    {
-      "id": "nl-eu-werkzame-stof",
-      "term": "werkzame stof",
-      "lang": "nl",
-      "category": "product_class",
-      "weight": 2,
-      "match": "phrase",
-      "aliases": [
-        "werkzame stoffen",
-        "goedkeuring van de werkzame stof"
+        "pesticiden"
       ]
     },
     {
@@ -763,7 +494,6 @@
       "term": "glyfosaat",
       "lang": "nl",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -771,7 +501,6 @@
       "term": "maximumresidugehalte",
       "lang": "nl",
       "category": "exposure_or_harm",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "maximale residulimiet",
@@ -783,7 +512,6 @@
       "term": "op de markt brengen van gewasbeschermingsmiddelen",
       "lang": "nl",
       "category": "procedure",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "duurzaam gebruik van pesticiden"
@@ -794,7 +522,6 @@
       "term": "1,4-diaminobutane",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "putrescine"
@@ -805,7 +532,6 @@
       "term": "1,4-dimethylnaphthalene",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -813,7 +539,6 @@
       "term": "1-decanol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -821,7 +546,6 @@
       "term": "1-methylcyclopropene",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -829,7 +553,6 @@
       "term": "1-naphthylacetamide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -837,7 +560,6 @@
       "term": "1-naphthylacetic acid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -845,7 +567,6 @@
       "term": "2,4-D",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -853,7 +574,6 @@
       "term": "2,4-DB",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -861,7 +581,6 @@
       "term": "2,5-Dichlorobenzoic acid methylester",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -869,7 +588,6 @@
       "term": "2-phenylphenol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -877,7 +595,6 @@
       "term": "24-epibrassinolide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -885,7 +602,6 @@
       "term": "6-Benzyladenine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -893,7 +609,6 @@
       "term": "8-hydroxyquinoline",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -901,7 +616,6 @@
       "term": "Abamectin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -909,7 +623,6 @@
       "term": "ABE-IT 56",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -917,7 +630,6 @@
       "term": "Acequinocyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -925,7 +637,6 @@
       "term": "Acetamiprid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -933,7 +644,6 @@
       "term": "Acetic acid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -945,7 +655,6 @@
       "term": "Acibenzolar-s-methyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -953,7 +662,6 @@
       "term": "Aclonifen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -961,7 +669,6 @@
       "term": "Acrinathrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -969,7 +676,6 @@
       "term": "Adoxophyes orana granulovirus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -977,7 +683,6 @@
       "term": "Akanthomyces muscarius",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -985,7 +690,6 @@
       "term": "Allium cepa L. bulb extract",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -993,7 +697,6 @@
       "term": "Allium fistulosum, processed",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1001,7 +704,6 @@
       "term": "Alpha-cypermethrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1009,7 +711,6 @@
       "term": "Aluminium ammonium sulfate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "dodecahydrate"
@@ -1024,7 +725,6 @@
       "term": "Aluminium ammonium sulphate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1032,7 +732,6 @@
       "term": "Aluminium phosphide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1040,7 +739,6 @@
       "term": "Aluminium silicate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1052,7 +750,6 @@
       "term": "Aluminium sulfate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1064,7 +761,6 @@
       "term": "Ametoctradin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1072,7 +768,6 @@
       "term": "Amidosulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1080,7 +775,6 @@
       "term": "Aminopyralid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1088,7 +782,6 @@
       "term": "Amisulbrom",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1096,7 +789,6 @@
       "term": "Amitrole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1104,7 +796,6 @@
       "term": "Ammonium acetate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1116,7 +807,6 @@
       "term": "Ampelomyces quisqualis",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1124,7 +814,6 @@
       "term": "Aqueous extract from the germinated seeds of sweet Lupinus albus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1132,7 +821,6 @@
       "term": "Aureobasidium pullulans",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1140,7 +828,6 @@
       "term": "Azadirachtin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1148,7 +835,6 @@
       "term": "Azimsulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1156,7 +842,6 @@
       "term": "Azoxystrobin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1164,7 +849,6 @@
       "term": "Bacillus amyloliquefaciens",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1172,7 +856,6 @@
       "term": "Bacillus firmus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1180,7 +863,6 @@
       "term": "Bacillus pumilus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1188,7 +870,6 @@
       "term": "Bacillus subtilis",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1200,7 +881,6 @@
       "term": "Bacillus thuringiensis",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1208,7 +888,6 @@
       "term": "Bacillus velezensis",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1216,7 +895,6 @@
       "term": "Beauveria bassiana",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1224,7 +902,6 @@
       "term": "Beer",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -1236,7 +913,6 @@
       "term": "Beflubutamid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1244,7 +920,6 @@
       "term": "Benalaxyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1252,7 +927,6 @@
       "term": "Benalaxyl-M",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1260,7 +934,6 @@
       "term": "Benfluralin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1268,7 +941,6 @@
       "term": "Bensulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1276,7 +948,6 @@
       "term": "Bentazone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1284,7 +955,6 @@
       "term": "Benthiavalicarb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1292,7 +962,6 @@
       "term": "Benzoic acid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1304,7 +973,6 @@
       "term": "Benzovindiflupyr",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1312,7 +980,6 @@
       "term": "Beta-cyfluthrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1320,7 +987,6 @@
       "term": "Betabaculovirus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1328,7 +994,6 @@
       "term": "Bifenazate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1336,7 +1001,6 @@
       "term": "Bifenox",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1344,7 +1008,6 @@
       "term": "Bifenthrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1352,7 +1015,6 @@
       "term": "Bispyribac",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1360,7 +1022,6 @@
       "term": "Bitertanol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1368,7 +1029,6 @@
       "term": "Bixafen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1376,7 +1036,6 @@
       "term": "Bixlozone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1384,7 +1043,6 @@
       "term": "Blood meal",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1396,7 +1054,6 @@
       "term": "Boscalid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1404,7 +1061,6 @@
       "term": "Bromadiolone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1412,7 +1068,6 @@
       "term": "Bromoxynil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1420,7 +1075,6 @@
       "term": "Bromuconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1428,7 +1082,6 @@
       "term": "Bupirimate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1436,7 +1089,6 @@
       "term": "Buprofezin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1444,7 +1096,6 @@
       "term": "Calcium carbide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1452,7 +1103,6 @@
       "term": "Calcium carbonate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1464,7 +1114,6 @@
       "term": "Calcium Hydroxide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1476,7 +1125,6 @@
       "term": "Calcium phosphide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1484,7 +1132,6 @@
       "term": "Candida oleophila",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1492,7 +1139,6 @@
       "term": "Candida oleophilastrain",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1500,7 +1146,6 @@
       "term": "Carbendazim",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1508,7 +1153,6 @@
       "term": "Carbetamide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1516,7 +1160,6 @@
       "term": "Carbon dioxide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1528,7 +1171,6 @@
       "term": "Carboxin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1536,7 +1178,6 @@
       "term": "Carfentrazone ethyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1544,7 +1185,6 @@
       "term": "Carfentrazone-ethyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1552,7 +1192,6 @@
       "term": "Carvone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1560,7 +1199,6 @@
       "term": "Cerevisane",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1568,7 +1206,6 @@
       "term": "Chitosan",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1576,7 +1213,6 @@
       "term": "Chitosan hydrochloride",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1584,7 +1220,6 @@
       "term": "Chlorantraniliprole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1592,7 +1227,6 @@
       "term": "Chloridazon",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1600,7 +1234,6 @@
       "term": "Chlormequat",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1608,7 +1241,6 @@
       "term": "Chlorotoluron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1616,7 +1248,6 @@
       "term": "Chlorpropham",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1624,7 +1255,6 @@
       "term": "Chlorsulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1632,7 +1262,6 @@
       "term": "Chromafenozide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1640,7 +1269,6 @@
       "term": "Cinidon-ethyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1648,7 +1276,6 @@
       "term": "citronella oil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1660,7 +1287,6 @@
       "term": "Clayed charcoal",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1672,7 +1298,6 @@
       "term": "Clethodim",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1680,7 +1305,6 @@
       "term": "Clodinafop",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1688,7 +1312,6 @@
       "term": "Clofentezine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1696,7 +1319,6 @@
       "term": "Clomazone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1704,7 +1326,6 @@
       "term": "Clonostachys rosea",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1712,7 +1333,6 @@
       "term": "Clopyralid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1720,7 +1340,6 @@
       "term": "clove oil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1732,7 +1351,6 @@
       "term": "Coniothyrium minitans",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1740,7 +1358,6 @@
       "term": "COS-OGA",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1748,7 +1365,6 @@
       "term": "Cow Milk",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1760,7 +1376,6 @@
       "term": "Cyantraniliprole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1768,7 +1383,6 @@
       "term": "Cyazofamid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1776,7 +1390,6 @@
       "term": "Cyclanilide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1784,7 +1397,6 @@
       "term": "Cycloxydim",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1792,7 +1404,6 @@
       "term": "Cydia pomonella Granulovirus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1800,7 +1411,6 @@
       "term": "Cyflufenamid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1808,7 +1418,6 @@
       "term": "Cyflumetofen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1816,7 +1425,6 @@
       "term": "Cyfluthrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1824,7 +1432,6 @@
       "term": "Cyhalofop butyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1832,7 +1439,6 @@
       "term": "Cyhalofop-butyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1840,7 +1446,6 @@
       "term": "Cymoxanil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1848,7 +1453,6 @@
       "term": "Cyproconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1856,7 +1460,6 @@
       "term": "Cyprodinil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1864,7 +1467,6 @@
       "term": "Cyromazine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1872,7 +1474,6 @@
       "term": "Daminozide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1880,7 +1481,6 @@
       "term": "Dazomet",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1888,7 +1488,6 @@
       "term": "Denathonium benzoate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1896,7 +1495,6 @@
       "term": "Desmedipham",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1904,7 +1502,6 @@
       "term": "Diammonium phosphate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -1916,7 +1513,6 @@
       "term": "Dicamba",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1924,7 +1520,6 @@
       "term": "Dichlorprop-P",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1932,7 +1527,6 @@
       "term": "Diclofop",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -1940,7 +1534,6 @@
       "term": "Didecyldimethylammonium chloride",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -1948,7 +1541,6 @@
       "term": "Diethofencarb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1956,7 +1548,6 @@
       "term": "Difenacoum",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1964,7 +1555,6 @@
       "term": "Difenoconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1972,7 +1562,6 @@
       "term": "Diflubenzuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1980,7 +1569,6 @@
       "term": "Diflufenican",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1988,7 +1576,6 @@
       "term": "Dimethachlor",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -1996,7 +1583,6 @@
       "term": "Dimethenamid-p",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2004,7 +1590,6 @@
       "term": "Dimethomorph",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2012,7 +1597,6 @@
       "term": "Dimoxystrobin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2020,7 +1604,6 @@
       "term": "Disodium phosphonate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -2028,7 +1611,6 @@
       "term": "Dithianon",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2036,7 +1618,6 @@
       "term": "Diuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2044,7 +1625,6 @@
       "term": "Dodemorph",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2052,7 +1632,6 @@
       "term": "Dodine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2060,7 +1639,6 @@
       "term": "DPX KE 459",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "flupyrsulfuron-methyl"
@@ -2071,7 +1649,6 @@
       "term": "Elemental iron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2083,7 +1660,6 @@
       "term": "Emamectin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2091,7 +1667,6 @@
       "term": "Epoxiconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2099,7 +1674,6 @@
       "term": "Equisetum arvense",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2111,7 +1685,6 @@
       "term": "Esfenvalerate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2119,7 +1692,6 @@
       "term": "Ethephon",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2127,7 +1699,6 @@
       "term": "Ethofumesate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2135,7 +1706,6 @@
       "term": "ethoprophos",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2143,7 +1713,6 @@
       "term": "Ethoxysulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2151,7 +1720,6 @@
       "term": "Ethylene",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -2163,7 +1731,6 @@
       "term": "Etofenprox",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2171,7 +1738,6 @@
       "term": "Etoxazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2179,7 +1745,6 @@
       "term": "Etridiazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2187,7 +1752,6 @@
       "term": "Eugenol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2195,7 +1759,6 @@
       "term": "Extract from tea tree",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2207,7 +1770,6 @@
       "term": "Famoxadone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2215,7 +1777,6 @@
       "term": "Fat destilation residues",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2227,7 +1788,6 @@
       "term": "Fat distillation residues",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2239,7 +1799,6 @@
       "term": "Fatty acids C7 to C20",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2251,7 +1810,6 @@
       "term": "FEN 560",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -2259,7 +1817,6 @@
       "term": "Fenamidone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2267,7 +1824,6 @@
       "term": "Fenamiphos",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2275,7 +1831,6 @@
       "term": "Fenazaquin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2283,7 +1838,6 @@
       "term": "Fenbuconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2291,7 +1845,6 @@
       "term": "Fenbutatin oxide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -2299,7 +1852,6 @@
       "term": "Fenhexamid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2307,7 +1859,6 @@
       "term": "Fenoxaprop-P",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2315,7 +1866,6 @@
       "term": "Fenoxycarb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2323,7 +1873,6 @@
       "term": "Fenpicoxamid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2331,7 +1880,6 @@
       "term": "Fenpropidin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2339,7 +1887,6 @@
       "term": "Fenpropimorph",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2347,7 +1894,6 @@
       "term": "Fenpyrazamine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2355,7 +1901,6 @@
       "term": "Fenpyroximate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2363,7 +1908,6 @@
       "term": "Ferric phosphate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -2371,7 +1915,6 @@
       "term": "Ferric pyrophosphate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -2379,7 +1922,6 @@
       "term": "Fish oil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2391,7 +1933,6 @@
       "term": "Flazasulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2399,7 +1940,6 @@
       "term": "Flonicamid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2407,7 +1947,6 @@
       "term": "Florasulam",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2415,7 +1954,6 @@
       "term": "Florpyrauxifen-benzyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2423,7 +1961,6 @@
       "term": "Fluazifop P",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -2431,7 +1968,6 @@
       "term": "Fluazinam",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2439,7 +1975,6 @@
       "term": "Flubendiamide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2447,7 +1982,6 @@
       "term": "Fludioxonil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2455,7 +1989,6 @@
       "term": "Flufenacet",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2463,7 +1996,6 @@
       "term": "Flumetralin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2471,7 +2003,6 @@
       "term": "Flumioxazin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2479,7 +2010,6 @@
       "term": "Flumioxazine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2487,7 +2017,6 @@
       "term": "Fluometuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2495,7 +2024,6 @@
       "term": "Fluopicolide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2503,7 +2031,6 @@
       "term": "Fluopyram",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2511,7 +2038,6 @@
       "term": "Fluoxastrobin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2519,7 +2045,6 @@
       "term": "Fluquinconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2527,7 +2052,6 @@
       "term": "Flurochloridone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2535,7 +2059,6 @@
       "term": "Fluroxypyr",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2543,7 +2066,6 @@
       "term": "Flurtamone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2551,7 +2073,6 @@
       "term": "Flusilazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2559,7 +2080,6 @@
       "term": "Flutianil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2567,7 +2087,6 @@
       "term": "Flutolanil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2575,7 +2094,6 @@
       "term": "Flutriafol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2583,7 +2101,6 @@
       "term": "Fluxapyroxad",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2591,7 +2108,6 @@
       "term": "Folpet",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2599,7 +2115,6 @@
       "term": "Foramsulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2607,7 +2122,6 @@
       "term": "Forchlorfenuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2615,7 +2129,6 @@
       "term": "Formetanate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2623,7 +2136,6 @@
       "term": "Fosetyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2631,7 +2143,6 @@
       "term": "Fosthiazate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2639,7 +2150,6 @@
       "term": "Fructose",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -2651,7 +2161,6 @@
       "term": "Fuberidazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2659,7 +2168,6 @@
       "term": "Gamma-cyhalothrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2667,7 +2175,6 @@
       "term": "Garlic extract",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2679,7 +2186,6 @@
       "term": "Geraniol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2687,7 +2193,6 @@
       "term": "Gibberellic acid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2699,7 +2204,6 @@
       "term": "Gibberellins",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -2711,7 +2215,6 @@
       "term": "Gliocladium catenulatum",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -2719,7 +2222,6 @@
       "term": "Glufosinate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2727,7 +2229,6 @@
       "term": "Halauxifen-methyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2735,7 +2236,6 @@
       "term": "Halosulfuron-methyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2743,7 +2243,6 @@
       "term": "Haloxyfop-P",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2751,7 +2250,6 @@
       "term": "Helicoverpa armigera nucleopolyhedrovirus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -2759,7 +2257,6 @@
       "term": "Heptamaloxyloglucan",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2767,7 +2264,6 @@
       "term": "Hexythiazox",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2775,7 +2271,6 @@
       "term": "Hydrogen peroxide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2787,7 +2282,6 @@
       "term": "Hydrolysed proteins",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2799,7 +2293,6 @@
       "term": "Hymexazol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2807,7 +2300,6 @@
       "term": "Imazalil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2815,7 +2307,6 @@
       "term": "Imazamox",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2823,7 +2314,6 @@
       "term": "Imazaquin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2831,7 +2321,6 @@
       "term": "Imazosulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2839,7 +2328,6 @@
       "term": "Indolylbutyric acid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -2847,7 +2335,6 @@
       "term": "Indoxacarb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2855,7 +2342,6 @@
       "term": "Iodosulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2863,7 +2349,6 @@
       "term": "Ioxynil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2871,7 +2356,6 @@
       "term": "Ipconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2879,7 +2363,6 @@
       "term": "Iprodione",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2887,7 +2370,6 @@
       "term": "Iprovalicarb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2895,7 +2377,6 @@
       "term": "Iron sulphate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2907,7 +2388,6 @@
       "term": "Isaria fumosorosea",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -2915,7 +2395,6 @@
       "term": "Isofetamid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2923,7 +2402,6 @@
       "term": "Isoproturon",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2931,7 +2409,6 @@
       "term": "Isopyrazam",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2939,7 +2416,6 @@
       "term": "Isoxaben",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -2947,7 +2423,6 @@
       "term": "Isoxaflutole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2955,7 +2430,6 @@
       "term": "Kieselgur",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "aliases": [
         "Diatomaceous earth"
@@ -2966,7 +2440,6 @@
       "term": "Kresoxim-Methyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -2974,7 +2447,6 @@
       "term": "L-ascorbic acid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -2986,7 +2458,6 @@
       "term": "L-cysteine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -2998,7 +2469,6 @@
       "term": "Lambda-cyhalothrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3006,7 +2476,6 @@
       "term": "Laminarin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3014,7 +2483,6 @@
       "term": "Lavandulyl senecioate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3022,7 +2490,6 @@
       "term": "Lecanicillium muscarium",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3030,7 +2497,6 @@
       "term": "Lecithins",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -3042,7 +2508,6 @@
       "term": "Lenacil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3050,7 +2515,6 @@
       "term": "Lime sulphur",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -3062,7 +2526,6 @@
       "term": "Limestone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -3074,7 +2537,6 @@
       "term": "Linuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3082,7 +2544,6 @@
       "term": "Lufenuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3090,7 +2551,6 @@
       "term": "Lysate of Willaertia magna",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3098,7 +2558,6 @@
       "term": "magnesium hydroxide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -3110,7 +2569,6 @@
       "term": "Magnesium phosphide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3118,7 +2576,6 @@
       "term": "Malathion",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3126,7 +2583,6 @@
       "term": "Maleic hydrazide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3134,7 +2590,6 @@
       "term": "Maltodextrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -3146,7 +2601,6 @@
       "term": "Mandestrobin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3154,7 +2608,6 @@
       "term": "Mandipropamid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3162,7 +2615,6 @@
       "term": "Maneb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3170,7 +2622,6 @@
       "term": "MCPA",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3178,7 +2629,6 @@
       "term": "MCPB",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3186,7 +2636,6 @@
       "term": "Mecoprop",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3194,7 +2643,6 @@
       "term": "Mecoprop-P",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3202,7 +2650,6 @@
       "term": "Mefentrifluconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3210,7 +2657,6 @@
       "term": "Mepanipyrim",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3218,7 +2664,6 @@
       "term": "Mepiquat",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3226,7 +2671,6 @@
       "term": "Mepiquat chloride",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3234,7 +2678,6 @@
       "term": "Meptyldinocap",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3242,7 +2685,6 @@
       "term": "Mesosulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3250,7 +2692,6 @@
       "term": "Mesotrione",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3258,7 +2699,6 @@
       "term": "Metaflumizone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3266,7 +2706,6 @@
       "term": "Metalaxyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3274,7 +2713,6 @@
       "term": "Metalaxyl-M",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3282,7 +2720,6 @@
       "term": "Metaldehyde",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3290,7 +2727,6 @@
       "term": "Metamitron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3298,7 +2734,6 @@
       "term": "Metarhizium anisopliae",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3306,7 +2741,6 @@
       "term": "Metarhizium brunneum",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3314,7 +2748,6 @@
       "term": "Metazachlor",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3322,7 +2755,6 @@
       "term": "Metconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3330,7 +2762,6 @@
       "term": "Methiocarb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3338,7 +2769,6 @@
       "term": "Methomyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3346,7 +2776,6 @@
       "term": "Methoxyfenozide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3354,7 +2783,6 @@
       "term": "Methyl nonyl ketone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3362,7 +2790,6 @@
       "term": "Metiram",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3370,7 +2797,6 @@
       "term": "Metobromuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3378,7 +2804,6 @@
       "term": "Metosulam",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3386,7 +2811,6 @@
       "term": "Metrafenone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3394,7 +2818,6 @@
       "term": "Metribuzin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3402,7 +2825,6 @@
       "term": "Metschnikowia fructicola",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3410,7 +2832,6 @@
       "term": "Metsulfuron methyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3418,7 +2839,6 @@
       "term": "Metsulfuron-methyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3426,7 +2846,6 @@
       "term": "Milbemectin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3434,7 +2853,6 @@
       "term": "Mild Pepino Mosaic Virus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3442,7 +2860,6 @@
       "term": "Molinate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3450,7 +2867,6 @@
       "term": "Mustard seeds powder",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -3462,7 +2878,6 @@
       "term": "Myclobutanil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3470,7 +2885,6 @@
       "term": "Napropamide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3478,7 +2892,6 @@
       "term": "Nicosulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3486,7 +2899,6 @@
       "term": "Onion oil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -3498,7 +2910,6 @@
       "term": "Onobrychis viciifolia (sainfoin) dried pellets",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3506,7 +2917,6 @@
       "term": "Orange oil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -3518,7 +2928,6 @@
       "term": "Oryzalin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3526,7 +2935,6 @@
       "term": "Oxadiargyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3534,7 +2942,6 @@
       "term": "Oxadiazon",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3542,7 +2949,6 @@
       "term": "Oxamyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3550,7 +2956,6 @@
       "term": "Oxasulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3558,7 +2963,6 @@
       "term": "Oxathiapiprolin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3566,7 +2970,6 @@
       "term": "Oxyfluorfen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3574,7 +2977,6 @@
       "term": "Paclobutrazol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3582,7 +2984,6 @@
       "term": "Paecilomyces fumosoroseus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3590,7 +2991,6 @@
       "term": "Paecilomyces lilacinus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3598,7 +2998,6 @@
       "term": "Paraffin oil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -3610,7 +3009,6 @@
       "term": "Paraffin oils",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -3622,7 +3020,6 @@
       "term": "Pasteuria nishizawae Pn1",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3630,7 +3027,6 @@
       "term": "Penconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3638,7 +3034,6 @@
       "term": "Pencycuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3646,7 +3041,6 @@
       "term": "Pendimethalin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3654,7 +3048,6 @@
       "term": "Penflufen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3662,7 +3055,6 @@
       "term": "Penoxsulam",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3670,7 +3062,6 @@
       "term": "Penthiopyrad",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3678,7 +3069,6 @@
       "term": "Pepino mosaic virus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3686,7 +3076,6 @@
       "term": "Pepper",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -3698,7 +3087,6 @@
       "term": "Pepper dust extraction residue",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "PDER"
@@ -3709,7 +3097,6 @@
       "term": "Pethoxamid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3717,7 +3104,6 @@
       "term": "Phenmedipham",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3725,7 +3111,6 @@
       "term": "Phlebiopsis gigantea",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3733,7 +3118,6 @@
       "term": "Phosmet",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3741,7 +3125,6 @@
       "term": "Phosphane",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3749,7 +3132,6 @@
       "term": "Picloram",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3757,7 +3139,6 @@
       "term": "Picolinafen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3765,7 +3146,6 @@
       "term": "Picoxystrobin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3773,7 +3153,6 @@
       "term": "Pinoxaden",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3781,7 +3160,6 @@
       "term": "Pirimicarb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3789,7 +3167,6 @@
       "term": "Pirimiphos-methyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3797,7 +3174,6 @@
       "term": "Potassium hydrogen carbonate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -3809,7 +3185,6 @@
       "term": "Potassium phosphonates",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3817,7 +3192,6 @@
       "term": "Prochloraz",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3825,7 +3199,6 @@
       "term": "Profoxydim",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3833,7 +3206,6 @@
       "term": "Prohexadione",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3841,7 +3213,6 @@
       "term": "Prohexadione Calcium",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3849,7 +3220,6 @@
       "term": "Propamocarb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3857,7 +3227,6 @@
       "term": "Propaquizafop",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3865,7 +3234,6 @@
       "term": "Propiconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3873,7 +3241,6 @@
       "term": "Propineb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3881,7 +3248,6 @@
       "term": "Propoxycarbazone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3889,7 +3255,6 @@
       "term": "Propyzamide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3897,7 +3262,6 @@
       "term": "Proquinazid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3905,7 +3269,6 @@
       "term": "Prosulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3913,7 +3276,6 @@
       "term": "Prothioconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3921,7 +3283,6 @@
       "term": "Pseudomonas chlororaphis",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3929,7 +3290,6 @@
       "term": "Pseudomonas sp. strain DSMZ 13134",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3937,7 +3297,6 @@
       "term": "Purpureocillium lilacinum",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -3945,7 +3304,6 @@
       "term": "Putrescin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3953,7 +3311,6 @@
       "term": "Pymetrozine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3961,7 +3318,6 @@
       "term": "Pyraclostrobin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3969,7 +3325,6 @@
       "term": "Pyraflufen-ethyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3977,7 +3332,6 @@
       "term": "Pyrethrins",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -3985,7 +3339,6 @@
       "term": "Pyridaben",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -3993,7 +3346,6 @@
       "term": "Pyridalyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4001,7 +3353,6 @@
       "term": "Pyridate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4009,7 +3360,6 @@
       "term": "Pyrimethanil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4017,7 +3367,6 @@
       "term": "Pyriofenone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4025,7 +3374,6 @@
       "term": "Pyriproxyfen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4033,7 +3381,6 @@
       "term": "Pyroxsulam",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4041,7 +3388,6 @@
       "term": "Pythium oligandrum",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4049,7 +3395,6 @@
       "term": "Quartz sand",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4061,7 +3406,6 @@
       "term": "Quinmerac",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4069,7 +3413,6 @@
       "term": "Quinoclamine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4077,7 +3420,6 @@
       "term": "Quinolin-8-ol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4085,7 +3427,6 @@
       "term": "Quinoxyfen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4093,7 +3434,6 @@
       "term": "Quizalofop-P",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4101,7 +3441,6 @@
       "term": "rape seed oil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4113,7 +3452,6 @@
       "term": "Rescalure",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4121,7 +3459,6 @@
       "term": "Rimsulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4129,7 +3466,6 @@
       "term": "S-abscisic acid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4137,7 +3473,6 @@
       "term": "S-metolachlor",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4145,7 +3480,6 @@
       "term": "Saccharomyces cerevisae",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4157,7 +3491,6 @@
       "term": "Salix spp. cortex",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4169,7 +3502,6 @@
       "term": "Sea-algae extract",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4181,7 +3513,6 @@
       "term": "Sedaxane",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4189,7 +3520,6 @@
       "term": "sheep fat",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4201,7 +3531,6 @@
       "term": "Silthiofam",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4209,7 +3538,6 @@
       "term": "Sintofen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4217,7 +3545,6 @@
       "term": "Sodium 5-nitroguaiacolate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4225,7 +3552,6 @@
       "term": "Sodium aluminium silicate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4237,7 +3563,6 @@
       "term": "Sodium chloride",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4249,7 +3574,6 @@
       "term": "Sodium hydrogen carbonate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4261,7 +3585,6 @@
       "term": "Sodium Hypochlorite",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4273,7 +3596,6 @@
       "term": "Sodium o-nitrophenolate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4281,7 +3603,6 @@
       "term": "Sodium p-nitrophenolate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4289,7 +3610,6 @@
       "term": "Sodium silver thiosulfate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4297,7 +3617,6 @@
       "term": "spear mint oil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4309,7 +3628,6 @@
       "term": "Spinetoram",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4317,7 +3635,6 @@
       "term": "Spinosad",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4325,7 +3642,6 @@
       "term": "Spirodiclofen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4333,7 +3649,6 @@
       "term": "Spiromesifen",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4341,7 +3656,6 @@
       "term": "Spirotetramat",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4349,7 +3663,6 @@
       "term": "Spiroxamine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4357,7 +3670,6 @@
       "term": "Spodoptera exigua multicapsid nucleopolyhedrovirus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4365,7 +3677,6 @@
       "term": "Spodoptera exigua nuclear polyhedrosis virus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4373,7 +3684,6 @@
       "term": "Spodoptera littoralis nucleopolyhedrovirus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4381,7 +3691,6 @@
       "term": "Straight Chain Lepidopteran Pheromones",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4389,7 +3698,6 @@
       "term": "Streptomyces K61",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4397,7 +3705,6 @@
       "term": "Streptomyces lydicus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4405,7 +3712,6 @@
       "term": "Streptomyces strain K61",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4413,7 +3719,6 @@
       "term": "Sucrose",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -4425,7 +3730,6 @@
       "term": "Sulcotrione",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4433,7 +3737,6 @@
       "term": "Sulfosulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4441,7 +3744,6 @@
       "term": "Sulfuryl fluoride",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4449,7 +3751,6 @@
       "term": "sulphur",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -4461,7 +3762,6 @@
       "term": "Sunflower oil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4473,7 +3773,6 @@
       "term": "Talc",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -4485,7 +3784,6 @@
       "term": "tall oil crude",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4493,7 +3791,6 @@
       "term": "tall oil pitch",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4501,7 +3798,6 @@
       "term": "Tau-fluvalinate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4509,7 +3805,6 @@
       "term": "Tebuconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4517,7 +3812,6 @@
       "term": "Tebufenozide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4525,7 +3819,6 @@
       "term": "Tebufenpyrad",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4533,7 +3826,6 @@
       "term": "Teflubenzuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4541,7 +3833,6 @@
       "term": "Tefluthrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4549,7 +3840,6 @@
       "term": "Tembotrione",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4557,7 +3847,6 @@
       "term": "Tepraloxydim",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4565,7 +3854,6 @@
       "term": "Terbuthylazine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4573,7 +3861,6 @@
       "term": "Terpenoid blend QRD 460",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4581,7 +3868,6 @@
       "term": "Tetraconazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4589,7 +3875,6 @@
       "term": "Thiabendazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4597,7 +3882,6 @@
       "term": "Thiencarbazone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4605,7 +3889,6 @@
       "term": "Thifensulfuron-methyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4613,7 +3896,6 @@
       "term": "Thiophanate-methyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4621,7 +3903,6 @@
       "term": "Thiram",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4629,7 +3910,6 @@
       "term": "Thymol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4637,7 +3917,6 @@
       "term": "Tolclofos-methyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4645,7 +3924,6 @@
       "term": "Tralkoxydim",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4653,7 +3931,6 @@
       "term": "Tri-allate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4661,7 +3938,6 @@
       "term": "Triadimenol",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4669,7 +3945,6 @@
       "term": "Triasulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4677,7 +3952,6 @@
       "term": "Triazoxide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4685,7 +3959,6 @@
       "term": "Tribenuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4693,7 +3966,6 @@
       "term": "Trichoderma asperellum",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4701,7 +3973,6 @@
       "term": "Trichoderma atroviride",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4709,7 +3980,6 @@
       "term": "Trichoderma gamsii",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4717,7 +3987,6 @@
       "term": "Trichoderma harzianum",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4725,7 +3994,6 @@
       "term": "Trichoderma polysporum",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4733,7 +4001,6 @@
       "term": "Triclopyr",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4741,7 +4008,6 @@
       "term": "Trifloxystrobin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4749,7 +4015,6 @@
       "term": "Triflumizole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4757,7 +4022,6 @@
       "term": "Triflumuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4765,7 +4029,6 @@
       "term": "Triflusulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4773,7 +4036,6 @@
       "term": "Trimethylamine hydrochloride",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4781,7 +4043,6 @@
       "term": "Trinexapac",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4789,7 +4050,6 @@
       "term": "Trinexapac-ethyl",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4797,7 +4057,6 @@
       "term": "Triticonazole",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4805,7 +4064,6 @@
       "term": "Tritosulfuron",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4813,7 +4071,6 @@
       "term": "Urea",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -4825,7 +4082,6 @@
       "term": "Urtica spp",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "requires": [
         "en-pesticide"
@@ -4837,7 +4093,6 @@
       "term": "Valifenalate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4845,7 +4100,6 @@
       "term": "Verticillium albo-atrum",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4853,7 +4107,6 @@
       "term": "Vinegar",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -4865,7 +4118,6 @@
       "term": "Vitis vinifera L. seed extract",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase",
       "aliases": [
         "grape seed extract"
@@ -4876,7 +4128,6 @@
       "term": "Warfarin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -4888,7 +4139,6 @@
       "term": "Whey",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "requires": [
         "en-pesticide"
@@ -4900,7 +4150,6 @@
       "term": "Z,Z,Z,Z-7,13,16,19- docosatetraen-1-yl isobutyrate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4908,7 +4157,6 @@
       "term": "Z,Z,Z,Z-7,13,16,19-docosatetraen-1-yl isobutyrate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4916,7 +4164,6 @@
       "term": "Z-13-hexadecen-11-yn-1-yl acetate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4924,7 +4171,6 @@
       "term": "Zeta-cypermethrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring"
     },
     {
@@ -4932,7 +4178,6 @@
       "term": "Zinc phosphide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4940,7 +4185,6 @@
       "term": "Ziram",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4948,7 +4192,6 @@
       "term": "Zoxamide",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word"
     },
     {
@@ -4956,7 +4199,6 @@
       "term": "Zucchini Yellow Mosaic Virus",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "phrase"
     },
     {
@@ -4964,7 +4206,6 @@
       "term": "clothianidin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-imidacloprid on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -4973,7 +4214,6 @@
       "term": "thiamethoxam",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-imidacloprid on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -4982,7 +4222,6 @@
       "term": "thiacloprid",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-imidacloprid on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -4991,7 +4230,6 @@
       "term": "dimethoate",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-fipronil on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5000,7 +4238,6 @@
       "term": "chlorothalonil",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-fipronil on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5009,7 +4246,6 @@
       "term": "mancozeb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-fipronil on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5018,7 +4254,6 @@
       "term": "captan",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-fipronil on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5027,7 +4262,6 @@
       "term": "prosulfocarb",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-fipronil on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5036,7 +4270,6 @@
       "term": "flupyradifurone",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-fipronil on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5045,7 +4278,6 @@
       "term": "atrazine",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-paraquat on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5054,7 +4286,6 @@
       "term": "lindane",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-paraquat on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5063,7 +4294,6 @@
       "term": "endosulfan",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-paraquat on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5072,7 +4302,6 @@
       "term": "diquat",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-paraquat on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5081,7 +4310,6 @@
       "term": "aldrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "word",
       "note": "Split out of en-paraquat on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed. Word-matched, unlike its neighbours: as a substring 'aldrin' matches inside 'Aldringen' and 'Aldringer', the Luxembourg street where litigants gave their address for service, which selected 41 unrelated ECSC and EEC judgments."
     },
@@ -5090,7 +4318,6 @@
       "term": "dieldrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 3,
       "match": "substring",
       "note": "Split out of en-paraquat on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5099,7 +4326,6 @@
       "term": "sulfoxaflor",
       "lang": "en",
       "category": "active_substance",
-      "weight": 2,
       "match": "word",
       "note": "Split out of en-copper-compounds on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5108,7 +4334,6 @@
       "term": "cypermethrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 2,
       "match": "word",
       "note": "Split out of en-copper-compounds on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5117,7 +4342,6 @@
       "term": "deltamethrin",
       "lang": "en",
       "category": "active_substance",
-      "weight": 2,
       "match": "word",
       "note": "Split out of en-copper-compounds on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
     },
@@ -5126,7 +4350,6 @@
       "term": "néonicotinoïde",
       "lang": "fr",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "néonicotinoïdes"
@@ -5138,7 +4361,6 @@
       "term": "Neonicotinoid",
       "lang": "de",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "Neonicotinoide"
@@ -5150,12 +4372,93 @@
       "term": "neonicotinoïde",
       "lang": "nl",
       "category": "product_class",
-      "weight": 3,
       "match": "substring",
       "aliases": [
         "neonicotinoïden"
       ],
       "note": "Split out of nl-eu-glyfosaat on 2026-08-13. It is a distinct active substance, not a spelling of that one; scoring it under its own id is what makes a match report name the substance the court actually discussed."
+    },
+    {
+      "id": "en-nematicide",
+      "term": "nematicide",
+      "lang": "en",
+      "category": "product_class",
+      "match": "substring",
+      "aliases": [
+        "nematicides"
+      ],
+      "note": "Its own term rather than an alias of en-fungicide: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
+    },
+    {
+      "id": "en-acaricide",
+      "term": "acaricide",
+      "lang": "en",
+      "category": "product_class",
+      "match": "substring",
+      "note": "Its own term rather than an alias of en-fungicide: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
+    },
+    {
+      "id": "en-rodenticide",
+      "term": "rodenticide",
+      "lang": "en",
+      "category": "product_class",
+      "match": "substring",
+      "note": "Its own term rather than an alias of en-fungicide: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
+    },
+    {
+      "id": "fr-insecticide",
+      "term": "insecticide",
+      "lang": "fr",
+      "category": "product_class",
+      "match": "substring",
+      "aliases": [
+        "insecticides"
+      ],
+      "note": "Its own term rather than an alias of fr-herbicide: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
+    },
+    {
+      "id": "fr-fongicide",
+      "term": "fongicide",
+      "lang": "fr",
+      "category": "product_class",
+      "match": "substring",
+      "aliases": [
+        "fongicides"
+      ],
+      "note": "Its own term rather than an alias of fr-herbicide: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
+    },
+    {
+      "id": "de-insektizid",
+      "term": "Insektizid",
+      "lang": "de",
+      "category": "product_class",
+      "match": "substring",
+      "aliases": [
+        "Insektizide"
+      ],
+      "note": "Its own term rather than an alias of de-herbizid: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
+    },
+    {
+      "id": "de-fungizid",
+      "term": "Fungizid",
+      "lang": "de",
+      "category": "product_class",
+      "match": "substring",
+      "aliases": [
+        "Fungizide"
+      ],
+      "note": "Its own term rather than an alias of de-herbizid: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
+    },
+    {
+      "id": "nl-eu-biocide",
+      "term": "biocide",
+      "lang": "nl",
+      "category": "product_class",
+      "match": "substring",
+      "aliases": [
+        "biociden"
+      ],
+      "note": "Its own term rather than an alias of nl-eu-pesticide: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
     }
   ],
   "exclusions": []

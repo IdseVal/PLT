@@ -38,7 +38,6 @@ class RecordingFilter(Filter):
 
     name: str = "recording"
     passed: bool = True
-    score: float = 1.0
     seen: list[str] = field(default_factory=list)
 
     def evaluate(self, case: FilterableDocument) -> FilterResult:
@@ -46,7 +45,6 @@ class RecordingFilter(Filter):
         self.seen.append(case.jurisdiction_code)
         return FilterResult(
             passed=self.passed,
-            score=self.score,
             reason=f"{self.name} says {self.passed}",
             stage=self.name,
         )
@@ -60,7 +58,7 @@ def test_empty_chain_passes_everything() -> None:
     result = FilterChain().evaluate(StubCase())
 
     assert result.passed
-    assert result.score == 0.0
+    assert result.matches == ()
     assert result.stage == "chain"
 
 
@@ -119,18 +117,19 @@ def test_filter_is_abstract() -> None:
 def test_results_and_matches_are_immutable() -> None:
     match = TermMatch(
         term_id="nl-glyfosaat",
+        term="glyfosaat",
+        category="active_substance",
         list_version="1.0.0",
         field="full_text",
-        weight_applied=3.0,
         snippet="…glyfosaat…",
         matched_text="glyfosaat",
         occurrences=1,
         start=0,
         end=9,
     )
-    result = FilterResult(passed=True, score=3.0, reason="ok", stage="keywords", matches=(match,))
+    result = FilterResult(passed=True, reason="ok", stage="keywords", matches=(match,))
 
     with pytest.raises(AttributeError):
         result.passed = False  # type: ignore[misc]
     with pytest.raises(AttributeError):
-        match.weight_applied = 0.0  # type: ignore[misc]
+        match.category = "brand"  # type: ignore[misc]

@@ -68,6 +68,15 @@ export interface CaseFilterState {
   readonly law_subfield: string
   /** Topic slug. */
   readonly topic: string
+  /**
+   * Id of a curated keyword term the case is labelled with, e.g. `nl-glyfosaat`.
+   *
+   * The id rather than the term text: the text is written to be read and may be re-worded,
+   * while the id is the stable thing a cited link has to survive.
+   */
+  readonly keyword: string
+  /** Keyword category the case carries a label in, e.g. `active_substance`. */
+  readonly category: string
   /** Court id, as a string because it travels through a `<select>`. */
   readonly court: string
   /** ISO 639-1 language code. */
@@ -89,6 +98,8 @@ export const EMPTY_FILTERS: CaseFilterState = {
   law_domain: '',
   law_subfield: '',
   topic: '',
+  keyword: '',
+  category: '',
   court: '',
   language: '',
   date_from: '',
@@ -103,6 +114,8 @@ const SINGLE_VALUE_KEYS = [
   'law_domain',
   'law_subfield',
   'topic',
+  'keyword',
+  'category',
   'court',
   'language',
 ] as const
@@ -181,6 +194,8 @@ export function parseCaseFilters(params: URLSearchParams): CaseFilterState {
     law_domain: cleanString(params.get('law_domain'), MAX_FACET_LENGTH),
     law_subfield: cleanString(params.get('law_subfield'), MAX_FACET_LENGTH),
     topic: cleanString(params.get('topic'), MAX_FACET_LENGTH),
+    keyword: cleanString(params.get('keyword'), MAX_FACET_LENGTH),
+    category: cleanString(params.get('category'), MAX_FACET_LENGTH),
     court: cleanString(params.get('court'), MAX_FACET_LENGTH),
     language: cleanString(params.get('language'), MAX_FACET_LENGTH),
     date_from: isIsoDate(dateFrom) ? dateFrom : '',
@@ -249,6 +264,8 @@ export function toSearchQuery(filters: CaseFilterState): Record<string, QueryVal
     law_domain: filters.law_domain,
     law_subfield: filters.law_subfield,
     topic: filters.topic,
+    keyword: filters.keyword,
+    category: filters.category,
     court: filters.court,
     language: filters.language,
     date_from: filters.date_from,

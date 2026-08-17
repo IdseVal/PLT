@@ -1,0 +1,242 @@
+{
+  "jurisdiction": "EU",
+  "excluded_from": "eu.json",
+  "list_version_after": "2.0.0",
+  "updated": "2026-08-17",
+  "why_this_file_exists": "Terms removed when the list moved from weighted scoring to a word search (schema 2.0.0). Under scoring these could corroborate another term without selecting anything on their own; under a word search every term selects, so a term that is not specific to plant protection selects the wrong cases. Kept here so a later curator can see what was considered and why it went.",
+  "terms": [
+    {
+      "id": "en-active-substance",
+      "term": "active substance",
+      "lang": "en",
+      "category": "product_class",
+      "weight": 2,
+      "match": "phrase",
+      "aliases": [
+        "active substances",
+        "approval of the active substance",
+        "basic substance",
+        "candidate for substitution"
+      ],
+      "removed_because": "Every chemical, pharmaceutical and food case names an active substance; it selected 674 cases."
+    },
+    {
+      "id": "en-reg-1272-2008",
+      "term": "1272/2008",
+      "lang": "en",
+      "category": "statute",
+      "weight": 1,
+      "match": "substring",
+      "aliases": [
+        "CLP Regulation",
+        "classification, labelling and packaging"
+      ],
+      "note": "Contextual: CLP covers all chemicals, not only pesticides.",
+      "removed_because": "CLP classifies and labels all hazardous chemicals."
+    },
+    {
+      "id": "en-reach",
+      "term": "REACH",
+      "lang": "en",
+      "category": "statute",
+      "weight": 1,
+      "match": "word",
+      "case_sensitive": true,
+      "aliases": [
+        "1907/2006"
+      ],
+      "note": "Contextual: chemicals law generally.",
+      "removed_because": "REACH governs industrial chemicals generally."
+    },
+    {
+      "id": "en-aarhus-ppp",
+      "term": "Aarhus",
+      "lang": "en",
+      "category": "statute",
+      "weight": 1,
+      "match": "word",
+      "aliases": [
+        "access to environmental information",
+        "1367/2006"
+      ],
+      "note": "Contextual: many pesticide-transparency cases run on Aarhus grounds (e.g. disclosure of studies), but Aarhus alone is not enough.",
+      "removed_because": "Aarhus governs access to environmental information in every field."
+    },
+    {
+      "id": "en-efsa",
+      "term": "EFSA",
+      "lang": "en",
+      "category": "authority",
+      "weight": 1,
+      "match": "word",
+      "case_sensitive": true,
+      "case_sensitive_exception": true,
+      "aliases": [
+        "European Food Safety Authority"
+      ],
+      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost. Revisit under issue #24.",
+      "removed_because": "The food safety authority advises on food and health generally, not on pesticides alone."
+    },
+    {
+      "id": "en-echa",
+      "term": "ECHA",
+      "lang": "en",
+      "category": "authority",
+      "weight": 1,
+      "match": "word",
+      "case_sensitive": true,
+      "case_sensitive_exception": true,
+      "aliases": [
+        "European Chemicals Agency"
+      ],
+      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost. Revisit under issue #24.",
+      "removed_because": "The chemicals agency covers industrial chemicals generally."
+    },
+    {
+      "id": "en-mutual-recognition-ppp",
+      "term": "mutual recognition of authorisations",
+      "lang": "en",
+      "category": "procedure",
+      "weight": 2,
+      "match": "phrase",
+      "aliases": [
+        "zonal authorisation",
+        "comparative assessment"
+      ],
+      "removed_because": "Mutual recognition is a general principle of EU law, dropped here as it was for the Dutch list. Its zonal-authorisation alias is genuinely plant-protection vocabulary and could return as a term of its own."
+    },
+    {
+      "id": "en-precautionary-principle",
+      "term": "precautionary principle",
+      "lang": "en",
+      "category": "procedure",
+      "weight": 1,
+      "match": "phrase",
+      "note": "Contextual: central to pesticide reasoning but used across all EU risk regulation.",
+      "removed_because": "A general principle of EU law, invoked across environment, health and trade."
+    },
+    {
+      "id": "en-endocrine-disruptor",
+      "term": "endocrine disrupt",
+      "lang": "en",
+      "category": "exposure_or_harm",
+      "weight": 2,
+      "match": "substring",
+      "aliases": [
+        "endocrine disruptor",
+        "endocrine-disrupting properties"
+      ],
+      "removed_because": "Endocrine disruption is regulated across chemicals, cosmetics and biocides."
+    },
+    {
+      "id": "en-bee-health",
+      "term": "bee health",
+      "lang": "en",
+      "category": "exposure_or_harm",
+      "weight": 2,
+      "match": "phrase",
+      "aliases": [
+        "pollinators",
+        "honeybee",
+        "bee guidance document"
+      ],
+      "removed_because": "Pollinator health is an ecological subject; a pesticide case names the substance."
+    },
+    {
+      "id": "en-operator-exposure",
+      "term": "operator exposure",
+      "lang": "en",
+      "category": "exposure_or_harm",
+      "weight": 2,
+      "match": "phrase",
+      "aliases": [
+        "bystander exposure",
+        "residents and bystanders",
+        "dietary exposure"
+      ],
+      "removed_because": "Exposure language is shared with occupational health and food safety."
+    },
+    {
+      "id": "en-groundwater-contamination",
+      "term": "groundwater contamination",
+      "lang": "en",
+      "category": "environment",
+      "weight": 1,
+      "match": "phrase",
+      "aliases": [
+        "surface water contamination",
+        "water framework directive"
+      ],
+      "removed_because": "Water contamination and the Water Framework Directive are not specific to pesticides."
+    },
+    {
+      "id": "en-organic-farming-ppp",
+      "term": "organic production",
+      "lang": "en",
+      "category": "crop_or_practice",
+      "weight": 1,
+      "match": "phrase",
+      "aliases": [
+        "2018/848"
+      ],
+      "removed_because": "The organic production regulation is about farming method, not plant protection products."
+    },
+    {
+      "id": "fr-substance-active",
+      "term": "substance active",
+      "lang": "fr",
+      "category": "product_class",
+      "weight": 2,
+      "match": "phrase",
+      "aliases": [
+        "substances actives",
+        "approbation de la substance active"
+      ],
+      "removed_because": "Every chemical, pharmaceutical and food case names an active substance."
+    },
+    {
+      "id": "de-wirkstoff",
+      "term": "Wirkstoff",
+      "lang": "de",
+      "category": "product_class",
+      "weight": 2,
+      "match": "substring",
+      "aliases": [
+        "Wirkstoffe",
+        "Wirkstoffgenehmigung"
+      ],
+      "removed_because": "Every chemical, pharmaceutical and food case names an active substance."
+    },
+    {
+      "id": "nl-eu-werkzame-stof",
+      "term": "werkzame stof",
+      "lang": "nl",
+      "category": "product_class",
+      "weight": 2,
+      "match": "phrase",
+      "aliases": [
+        "werkzame stoffen",
+        "goedkeuring van de werkzame stof"
+      ],
+      "removed_because": "Every chemical, pharmaceutical and food case names an active substance."
+    }
+  ],
+  "aliases_trimmed_from_retained_terms": [
+    {
+      "term_id": "en-spray-drift",
+      "aliases": [
+        "buffer zone"
+      ],
+      "removed_because": "A planning instrument used for noise, odour and safety alike."
+    },
+    {
+      "term_id": "en-authorisation-ppp",
+      "aliases": [
+        "renewal of approval",
+        "non-renewal of approval",
+        "withdrawal of approval"
+      ],
+      "removed_because": "Approval is granted, renewed and withdrawn in every authorisation regime."
+    }
+  ]
+}

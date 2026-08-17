@@ -2,11 +2,15 @@
 
 The matcher decides what enters the database (``docs/core-document.md`` section 2.5), so
 these tests exercise the semantics the curated lists rely on - every ``match`` mode,
-``aliases``, ``requires``, ``exclusions``, the per-field multipliers and diacritic folding -
-against the two shipped lists and against synthetic lists written into ``tmp_path``.
+``aliases``, ``requires``, ``exclusions``, the scanned fields and diacritic folding - against
+the two shipped lists and against synthetic lists written into ``tmp_path``.
 
-The shipped lists are content-manager-owned data. Nothing here edits them; the synthetic
-lists exist precisely so that no test ever has a reason to.
+Selection is a word search: one term matching is enough, and a term that could not carry a
+case alone belongs in ``excluded_<code>.json`` rather than in the list at a low weight.
+
+Several tests below guard exactly that, by naming terms that were removed and asserting they
+select nothing. The shipped lists are content-manager-owned data. Nothing here edits them; the
+synthetic lists exist precisely so that no test ever has a reason to.
 """
 
 from __future__ import annotations
@@ -60,7 +64,6 @@ class Doc:
 def term(
     term_id: str,
     text: str,
-    weight: float,
     **overrides: Any,  # noqa: ANN401 - passes schema fields straight through
 ) -> dict[str, Any]:
     """Build one term entry for a synthetic list."""
@@ -69,7 +72,6 @@ def term(
         "term": text,
         "lang": "nl",
         "category": "general",
-        "weight": weight,
     }
     entry.update(overrides)
     return entry
@@ -78,17 +80,13 @@ def term(
 def make_list(terms: list[dict[str, Any]], **overrides: Any) -> dict[str, Any]:  # noqa: ANN401
     """Build a minimal schema-valid list document around a set of terms."""
     document: dict[str, Any] = {
-        "schema_version": "1.0.0",
+        "schema_version": "2.0.0",
         "jurisdiction": "NL",
         "jurisdiction_name": "Netherlands",
         "list_version": "9.9.9",
         "updated": "2026-08-03",
         "languages": ["nl"],
-        "scoring": {
-            "min_score": 3,
-            "count_term_once": True,
-            "fields": {"title": 2.0, "abstract": 1.5, "full_text": 1.0},
-        },
+        "fields": ["title", "abstract", "full_text"],
         "terms": terms,
     }
     document.update(overrides)
@@ -109,8 +107,8 @@ def build_filter(tmp_path: Path, document: dict[str, Any]) -> KeywordFilter:
 
 
 def matched(result: FilterResult) -> set[str]:
-    """Return the ids of the terms that contributed weight."""
-    return {match.term_id for match in result.matches if match.weight_applied > 0}
+    """Return the ids of the terms that actually selected the document."""
+    return {match.term_id for match in result.labels}
 
 
 # ----------------------------------------------------------------------------------------
@@ -128,9 +126,9 @@ def test_shipped_lists_load_and_validate(code: str) -> None:
 
     assert keyword_list.jurisdiction == code.upper()
     assert keyword_list.term_count == term_count
-    assert keyword_list.min_score > 0
-    assert set(keyword_list.field_multipliers) >= {"title", "abstract", "full_text"}
+    assert set(keyword_list.fields) >= {"title", "abstract", "full_text"}
     assert keyword_list.pattern_count > keyword_list.term_count, "aliases must be compiled too"
+    assert keyword_list.categories, "every list must classify its terms; the labels come from it"
 
 
 def test_shipped_lists_are_reached_through_the_settings() -> None:
@@ -169,8 +167,8 @@ def test_an_unparsable_list_is_rejected(tmp_path: Path) -> None:
 def test_an_invalid_term_is_named_in_the_error(tmp_path: Path) -> None:
     document = make_list(
         [
-            term("nl-good", "glyfosaat", 3),
-            term("nl-broken", "iets", 3, category="not-a-category"),
+            term("nl-good", "glyfosaat"),
+            term("nl-broken", "iets", category="not-a-category"),
         ]
     )
 
@@ -178,29 +176,35 @@ def test_an_invalid_term_is_named_in_the_error(tmp_path: Path) -> None:
         load_keyword_list(write_list(tmp_path, document))
 
 
-def test_a_negative_weight_is_named_in_the_error(tmp_path: Path) -> None:
-    document = make_list([term("nl-negative", "iets", -1)])
+def test_a_weight_is_now_rejected_rather_than_ignored(tmp_path: Path) -> None:
+    """A list still carrying weights was written for the old semantics.
 
-    with pytest.raises(KeywordListValidationError, match=r"nl-negative.*terms/0/weight"):
+    Accepting it and ignoring the numbers would silently change what that list
+    selects, so the schema refuses it: the curator is sent back to the file rather
+    than to the results.
+    """
+    document = make_list([term("nl-weighted", "iets", weight=3)])
+
+    with pytest.raises(KeywordListValidationError, match=r"terms/0"):
         load_keyword_list(write_list(tmp_path, document))
 
 
 def test_duplicate_term_ids_are_rejected(tmp_path: Path) -> None:
-    document = make_list([term("nl-same", "eerste", 3), term("nl-same", "tweede", 3)])
+    document = make_list([term("nl-same", "eerste"), term("nl-same", "tweede")])
 
     with pytest.raises(KeywordListValidationError, match=r"nl-same.*duplicate"):
         load_keyword_list(write_list(tmp_path, document))
 
 
 def test_a_gate_on_an_unknown_term_is_rejected(tmp_path: Path) -> None:
-    document = make_list([term("nl-gated", "drift", 1, requires=["nl-missing"])])
+    document = make_list([term("nl-gated", "drift", requires=["nl-missing"])])
 
     with pytest.raises(KeywordListValidationError, match=r"nl-gated.*nl-missing"):
         load_keyword_list(write_list(tmp_path, document))
 
 
 def test_a_term_may_not_gate_itself(tmp_path: Path) -> None:
-    document = make_list([term("nl-self", "drift", 1, requires=["nl-self"])])
+    document = make_list([term("nl-self", "drift", requires=["nl-self"])])
 
     with pytest.raises(KeywordListValidationError, match=r"nl-self.*itself"):
         load_keyword_list(write_list(tmp_path, document))
@@ -226,7 +230,6 @@ def test_the_ddt_defect_stays_fixed_a_prose_alias_may_not_inherit_case_sensitive
             term(
                 "nl-ddt",
                 "DDT",
-                3,
                 case_sensitive=True,
                 aliases=["lindaan", "paraquat", "atrazine"],
             )
@@ -249,7 +252,6 @@ def test_the_authority_defect_stays_fixed_a_spelled_out_name_may_not_inherit_it_
             term(
                 "nl-nvwa-gewas",
                 "NVWA",
-                1,
                 case_sensitive=True,
                 aliases=["Nederlandse Voedsel- en Warenautoriteit"],
             )
@@ -279,7 +281,7 @@ def test_the_abbreviation_defect_stays_fixed_a_short_alias_may_not_inherit_subst
     # Defect 3: five register abbreviations inherited substring from the long chemical name
     # they abbreviate. Nothing gated them, so a fragment scored 3 and selected the document:
     # DDAC inside the surname Faddach, BBIT inside rabbits, TMAD inside Oostmadeweg.
-    document = make_list([term(term_id, name, 3, match="substring", aliases=[abbreviation])])
+    document = make_list([term(term_id, name, match="substring", aliases=[abbreviation])])
 
     with pytest.raises(KeywordListValidationError) as error:
         load_keyword_list(write_list(tmp_path, document))
@@ -289,9 +291,7 @@ def test_the_abbreviation_defect_stays_fixed_a_short_alias_may_not_inherit_subst
 
 
 def test_a_case_sensitive_term_of_acronyms_only_is_what_the_rule_allows(tmp_path: Path) -> None:
-    document = make_list(
-        [term("nl-ddt", "DDT", 3, case_sensitive=True, aliases=["DDE", "1907/2006"])]
-    )
+    document = make_list([term("nl-ddt", "DDT", case_sensitive=True, aliases=["DDE", "1907/2006"])])
 
     keyword_list = load_keyword_list(write_list(tmp_path, document))
 
@@ -300,7 +300,7 @@ def test_a_case_sensitive_term_of_acronyms_only_is_what_the_rule_allows(tmp_path
 
 def test_upper_casing_a_spelled_out_name_is_not_a_way_past_the_rule(tmp_path: Path) -> None:
     document = make_list(
-        [term("nl-efsa", "EFSA", 1, case_sensitive=True, aliases=["EUROPESE AUTORITEIT"])]
+        [term("nl-efsa", "EFSA", case_sensitive=True, aliases=["EUROPESE AUTORITEIT"])]
     )
 
     with pytest.raises(KeywordListValidationError, match="EUROPESE AUTORITEIT"):
@@ -311,7 +311,7 @@ def test_a_regex_term_is_read_as_an_expression_and_not_as_a_literal(tmp_path: Pa
     # nl-ctgb is case_sensitive and match=regex; the lowercase characters of its pattern are
     # syntax, not prose, so the acronym rule does not apply to it.
     document = make_list(
-        [term("nl-ctgb", r"(?<!\w)Ctgb(?!\w)", 2, match="regex", case_sensitive=True)]
+        [term("nl-ctgb", r"(?<!\w)Ctgb(?!\w)", match="regex", case_sensitive=True)]
     )
 
     assert load_keyword_list(write_list(tmp_path, document)).term_count == 1
@@ -323,7 +323,6 @@ def test_a_declared_exception_admits_the_alias_the_rule_would_refuse(tmp_path: P
             term(
                 "nl-efsa",
                 "EFSA",
-                1,
                 case_sensitive=True,
                 case_sensitive_exception=True,
                 aliases=["Europese Autoriteit voor voedselveiligheid"],
@@ -335,7 +334,7 @@ def test_a_declared_exception_admits_the_alias_the_rule_would_refuse(tmp_path: P
 
 
 def test_an_exception_on_a_term_that_is_not_case_sensitive_is_rejected(tmp_path: Path) -> None:
-    document = make_list([term("nl-efsa", "EFSA", 1, case_sensitive_exception=True)])
+    document = make_list([term("nl-efsa", "EFSA", case_sensitive_exception=True)])
 
     with pytest.raises(KeywordListValidationError, match=r"nl-efsa.*not case_sensitive"):
         load_keyword_list(write_list(tmp_path, document))
@@ -343,7 +342,7 @@ def test_an_exception_on_a_term_that_is_not_case_sensitive_is_rejected(tmp_path:
 
 def test_an_exception_nothing_needs_is_rejected_so_the_set_cannot_rot(tmp_path: Path) -> None:
     document = make_list(
-        [term("nl-efsa", "EFSA", 1, case_sensitive=True, case_sensitive_exception=True)]
+        [term("nl-efsa", "EFSA", case_sensitive=True, case_sensitive_exception=True)]
     )
 
     with pytest.raises(KeywordListValidationError, match=r"nl-efsa.*every literal"):
@@ -356,7 +355,6 @@ def test_an_exception_on_a_regex_term_is_rejected_as_well(tmp_path: Path) -> Non
             term(
                 "nl-ctgb",
                 r"(?<!\w)Ctgb(?!\w)",
-                2,
                 match="regex",
                 case_sensitive=True,
                 case_sensitive_exception=True,
@@ -369,7 +367,7 @@ def test_an_exception_on_a_regex_term_is_rejected_as_well(tmp_path: Path) -> Non
 
 
 def test_a_substring_literal_at_the_floor_is_accepted(tmp_path: Path) -> None:
-    document = make_list([term("nl-residu", "residu", 2, match="substring")])
+    document = make_list([term("nl-residu", "residu", match="substring")])
 
     keyword_list = load_keyword_list(write_list(tmp_path, document))
 
@@ -379,13 +377,13 @@ def test_a_substring_literal_at_the_floor_is_accepted(tmp_path: Path) -> None:
 def test_a_short_literal_is_only_refused_where_substring_would_reach_inside_a_word(
     tmp_path: Path,
 ) -> None:
-    document = make_list([term("nl-ddac", "DDAC", 3, match="word")])
+    document = make_list([term("nl-ddac", "DDAC", match="word")])
 
     assert load_keyword_list(write_list(tmp_path, document)).term_count == 1
 
 
 def test_an_uncompilable_regex_term_is_named(tmp_path: Path) -> None:
-    document = make_list([term("nl-bad-regex", "gewas(", 3, match="regex")])
+    document = make_list([term("nl-bad-regex", "gewas(", match="regex")])
 
     with pytest.raises(KeywordListValidationError, match=r"nl-bad-regex.*invalid regular"):
         load_keyword_list(write_list(tmp_path, document))
@@ -393,7 +391,7 @@ def test_an_uncompilable_regex_term_is_named(tmp_path: Path) -> None:
 
 def test_a_missing_schema_is_reported(tmp_path: Path) -> None:
     path = tmp_path / "nl.json"
-    path.write_text(json.dumps(make_list([term("nl-x", "glyfosaat", 3)])), encoding="utf-8")
+    path.write_text(json.dumps(make_list([term("nl-x", "glyfosaat")])), encoding="utf-8")
 
     with pytest.raises(KeywordListError, match="schema not found"):
         load_keyword_list(path, schema_path=tmp_path / "absent.json")
@@ -405,15 +403,15 @@ def test_a_missing_list_file_is_reported(tmp_path: Path) -> None:
 
 
 def test_a_violation_outside_the_terms_array_is_located(tmp_path: Path) -> None:
-    document = make_list([term("nl-x", "glyfosaat", 3)])
-    del document["scoring"]
+    document = make_list([term("nl-x", "glyfosaat")])
+    del document["fields"]
 
-    with pytest.raises(KeywordListValidationError, match=r"<root>.*scoring"):
+    with pytest.raises(KeywordListValidationError, match=r"<root>.*fields"):
         load_keyword_list(write_list(tmp_path, document))
 
 
 def test_a_blank_alias_is_rejected(tmp_path: Path) -> None:
-    document = make_list([term("nl-blank", "glyfosaat", 3, aliases=["  "])])
+    document = make_list([term("nl-blank", "glyfosaat", aliases=["  "])])
 
     with pytest.raises(KeywordListValidationError, match=r"nl-blank.*empty"):
         load_keyword_list(write_list(tmp_path, document))
@@ -447,7 +445,6 @@ def test_glyfosaat_alone_qualifies_a_document(nl_filter: KeywordFilter) -> None:
     result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} Het gaat om glyfosaat."))
 
     assert result.passed
-    assert result.score >= 3
     assert "nl-glyfosaat" in matched(result)
 
 
@@ -455,37 +452,50 @@ def test_lelieteelt_alone_does_not_qualify_a_document(nl_filter: KeywordFilter) 
     result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} Het gaat om de lelieteelt."))
 
     assert not result.passed
-    assert result.score < 3
-    assert matched(result) == {"nl-lelieteelt"}
+    assert result.matches == (), "the crop is out of the list, not held back by a weight"
 
 
-def test_lelieteelt_with_bespuiting_qualifies_a_document(nl_filter: KeywordFilter) -> None:
+def test_bespuiting_selects_and_lelieteelt_no_longer_does(nl_filter: KeywordFilter) -> None:
+    """Spraying a crop is plant protection; growing one is not."""
     result = nl_filter.evaluate(
         Doc(full_text=f"{BOILERPLATE} De lelieteelt en de bespuiting van het perceel.")
     )
 
     assert result.passed
-    assert matched(result) == {"nl-lelieteelt", "nl-bespuiting"}
+    assert matched(result) == {"nl-bespuiting"}
 
 
-def test_drift_alone_scores_nothing(nl_filter: KeywordFilter) -> None:
-    result = nl_filter.evaluate(
-        Doc(full_text=f"{BOILERPLATE} Verdachte handelde in een vlaag van drift.")
-    )
+def test_a_substance_named_like_an_ordinary_word_selects_nothing_alone(
+    nl_filter: KeywordFilter,
+) -> None:
+    """``water`` is an approved active substance and an ordinary word.
+
+    Without weights, the ``requires`` gate is the only thing standing between that
+    entry in the register and every judgment that mentions water.
+    """
+    result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} Er stond water op het perceel."))
 
     assert not result.passed
-    assert result.score == 0.0
+    assert result.labels == ()
     gated = {match.term_id for match in result.matches if match.gated}
-    assert gated == {"nl-drift"}, "the homonym must be reported as disarmed, not dropped"
+    assert "nl-water" in gated, "the homonym must be reported as disarmed, not dropped"
 
 
-def test_drift_with_a_spraying_term_scores(nl_filter: KeywordFilter) -> None:
+def test_a_gated_substance_labels_the_case_once_its_gate_opens(
+    nl_filter: KeywordFilter,
+) -> None:
+    """The same word, in a document that is about plant protection, is a label."""
     result = nl_filter.evaluate(
-        Doc(full_text=f"{BOILERPLATE} De drift bij de bespuiting van het perceel.")
+        Doc(
+            full_text=(
+                f"{BOILERPLATE} Het gewasbeschermingsmiddel is met water aangelengd "
+                "voor de bespuiting."
+            )
+        )
     )
 
     assert result.passed
-    assert matched(result) == {"nl-drift", "nl-bespuiting"}
+    assert {"nl-water", "nl-gewasbeschermingsmiddel"} <= matched(result)
     assert not any(match.gated for match in result.matches)
 
 
@@ -500,7 +510,6 @@ def test_an_exclusion_vetoes_a_document_that_would_otherwise_pass(
     )
 
     assert not result.passed
-    assert result.score == 0.0
     assert "opwelling van drift" in result.reason
     assert "Criminal-law idiom" in result.reason
 
@@ -524,7 +533,7 @@ def test_the_toxicology_boilerplate_no_longer_admits_a_homicide_judgment(
     result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} {screen}"))
 
     assert not result.passed
-    assert result.score == 0.0
+    assert result.labels == ()
 
 
 def test_the_boilerplate_guard_suppresses_one_occurrence_and_not_the_term(
@@ -547,17 +556,13 @@ def test_the_boilerplate_guard_suppresses_one_occurrence_and_not_the_term(
 
 
 def test_kwekerij_no_longer_matches_inside_hennepkwekerij(nl_filter: KeywordFilter) -> None:
-    hennep = nl_filter.evaluate(
-        Doc(full_text=f"{BOILERPLATE} In de loods is een hennepkwekerij aangetroffen.")
-    )
-    bare = nl_filter.evaluate(
-        Doc(full_text=f"{BOILERPLATE} Op het perceel wordt een kwekerij geëxploiteerd.")
-    )
-    compound = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} De boomkwekerijen aldaar."))
-
-    assert hennep.score == 0.0
-    assert matched(bare) == {"nl-boomkwekerij"}, "the bare word still carries its weight"
-    assert matched(compound) == {"nl-boomkwekerij"}, "and so does the compound it was named for"
+    for sentence in (
+        "In de loods is een hennepkwekerij aangetroffen.",
+        "Op het perceel wordt een kwekerij geëxploiteerd.",
+        "De boomkwekerijen aldaar.",
+    ):
+        result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} {sentence}"))
+        assert not result.passed, f"naming a nursery is not naming a pesticide: {sentence!r}"
 
 
 def test_ctb_no_longer_matches_cement_bound_road_base(nl_filter: KeywordFilter) -> None:
@@ -572,47 +577,68 @@ def test_ctb_no_longer_matches_cement_bound_road_base(nl_filter: KeywordFilter) 
     )
 
     assert not road_base.passed
-    assert road_base.score == 0.0
+    assert road_base.labels == ()
     assert historical.passed, "the historical abbreviation is kept; only the collision is removed"
     assert current.passed
 
 
-def test_toelatingsbesluit_alone_no_longer_qualifies_an_immigration_judgment(
+def test_toelatingsbesluit_is_gone_and_the_specific_phrase_remains(
     nl_filter: KeywordFilter,
 ) -> None:
+    """A gate was the weighted answer to this homonym; removal is the word-search one.
+
+    ``toelatingsbesluit`` is an ordinary administrative act in immigration, housing and
+    every other licensing field, so it is out of the list.
+
+    The phrase that names the subject rather than the instrument stays, and still selects.
+    """
     immigration = nl_filter.evaluate(
         Doc(full_text=f"{BOILERPLATE} Eiser komt op tegen het toelatingsbesluit van de minister.")
     )
     authorisation = nl_filter.evaluate(
-        Doc(
-            full_text=(
-                f"{BOILERPLATE} Het beroep richt zich tegen het toelatingsbesluit over de "
-                "toelating van gewasbeschermingsmiddelen."
-            )
-        )
+        Doc(full_text=f"{BOILERPLATE} Het gaat om de toelating van gewasbeschermingsmiddelen.")
     )
 
     assert not immigration.passed
-    assert immigration.score == 0.0
-    gated = {match.term_id for match in immigration.matches if match.gated}
-    assert gated == {"nl-toelatingsbesluit"}, "a disarmed homonym is reported, not dropped"
+    assert immigration.matches == (), "the term is out of the list, not merely disarmed"
     assert authorisation.passed
-    assert "nl-toelatingsbesluit" in matched(authorisation)
+    assert "nl-toelating" in matched(authorisation)
 
 
-def test_the_other_toelating_aliases_are_not_gated(nl_filter: KeywordFilter) -> None:
-    for alias in ("toelatingshouder", "toelatingsaanvraag", "herbeoordeling werkzame stof"):
+def test_the_generic_licensing_aliases_were_trimmed(nl_filter: KeywordFilter) -> None:
+    """``toelatingshouder`` and ``toelatingsaanvraag`` name no subject on their own."""
+    for alias in ("toelatingshouder", "toelatingsaanvraag"):
         result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} Het betreft de {alias}."))
-        assert result.passed, f"{alias} was never implicated and must keep qualifying alone"
+        assert not result.passed, f"{alias} is ordinary licensing vocabulary"
 
 
-def test_weight_one_terms_never_qualify_alone(nl_filter: KeywordFilter) -> None:
-    for contextual in ("lelieteelt", "omwonenden", "residu"):
+def test_the_contextual_terms_are_out_of_the_list_entirely(nl_filter: KeywordFilter) -> None:
+    """Under a word search a term that cannot carry a case has to be gone, not light.
+
+    These are the terms the project owner named when the weighting went.
+
+    Each of them appears in thousands of judgments with nothing to do with plant protection, and
+    each now lives in ``excluded_nl.json`` with the reason it went.
+    """
+    for contextual in (
+        "lelieteelt",
+        "bollenteelt",
+        "boomkwekerij",
+        "omwonenden",
+        "residu",
+        "blootstelling",
+        "bufferzone",
+        "werkzame stof",
+        "NVWA",
+        "EFSA",
+        "toelatingsbesluit",
+        "wederzijdse erkenning",
+    ):
         result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} Het betreft {contextual}."))
-        assert not result.passed, f"{contextual} must not qualify a document on its own"
+        assert not result.passed, f"{contextual} must no longer select a document"
 
 
-def test_weight_three_terms_qualify_alone(nl_filter: KeywordFilter) -> None:
+def test_unambiguous_terms_select_alone(nl_filter: KeywordFilter) -> None:
     for unambiguous in ("glyfosaat", "spuitzone", "Verordening (EG) nr. 1107/2009"):
         result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} Het betreft {unambiguous}."))
         assert result.passed, f"{unambiguous} must qualify a document on its own"
@@ -626,7 +652,8 @@ def test_reach_alone_does_not_qualify_an_eu_document() -> None:
         Doc(jurisdiction_code="EU", full_text="Regulation (EC) No 1107/2009 applies.")
     )
 
-    assert not contextual.passed
+    assert not contextual.passed, "REACH governs industrial chemicals generally"
+    assert contextual.matches == (), "and is no longer in the list at all"
     assert unambiguous.passed
 
 
@@ -639,13 +666,15 @@ def test_every_match_carries_the_provenance_the_keyword_match_table_needs(
 
     assert result.matches
     for match in result.matches:
-        assert match.term_id in nl_filter.keyword_list.terms
+        curated = nl_filter.keyword_list.terms[match.term_id]
         assert match.list_version == nl_filter.keyword_list.list_version
-        assert match.field in nl_filter.keyword_list.field_multipliers
-        assert match.weight_applied >= 0
+        assert match.field in nl_filter.keyword_list.fields
         assert match.snippet
         assert match.occurrences >= 1
-    assert result.score == pytest.approx(sum(match.weight_applied for match in result.matches))
+        # The label is the curated term and its category, never the inflection found.
+        assert match.term == curated.term
+        assert match.category == curated.category
+    assert result.matched_term_count == len({match.term_id for match in result.labels})
 
 
 # ----------------------------------------------------------------------------------------
@@ -654,7 +683,7 @@ def test_every_match_carries_the_provenance_the_keyword_match_table_needs(
 
 
 def test_word_mode_respects_word_boundaries(tmp_path: Path) -> None:
-    stage = build_filter(tmp_path, make_list([term("nl-drift", "drift", 3, match="word")]))
+    stage = build_filter(tmp_path, make_list([term("nl-drift", "drift", match="word")]))
 
     assert stage.evaluate(Doc(full_text="Sprake van drift, aldus de rechtbank.")).passed
     assert stage.evaluate(Doc(full_text="Er was sprake van spuitdrift.")).passed is False
@@ -662,7 +691,7 @@ def test_word_mode_respects_word_boundaries(tmp_path: Path) -> None:
 
 
 def test_phrase_mode_normalises_whitespace(tmp_path: Path) -> None:
-    stage = build_filter(tmp_path, make_list([term("nl-stof", "werkzame stof", 3, match="phrase")]))
+    stage = build_filter(tmp_path, make_list([term("nl-stof", "werkzame stof", match="phrase")]))
 
     assert stage.evaluate(Doc(full_text="de werkzame stof glyfosaat")).passed
     assert stage.evaluate(Doc(full_text="de werkzame\n   stof glyfosaat")).passed
@@ -672,7 +701,7 @@ def test_phrase_mode_normalises_whitespace(tmp_path: Path) -> None:
 def test_substring_mode_matches_inside_a_compound(tmp_path: Path) -> None:
     stage = build_filter(
         tmp_path,
-        make_list([term("nl-middel", "gewasbeschermingsmiddel", 3, match="substring")]),
+        make_list([term("nl-middel", "gewasbeschermingsmiddel", match="substring")]),
     )
 
     result = stage.evaluate(Doc(full_text="de gewasbeschermingsmiddelenrichtlijn"))
@@ -684,7 +713,7 @@ def test_substring_mode_matches_inside_a_compound(tmp_path: Path) -> None:
 def test_regex_mode_matches_what_the_other_modes_cannot(tmp_path: Path) -> None:
     stage = build_filter(
         tmp_path,
-        make_list([term("nl-artikel", r"artikel\s+5[0-9] van de verordening", 3, match="regex")]),
+        make_list([term("nl-artikel", r"artikel\s+5[0-9] van de verordening", match="regex")]),
     )
 
     matching = stage.evaluate(Doc(full_text="op grond van artikel 53 van de verordening"))
@@ -696,7 +725,7 @@ def test_regex_mode_matches_what_the_other_modes_cannot(tmp_path: Path) -> None:
 
 def test_aliases_score_as_their_parent_and_report_its_id(tmp_path: Path) -> None:
     document = make_list(
-        [term("nl-parent", "bestrijdingsmiddel", 3, aliases=["bestrijdingsmiddelen"])]
+        [term("nl-parent", "bestrijdingsmiddel", aliases=["bestrijdingsmiddelen"])]
     )
     stage = build_filter(tmp_path, document)
 
@@ -705,7 +734,7 @@ def test_aliases_score_as_their_parent_and_report_its_id(tmp_path: Path) -> None
     assert result.passed
     assert [match.term_id for match in result.matches] == ["nl-parent"]
     assert result.matches[0].matched_text == "bestrijdingsmiddelen"
-    assert result.score == 3.0
+    assert result.matches[0].term == "bestrijdingsmiddel", "the label is the curated term"
 
 
 # ----------------------------------------------------------------------------------------
@@ -716,8 +745,8 @@ def test_aliases_score_as_their_parent_and_report_its_id(tmp_path: Path) -> None
 def test_requires_gates_a_term_to_zero_until_its_companion_matches(tmp_path: Path) -> None:
     document = make_list(
         [
-            term("nl-spray", "bespuiting", 2, match="substring"),
-            term("nl-drift", "drift", 3, match="word", requires=["nl-spray"]),
+            term("nl-spray", "bespuiting", match="substring"),
+            term("nl-drift", "drift", match="word", requires=["nl-spray"]),
         ]
     )
     stage = build_filter(tmp_path, document)
@@ -725,33 +754,33 @@ def test_requires_gates_a_term_to_zero_until_its_companion_matches(tmp_path: Pat
     alone = stage.evaluate(Doc(full_text="in een vlaag van drift"))
     together = stage.evaluate(Doc(full_text="drift bij de bespuiting"))
 
-    assert alone.score == 0.0
     assert not alone.passed
     assert alone.matches[0].gated
-    assert alone.matches[0].weight_applied == 0.0
-    assert together.score == 5.0
+    assert alone.labels == (), "a gated term labels nothing"
     assert together.passed
+    assert {match.term_id for match in together.labels} == {"nl-spray", "nl-drift"}
 
 
 def test_a_gate_opens_only_on_the_named_term(tmp_path: Path) -> None:
     document = make_list(
         [
-            term("nl-spray", "bespuiting", 2, match="substring"),
-            term("nl-other", "perceel", 1, match="substring"),
-            term("nl-drift", "drift", 3, match="word", requires=["nl-spray"]),
+            term("nl-spray", "bespuiting", match="substring"),
+            term("nl-other", "perceel", match="substring"),
+            term("nl-drift", "drift", match="word", requires=["nl-spray"]),
         ]
     )
     stage = build_filter(tmp_path, document)
 
     result = stage.evaluate(Doc(full_text="drift op het perceel"))
 
-    assert result.score == 1.0
-    assert not result.passed
+    # ``nl-other`` matched and selects; ``nl-drift`` is gated on ``nl-spray``, which did not.
+    assert result.passed, "the ungated term still selects"
+    assert matched(result) == {"nl-other"}, "a gate opens only on the term it names"
 
 
 def test_an_exclusion_vetoes_regardless_of_score(tmp_path: Path) -> None:
     document = make_list(
-        [term("nl-strong", "glyfosaat", 3, match="substring")],
+        [term("nl-strong", "glyfosaat", match="substring")],
         exclusions=[
             {"pattern": "in een opwelling van drift", "match": "phrase", "reason": "idiom"}
         ],
@@ -763,26 +792,30 @@ def test_an_exclusion_vetoes_regardless_of_score(tmp_path: Path) -> None:
     )
 
     assert not result.passed
-    assert result.score == 0.0
     assert result.matches == ()
     assert "idiom" in result.reason
 
 
-def test_field_multipliers_apply_where_the_term_matched(tmp_path: Path) -> None:
-    document = make_list([term("nl-x", "spuitzone", 2, match="substring")])
+def test_a_match_is_reported_against_the_field_it_was_found_in(tmp_path: Path) -> None:
+    """Where a term was found no longer decides whether it selects.
+
+    A term in the title and the same term in the body both select, and each match still names
+    its field so a curator can see where the evidence came from.
+    """
+    document = make_list([term("nl-x", "spuitzone", match="substring")])
     stage = build_filter(tmp_path, document)
 
     in_title = stage.evaluate(Doc(title="spuitzone", full_text=BOILERPLATE))
     in_body = stage.evaluate(Doc(full_text=f"{BOILERPLATE} spuitzone"))
 
-    assert in_title.score == 4.0, "title multiplier is 2.0 in this list"
-    assert in_body.score == 2.0
     assert in_title.passed
-    assert not in_body.passed
+    assert in_body.passed
+    assert [match.field for match in in_title.matches] == ["title"]
+    assert [match.field for match in in_body.matches] == ["full_text"]
 
 
 def test_a_field_the_list_does_not_score_is_not_scanned(tmp_path: Path) -> None:
-    document = make_list([term("nl-x", "glyfosaat", 3, match="substring")])
+    document = make_list([term("nl-x", "glyfosaat", match="substring")])
     stage = build_filter(tmp_path, document)
 
     result = stage.evaluate(Doc(subject="glyfosaat", full_text=BOILERPLATE))
@@ -791,35 +824,19 @@ def test_a_field_the_list_does_not_score_is_not_scanned(tmp_path: Path) -> None:
     assert result.matches == ()
 
 
-def test_count_term_once_credits_the_strongest_field(tmp_path: Path) -> None:
-    document = make_list([term("nl-x", "spuitzone", 1, match="substring")])
+def test_a_term_found_in_two_fields_is_still_one_label(tmp_path: Path) -> None:
+    """Occurrences stay visible for tuning; the case is listed under one keyword."""
+    document = make_list([term("nl-x", "spuitzone", match="substring")])
     stage = build_filter(tmp_path, document)
 
     result = stage.evaluate(Doc(title="spuitzone", full_text="spuitzone spuitzone spuitzone"))
 
     by_field = {match.field: match for match in result.matches}
-    assert result.score == 2.0, "counted once, credited to the title multiplier"
-    assert by_field["title"].weight_applied == 2.0
-    assert by_field["full_text"].weight_applied == 0.0
-    assert by_field["full_text"].occurrences == 3, "occurrences stay visible for tuning"
-
-
-def test_without_count_term_once_every_occurrence_counts(tmp_path: Path) -> None:
-    document = make_list(
-        [term("nl-x", "spuitzone", 1, match="substring")],
-        scoring={
-            "min_score": 3,
-            "count_term_once": False,
-            "fields": {"title": 2.0, "abstract": 1.5, "full_text": 1.0},
-        },
-    )
-    stage = build_filter(tmp_path, document)
-
-    result = stage.evaluate(Doc(full_text="spuitzone, spuitzone en nog eens spuitzone"))
-
-    assert result.score == 3.0
     assert result.passed
-    assert result.matches[0].occurrences == 3
+    assert result.matched_term_count == 1
+    assert len(result.labels) == 1
+    assert set(by_field) == {"title", "full_text"}
+    assert by_field["full_text"].occurrences == 3, "occurrences stay visible for tuning"
 
 
 def test_terms_written_alike_in_several_languages_are_all_credited() -> None:
@@ -856,9 +873,7 @@ def test_an_undiacritised_term_finds_a_diacritised_document(nl_filter: KeywordFi
 
 
 def test_a_diacritised_term_finds_an_undiacritised_document(tmp_path: Path) -> None:
-    stage = build_filter(
-        tmp_path, make_list([term("nl-x", "neonicotinoïde", 3, match="substring")])
-    )
+    stage = build_filter(tmp_path, make_list([term("nl-x", "neonicotinoïde", match="substring")]))
 
     assert stage.evaluate(Doc(full_text="het middel bevat neonicotinoide")).passed
 
@@ -925,21 +940,19 @@ def test_the_snippet_shows_the_term_in_context(nl_filter: KeywordFilter) -> None
 
 def test_the_reason_explains_the_verdict(nl_list: KeywordList, nl_filter: KeywordFilter) -> None:
     passed = nl_filter.evaluate(Doc(full_text="glyfosaat"))
-    failed = nl_filter.evaluate(Doc(full_text="lelieteelt"))
     nothing = nl_filter.evaluate(Doc(full_text="een gewoon huurgeschil"))
 
-    assert "reaches" in passed.reason
+    assert "matched 1 curated term" in passed.reason
     assert "nl-glyfosaat" in passed.reason
-    assert "below" in failed.reason
     # Taken from the loaded list: curation bumps list_version, and that must not break a
     # test of the matcher's reporting.
-    assert f"NL list v{nl_list.list_version}" in failed.reason
-    assert "no curated term" in nothing.reason
+    assert f"NL list v{nl_list.list_version}" in nothing.reason
+    assert "no curated term matched" in nothing.reason
     assert nothing.matches == ()
 
 
 def test_the_reason_is_abbreviated_when_many_terms_contribute(tmp_path: Path) -> None:
-    document = make_list([term(f"nl-t{index}", f"kwestie{index}", 1) for index in range(12)])
+    document = make_list([term(f"nl-t{index}", f"kwestie{index}") for index in range(12)])
     stage = build_filter(tmp_path, document)
 
     result = stage.evaluate(Doc(full_text=" ".join(f"kwestie{index}" for index in range(12))))
@@ -953,7 +966,7 @@ def test_an_empty_document_is_rejected_without_error(nl_filter: KeywordFilter) -
     result = nl_filter.evaluate(Doc())
 
     assert not result.passed
-    assert result.score == 0.0
+    assert result.matches == ()
     assert result.stage == "keywords"
 
 
@@ -1018,17 +1031,19 @@ def test_cost_does_not_grow_with_the_number_of_terms(
     """Twenty times the terms must not cost twenty times the time.
 
     A trie shares the prefixes of its terms, so the scan stays proportional to the length of
-    the text. A flat alternation, or one scan per term, would fail this outright.
+    the text.
+
+    A flat alternation, or one scan per term, would fail this outright.
     """
     (tmp_path / "small").mkdir()
     (tmp_path / "large").mkdir()
     small = build_filter(
         tmp_path / "small",
-        make_list([term(f"nl-t{index:04d}", _synthetic_word(index), 1) for index in range(25)]),
+        make_list([term(f"nl-t{index:04d}", _synthetic_word(index)) for index in range(25)]),
     )
     large = build_filter(
         tmp_path / "large",
-        make_list([term(f"nl-t{index:04d}", _synthetic_word(index), 1) for index in range(500)]),
+        make_list([term(f"nl-t{index:04d}", _synthetic_word(index)) for index in range(500)]),
     )
     document = Doc(full_text=_one_megabyte())
 

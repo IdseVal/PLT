@@ -11,6 +11,7 @@ for why this exists.
 | `schema.json` | JSON Schema (2020-12) every list validates against. |
 | `nl.json` | Netherlands — Dutch. |
 | `eu.json` | European Union — English, French, German, Dutch. |
+| `excluded_nl.json`, `excluded_eu.json` | Terms considered and **rejected**, each with the reason. Not loaded by anything; read before re-adding a term. |
 
 **One file per jurisdiction, named `<jurisdiction-code-lowercase>.json`.** A jurisdiction
 cannot be onboarded to the pipeline until its list exists: the terms are language-,
@@ -52,17 +53,18 @@ Four rules that are easy to get wrong:
   union; a national register that keeps expired authorisations gives you this for free.
 - **Take the national spelling as well as the international one.** Dutch judgments write
   both `chloorpyrifos` and `chlorpyrifos`, both `glyfosaat` and `glyphosate`. Carry the
-  national name as the term and the other spelling as an **alias**, so one occurrence scores
-  once. Never give the same literal to two terms — the score would count it twice.
-- **Weight 3, category `active_substance`.** A named substance qualifies a document alone,
-  which is the point.
+  national name as the term and the other spelling as an **alias**, so both file under one
+  label. Never give the same literal to two terms — the case would carry two labels for one
+  word.
+- **Category `active_substance`.** A named substance selects a document on its own, which
+  is the point.
 - **Check the short and word-like names before you commit them.** See below.
 
 ### Substance names that are also ordinary words
 
 A register contains `beer`, `vinegar`, `sucrose`, `urea`, `talc`, `water`, `koper` — which in
-Dutch is also a *buyer* — and `jood`, which is also a *Jew*. At weight 3 each of those would
-admit and publish any judgment that happens to contain the word.
+Dutch is also a *buyer* — and `jood`, which is also a *Jew*. Each of those would admit and
+publish any judgment that happens to contain the word.
 
 Two mechanisms, used together:
 
@@ -93,22 +95,19 @@ Two mechanisms, used together:
    carried as a `substring` literal into the first full EU run, where it matched inside
    **Aldringen** and **Aldringer** — the Luxembourg street at which litigants of the 1950s to
    1970s gave their address for service. It selected 41 ECSC and EEC judgments about coal,
-   steel and pricing, each scoring exactly 3.0 on that one term, before anything else in the
-   corpus had been read. `en-aldrin` and `nl-captan` are therefore `word`, and `nl-aldrin` is
+   steel and pricing, on that one term, before anything else in the corpus had been read. `en-aldrin` and `nl-captan` are therefore `word`, and `nl-aldrin` is
    `word` with its real Dutch compounds spelled out as aliases. `en-captan` stays `substring`:
    the same scan over 20,000 EU judgments and 214,614 distinct word forms found no English
    word containing it. Each of those is a measurement, not a rule.
 
 2. **`requires`.** Match mode cannot save `beer`. A name that is an ordinary word in the
-   jurisdiction's language keeps its weight and its place in the list but is gated on a
-   plant-protection term — `en-pesticide` in `eu.json`, `nl-gewasbeschermingsmiddel` in
-   `nl.json`. It still reports its match, so the content manager can see it; it just cannot
-   qualify a document on its own. This is the same instrument as `nl-drift` and
-   `nl-toelatingsbesluit`.
+   jurisdiction's language keeps its place in the list but is gated on a plant-protection
+   term — `en-pesticide` in `eu.json`, `nl-gewasbeschermingsmiddel` in `nl.json`. It cannot
+   select a document on its own, and it labels nothing until its gate opens.
 
 The gate is deliberately generous: gating a name that did not need it costs nothing — any
-document genuinely about plant protection has already reached `min_score` on the term that
-opened the gate — while missing one costs precision across the whole corpus.
+document genuinely about plant protection has already been selected by the term that opened
+the gate — while missing one costs precision across the whole corpus.
 
 **Micro-organisms are carried as genus and species**, and viruses by their name: a judgment
 prints `Bacillus thuringiensis`, never `Bacillus thuringiensis subsp. kurstaki strain
@@ -132,54 +131,67 @@ read; a CJEU judgment in German that names only the German spelling of a substan
 other term is the residual exposure. Adding the FR/DE/NL columns of the same Annex would
 close it.
 
-## Weighting
+## Selection: one term is enough
 
-| Weight | Meaning |
-| --- | --- |
-| **3** | Unambiguous. Reaching `scoring.min_score` on this term alone is intended. |
-| **2** | Strong, but wants light corroboration. |
-| **1** | Contextual only. Meaningless in isolation — `lelieteelt`, `drift`, `omwonenden`, `REACH`. |
+**A document is selected when any curated term matches it.** There is no score, no threshold
+and no weight column: a term either belongs in the list, in which case a judgment that uses
+it is a pesticide case, or it belongs in `excluded_<code>.json`.
 
-A document passes when its total weight (after per-field multipliers) reaches
-`scoring.min_score`. `requires` disarms homonyms by making a term score nothing unless
-another term also matched — `nl-drift` is the worked example, since *drift* also means
-*fit of anger* in Dutch criminal judgments.
+That is the whole rule, and it puts the burden on curation. Before adding a term, ask the
+only question that matters:
 
-## The review band
+> Would a judgment that uses this word, and no other word from this list, be a case the
+> tracker should hold?
 
-`scoring.review_band` is the width, in score points **above `min_score`**, of the band in
-which a passing document is additionally flagged for a content manager. A document scoring
-`min_score ≤ score < min_score + review_band` is ingested and published exactly like any
-other and appears in the review queue (`GET /api/reviews`). A band of `0` disables flagging;
-a list that omits the key inherits **3**.
+If the answer is no, the term does not go in at a discount — it does not go in.
 
-This exists because the PLT optimises for recall
-([core document §2.7](../../docs/core-document.md)). `min_score` is deliberately not raised
-to buy precision — a false negative is a case the tracker implicitly claims does not exist —
-so precision is bought downstream instead: **selection admits, review curates.** Flagging
-never rejects, and never withholds a case from the site.
+### What this replaced, and why
 
-**Set the band from your own jurisdiction's dry run, not from another list's.** The shipped
-values were each derived from their own corpus, and they differ:
+The lists used to weight terms 1 to 3 and admit a document that reached a score threshold.
+It was removed on 17 August 2026 ([core document §2.13](../../docs/core-document.md)) after
+the first full run over both corpora. Weighting had let terms stay in the lists that could
+never carry a case — `werkzame stof`, `omwonenden`, `bufferzone`, `NVWA`, `EFSA`, `Wet op de
+economische delicten` — on the reasoning that they were harmless below the threshold. They
+were not: they combined with each other, and a crop name beside an exposure word was enough
+to select a judgment about anything at all. `nl-wed` alone brought in 577 cases.
 
-| List | `min_score` | `review_band` | Flagged range | Evidence |
-| --- | ---: | ---: | --- | --- |
-| `eu.json` | 3 | 3 | `[3, 6)` | First EU dry run: 1,548 CJEU decisions across 2024, 54 passed. False positives concentrated at 3.0–3.9; the ≥12 band almost entirely genuine. Raising `min_score` to 6 would have removed 21 cases, ~2 of them in scope — declined, so that population is reviewed instead. |
-| `nl.json` | 3 | 2.5 | `[3, 5.5)` | First Rechtspraak dry run: 10,011 documents, 38 passed. Every clear false positive scored at or below 5.0 and none above, so the band covers them with a margin. |
+Those terms are now in `excluded_nl.json` and `excluded_eu.json`, each with the reason it
+went. **Read those files before re-adding anything**: a term that was considered and rejected
+is a curation decision, not an oversight.
 
-Practical notes for a curator:
+### `requires` is the one instrument that survived
 
-- **The interval is half-open.** A score exactly on `min_score` is flagged; one exactly on
-  the ceiling is not. Widen the band rather than nudging a score if a case on the boundary
-  should be reviewed.
-- **Widening is cheap, narrowing is not.** A band that is too wide costs a reviewer some
-  minutes; one that is too narrow lets the borderline false positives through unexamined,
-  which is the failure mode this mechanism exists to catch.
-- **Bump `list_version` when you change the band.** The flag is stored with the version that
-  produced it, and re-running a window against the same version must reproduce it exactly
-  ([core document §2.8](../../docs/core-document.md)).
-- **A dry run shows the effect without writing a row.** Every line of the match report
-  carries `needs_review`, `threshold` and `review_ceiling`.
+`requires` gates a term on another having matched, and it is doing more work now than it did
+under weighting. An active substance whose ISO common name is an ordinary word — `water`,
+`beer`, `talc`, `koper` — would otherwise select every judgment that says it. Gated, it
+selects nothing on its own and labels nothing; when its gate opens, it labels the case like
+any other term.
+
+Roughly ninety terms in each list are gated this way. Gate generously: gating a name that did
+not need it costs nothing, because a document genuinely about plant protection has already
+been selected by the term that opened the gate.
+
+## Every match is a public label
+
+A case carries the **term** and the **category** of each term that selected it. Both are shown
+on the case page and both are filters on the case list, so two things follow for a curator:
+
+- **`term` is written to be read.** It is the label the public sees, and it is the *curated*
+  spelling — a case matching `glyphosaat` is listed under `glyfosaat`, because the label comes
+  from the term and not from the text.
+- **An alias is a spelling of its own term, never a different thing.** A second substance
+  filed as an alias labels the case with the wrong chemical. Twelve terms did exactly that —
+  atrazine and lindane under `paraquat`, captan and folpet under `mancozeb`, neonicotinoids
+  under `glyphosate` in three languages — and each was split into a term of its own.
+- **`category` is the second label**, so it is a claim about what kind of thing the term is,
+  not a filing convenience.
+
+## The review queue
+
+The queue still exists ([core document §2.7](../../docs/core-document.md)) and still
+publishes, records and audits decisions. What changed is that **nothing raises a flag
+automatically**. "Borderline" meant "just above the threshold", and there is no threshold; a
+content manager raises the flag, and `scoring.review_band` is gone from the schema.
 
 ## Case sensitivity
 
@@ -212,89 +224,27 @@ Only set `case_sensitive` where the lowercase form is a common word or would ove
 
 ### Known exceptions
 
-Four authority terms keep a spelled-out name as an alias and are therefore **not** compliant
-with the rule above: `nl-nvwa-gewas`, `nl-efsa`, `en-efsa`, `en-echa`.
+**There are none, and the set is empty for a reason worth recording.**
 
-Each carries **`case_sensitive_exception: true`**, which is how the loader is told, per term
-and in the data, that the breach is deliberate. The field is deliberately awkward: it is
-refused on a term that is not `case_sensitive`, and refused on a term that does not need it,
-so the exception set cannot grow by accident and cannot rot once a term is split. Setting it
-is a curation decision with a measured cost — the table below — not a way past a failing
-load. Four is the whole set; a fifth needs the same argument these four have.
+Four authority terms used to breach the acronym-only rule by carrying a spelled-out name as
+an alias: `nl-nvwa-gewas`, `nl-efsa`, `en-efsa` and `en-echa`. Each held
+`case_sensitive_exception: true`, which is how the loader is told, per term and in the data,
+that a breach is deliberate.
 
-They are exceptions on purpose, because splitting them would change scoring rather than just
-structure. `count_term_once` counts per **term**, so splitting a weight-1 term in two either
-doubles the score of a document that names the authority both ways, or halves the score of
-one that names it once, depending on how the halves are weighted. Neither is acceptable for
-a contextual term sitting one point below the threshold, and there is no weighting that is
-right in both shapes.
+The exception was expensive and the cost is worth remembering, because it is the failure mode
+`case_sensitive` always has. Under `case_sensitive: true` a spelled-out alias matches **only
+the exact string as curated**. Every other rendering scored zero — `Europese Autoriteit voor
+Voedselveiligheid` with a capital V, an all-caps heading, a lower-cased mention — and so did
+every casing of the acronym itself, so `efsa`, `Efsa` and `nvwa` matched nothing at all.
 
-**The status quo is not cost-free**, and whoever decides #24 should know what it costs.
+All four terms were removed on 17 August 2026, not to resolve that, but because a word search
+selects on any term and none of these four names a subject: EFSA, ECHA, the NVWA and the RIVM
+advise on food, chemicals and health generally. They are in the `excluded_*.json` files.
 
-The failure mode is **not** lower-casing. Under `case_sensitive: true` a spelled-out alias
-matches **only the exact string as curated** — every other casing scores zero, including
-renderings a court is likely to produce:
-
-| Text | `nl-efsa` |
-| --- | ---: |
-| `Europese Autoriteit voor voedselveiligheid` (as curated) | 1.00 |
-| `Europese Autoriteit voor Voedselveiligheid` (capital V) | **0.00** |
-| `europese autoriteit voor voedselveiligheid` | **0.00** |
-| `EUROPESE AUTORITEIT VOOR VOEDSELVEILIGHEID` (heading) | **0.00** |
-
-The same holds for all four terms: `Nederlandse voedsel- en Warenautoriteit`,
-`European food safety authority` and `European chemicals agency` all score 0.00 today.
-
-What limits the damage is **not** that these names are always capitalised — they are not.
-Nor is it that the acronym is case-robust, which an earlier version of this section claimed.
-**The acronym is case-sensitive too**, so `efsa`, `Efsa`, `nvwa` and `echa` all score 0.00,
-and nothing else in either list catches them. Under `case_sensitive`, *every* form of these
-terms matches only the exact curated casing.
-
-What bounds the cost is the **weight** — but the bound is larger than the weight column
-suggests, because `scoring.fields` multiplies it. A weight-1 term contributes:
-
-| Field it matched in | Contribution |
-| --- | ---: |
-| `full_text` (×1.0) | 1.00 |
-| `subject` (×1.0 in `nl.json`, ×1.2 in `eu.json`) | 1.00 / 1.20 |
-| `abstract` (×1.5) | **1.50** |
-| `title` (×1.5) | **1.50** |
-
-A term matching in several fields does **not** accumulate multipliers. Under
-`count_term_once` the matcher credits the term to its single highest-multiplier field and
-zeroes the rest, so one term contributes `weight × max(multiplier)` however many fields it
-hits. That is what makes 1.50 a true ceiling rather than the largest case anyone happened to
-try: across all four terms and every combination of fields, only three contributions are
-reachable — 1.00, 1.20 and 1.50.
-
-So a miss costs up to **1.50** against a `min_score` of 3, and the vulnerable band is any
-document already scoring in **`[1.50, 3.00)`** from other terms — not, as this section
-previously said, "already sitting at 2.x". Worked counterexample from the shipped `eu.json`:
-
-| Document | Score | Verdict |
-| --- | ---: | --- |
-| `Aarhus information request` in the abstract | 1.50 | rejected |
-| …plus `European Chemicals Agency` in the title | 3.00 | **accepted** |
-| …plus `European chemicals agency` (two letters lower-cased) | 1.50 | rejected |
-
-Two characters of casing decide whether that case enters the database.
-
-Bounded, then, but across a wider band than the raw weights imply, and the band is exactly
-where these contextual terms exist to tip the balance. **Treat all four as equally brittle**:
-there is no safe one among them, and no casing of any of them is safe except the one curated
-string.
-
-**Gating on a pesticide term — the proposal in #24 — does not fix any of this.** The two
-problems are independent. If these terms are restructured anyway, dropping `case_sensitive`
-from the spelled-out halves closes the casing gap at the same time.
-
-Resolving this properly needs a curation decision (issue #24) about whether contextual
-authority terms should be *gated* on a pesticide term rather than merely weighted. Note that
-`requires` cannot currently express that: it is an **AND** over term ids, so there is no way
-to say "requires any pesticide term".
-
-Do not split these four without reading #24 first.
+`case_sensitive_exception` stays in the schema, unused. It is deliberately awkward — refused
+on a term that is not `case_sensitive`, and refused on a term that does not need it — so the
+exception set cannot grow by accident. A fifth exception would need the argument these four
+never really had.
 
 ## Curation
 
@@ -302,10 +252,11 @@ These lists are **data curated by the content manager**, not code. Every ingesti
 records which term ids matched each case, so precision and recall can be reviewed and the
 lists tuned.
 
-**Bump `list_version` on every change that can alter a score** — a term, an alias, a weight,
-a match mode, a threshold, a band. Note the reasoning in `notes`.
+**Bump `list_version` on every change that can alter what is selected or how it is
+labelled** — a term, an alias, a category, a match mode, a gate. Note the reasoning in
+`notes`.
 
 **Do not bump it for a change that cannot** — a corrected comment, a rewritten note, a typo in
 prose. `keyword_match` records the version that produced each match, so two versions with
-identical scoring behaviour make that record ambiguous: a reader comparing runs would see a
+identical matching behaviour make that record ambiguous: a reader comparing runs would see a
 version change and look for a behavioural difference that does not exist.

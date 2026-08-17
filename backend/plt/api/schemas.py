@@ -56,6 +56,10 @@ from plt.db.repositories import (
     ReviewSort,
 )
 from plt.notifications.pseudonyms import normalise_address
+from plt.pipeline.filters.keywords import KeywordListError, load_keyword_list_for
+from plt.utils.logging import get_logger
+
+log = get_logger(__name__)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -141,6 +145,9 @@ _INTEGER_RE: Final[re.Pattern[str]] = re.compile(r"^[+-]?[0-9]+$")
 _DATE_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 _CODE_RE: Final[re.Pattern[str]] = re.compile(r"^[A-Z0-9]{2,8}$")
 _SLUG_RE: Final[re.Pattern[str]] = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+#: Keyword-list category, e.g. ``active_substance``. Underscored rather than hyphenated,
+#: because these are the schema's own enum values and not slugs invented for a URL.
+_CATEGORY_RE: Final[re.Pattern[str]] = re.compile(r"^[a-z]+(?:_[a-z]+)*$")
 _LANGUAGE_RE: Final[re.Pattern[str]] = re.compile(r"^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$")
 _SOURCE_ID_RE: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:()\-/ ]*$")
 _LIST_VERSION_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
@@ -526,6 +533,12 @@ def _parse_criteria(args: MultiDict[str, str]) -> CaseSearchCriteria:
         court_id=court or None,
         language=_parse_text(
             args, "language", max_length=_MAX_CODE_LENGTH, pattern=_LANGUAGE_RE, transform="lower"
+        ),
+        keyword=_parse_text(
+            args, "keyword", max_length=_MAX_FILTER_LENGTH, pattern=_SLUG_RE, transform="lower"
+        ),
+        category=_parse_text(
+            args, "category", max_length=_MAX_FILTER_LENGTH, pattern=_CATEGORY_RE, transform="lower"
         ),
         date_from=date_from,
         date_to=date_to,
@@ -1001,9 +1014,9 @@ def _match_payload(match: KeywordMatch) -> dict[str, Any]:
     return {
         "term_id": match.term_id,
         "term": match.term,
+        "category": match.category,
         "list_version": match.list_version,
         "field": match.field,
-        "weight_applied": match.weight_applied,
         "match_count": match.match_count,
         "snippet": match.snippet,
     }
@@ -1114,9 +1127,7 @@ def review_item_payload(review: CaseReview) -> dict[str, Any]:
     return {
         "id": review.id,
         "status": _enum_value(review.status),
-        "score": review.score,
-        "min_score": review.min_score,
-        "band_ceiling": review.band_ceiling,
+        "matched_term_count": review.case.matched_term_count,
         "list_version": review.list_version,
         "reason": review.reason,
         "flagged_at": _iso(review.flagged_at),
@@ -1180,6 +1191,48 @@ def jurisdiction_stat_payload(stat: JurisdictionStat) -> dict[str, Any]:
     }
 
 
+def _keyword_options(facets: FacetValues, settings: Settings) -> list[dict[str, Any]]:
+    """Build the keyword dropdown's options from the curated lists themselves.
+
+    The roster is the list, not the database. A term that is in the list and has selected
+    nothing is a fact worth seeing — it is how a curator notices that a substance never
+    appears in the case law, or that a term is misspelled — so it appears with a count of
+    zero rather than being silently absent.
+
+    A list that cannot be loaded is skipped rather than fatal: the filter UI is not the place
+    a broken keyword file should surface, and the ingestion run says so far more loudly.
+
+    Args:
+        facets: The counts of published cases per term id.
+        settings: Settings resolving the keyword directory.
+
+    Returns:
+        Every curated term, sorted by label, each with its id, category, jurisdiction and
+        the number of published cases carrying it.
+    """
+    options: list[dict[str, Any]] = []
+    for code, _ in facets.jurisdictions:
+        try:
+            keyword_list = load_keyword_list_for(code, settings)
+        except KeywordListError:
+            log.warning(
+                "no usable keyword list for %s; its terms are left out of /api/filters", code
+            )
+            continue
+        options.extend(
+            {
+                "id": term.term_id,
+                "term": term.term,
+                "category": term.category,
+                "jurisdiction": keyword_list.jurisdiction,
+                "case_count": facets.keyword_counts.get(term.term_id, 0),
+            }
+            for term in keyword_list.terms.values()
+        )
+    options.sort(key=lambda option: (str(option["term"]).lower(), str(option["jurisdiction"])))
+    return options
+
+
 def facets_payload(facets: FacetValues, settings: Settings) -> dict[str, Any]:
     """Serialise the facet values behind the All-cases filter UI.
 
@@ -1188,7 +1241,7 @@ def facets_payload(facets: FacetValues, settings: Settings) -> dict[str, Any]:
 
     Args:
         facets: The distinct values found on published cases.
-        settings: Settings supplying the pagination bounds.
+        settings: Settings supplying the pagination bounds and the keyword directory.
 
     Returns:
         The wire representation of ``/api/filters``.
@@ -1200,6 +1253,8 @@ def facets_payload(facets: FacetValues, settings: Settings) -> dict[str, Any]:
         "law_subfields": list(facets.law_subfields),
         "languages": list(facets.languages),
         "topics": [{"slug": slug, "label": label} for slug, label in facets.topics],
+        "keywords": _keyword_options(facets, settings),
+        "categories": list(facets.categories),
         "decision_date_range": {
             "from": _iso(facets.earliest_decision_date),
             "to": _iso(facets.latest_decision_date),

@@ -103,18 +103,23 @@ def test_a_term_in_any_language_version_qualifies_the_case() -> None:
     assert {match.field for match in result.matches} == {"full_text"}
 
 
-def test_the_subject_field_is_scored() -> None:
-    """``subject`` is the rechtsgebied for NL: on its own it reaches min_score."""
+def test_the_subject_field_is_scanned() -> None:
+    """``subject`` is the rechtsgebied for NL: on its own it selects the case."""
     stage = KeywordFilter.for_jurisdiction("NL", settings=build_settings())
     subject = case(subject="Gewasbeschermingsmiddelen en biociden")
 
     result = stage.evaluate(subject)
 
     assert result.passed
-    assert {match.field for match in result.matches if match.weight_applied > 0} == {"subject"}
+    assert {match.field for match in result.labels} == {"subject"}
 
 
-def test_the_eu_list_weights_the_subject_field_above_full_text() -> None:
+def test_the_eu_list_reads_the_subject_field_and_the_full_text_alike() -> None:
+    """Where a term is found no longer changes what it is worth.
+
+    The subject-matter heading used to be weighted above the prose; with the weighting gone,
+    both select, and each match still names its own field.
+    """
     stage = KeywordFilter.for_jurisdiction("EU", settings=build_settings())
 
     in_subject = stage.evaluate(case(jurisdiction_code="EU", subject="Pesticides"))
@@ -125,10 +130,10 @@ def test_the_eu_list_weights_the_subject_field_above_full_text() -> None:
         )
     )
 
-    # The EU list gives subject 1.2 and full text 1.0, so the same term in the
-    # subject-matter heading counts for a fifth more than in the prose.
-    assert in_text.score > 0
-    assert in_subject.score == pytest.approx(in_text.score * 1.2)
+    assert in_subject.passed
+    assert in_text.passed
+    assert {match.field for match in in_subject.labels} == {"subject"}
+    assert {match.field for match in in_text.labels} == {"full_text"}
 
 
 def test_a_candidate_rejects_a_naive_timestamp() -> None:

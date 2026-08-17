@@ -31,22 +31,29 @@ Both transformations are length-preserving translations, so every offset and sni
 points into the document's own text, and matching runs without ``re.IGNORECASE`` - which
 alone costs roughly a factor of fifty on a megabyte of text.
 
-Selection and review
---------------------
-A document passes when its score reaches the list's ``min_score``, and that threshold is
-deliberately low: the PLT optimises for recall, and a threshold raised to buy precision buys
-it with cases that then silently do not exist (``docs/core-document.md`` section 2.7).
-Precision is bought downstream instead. A document that passes but scores inside the list's
-``review_band`` - the interval immediately above ``min_score``, where both live dry runs
-found the false positives concentrated - is admitted exactly like any other and additionally
-marked ``needs_review``, for a content manager to confirm or reject. The band is per list,
-because the EU evidence does not transfer to the Dutch corpus, and it is data in the same
-curated file as the terms it qualifies.
+Selection
+---------
+**A document passes when any curated term matches it.** There is no score and no threshold:
+a term either belongs in the list, in which case a judgment that uses it is a pesticide case,
+or it does not. Weighting was the earlier design, and what it bought was a way to keep terms
+that could not carry a case alone - ``werkzame stof``, ``omwonenden``, ``bufferzone`` - which
+then accumulated into thousands of false positives anyway. Precision is now bought where it
+belongs, in curation: the term comes out of the list and into ``excluded_<code>.json``, with
+the reason.
 
+One instrument survives from that design and is load-bearing without it. ``requires`` gates a
+term on another having matched, which is what lets an active substance whose ISO name is an
+ordinary word - ``water``, ``beer``, ``talc`` - stay in the list without admitting every
+judgment that says it. A gated term whose gate stayed shut selects nothing and labels nothing.
+
+Matches are labels
+------------------
 Every match is reported as a :class:`~plt.pipeline.filters.base.TermMatch` carrying the term
-id, the list version, the field and the weight actually applied. Those rows populate
-``keyword_match`` (``docs/architecture.md`` section 3), which is how the content manager
-tunes the lists against real runs; they are not debug output.
+id, **the curated term and its category**, the list version and the field. Those rows populate
+``keyword_match`` (``docs/architecture.md`` section 3), and they are no longer only a curation
+instrument: the term and the category are what a case is publicly listed under and what the
+case list is filtered by. A case is labelled with the *curated* term rather than the inflection
+found in the text, so every spelling of ``glyfosaat`` files under ``glyfosaat``.
 """
 
 from __future__ import annotations
@@ -68,7 +75,6 @@ from plt.config import Settings, get_settings
 from plt.pipeline.filters.base import Filter, FilterableDocument, FilterResult, TermMatch
 
 __all__ = [
-    "DEFAULT_REVIEW_BAND",
     "DEFAULT_SNIPPET_RADIUS",
     "SCHEMA_FILENAME",
     "Exclusion",
@@ -91,20 +97,7 @@ SCHEMA_FILENAME: Final[str] = "schema.json"
 #: Characters of context kept either side of a match in a reported snippet.
 DEFAULT_SNIPPET_RADIUS: Final[int] = 90
 
-#: Width of the review band used by a list that declares none, in score points above
-#: ``min_score``. Three points is one weight-3 term at the full-text multiplier: a document
-#: below it was admitted on a single unambiguous mention or on an accumulation of contextual
-#: ones, which is exactly the population the dry runs found the false positives in
-#: (``docs/core-document.md`` section 2.7). A new jurisdiction inherits it until its own dry
-#: run gives it a number, and inheriting a *wide* band is the recall-safe direction: it
-#: over-reviews rather than under-reviews.
-DEFAULT_REVIEW_BAND: Final[float] = 3.0
-
-#: Tolerance on the ``score >= min_score`` comparison, so a total assembled from float
-#: multipliers is never rejected by a representation error of the order of 1e-16.
-_SCORE_EPSILON: Final[float] = 1e-9
-
-#: Number of contributing term ids named in a result's reason before it is abbreviated.
+#: Number of selecting term ids named in a result's reason before it is abbreviated.
 _REASON_TERM_LIMIT: Final[int] = 8
 
 #: Number of schema violations reported before the message is abbreviated.
@@ -236,17 +229,18 @@ class KeywordTerm:
         term_id: Stable id, e.g. ``nl-drift``. Match provenance is stored against it.
         term: The term as it appears in court documents, in the source language.
         lang: ISO 639-1 code of the language the term is written in.
-        category: Curation category, used for reporting on what drives recall.
-        weight: 3 qualifies a document alone, 2 is strong, 1 is contextual only.
+        category: The kind of term this is. Stored on every match and shown publicly, so it
+            is one of the two labels a case is listed under.
         match: How the term is matched: ``word``, ``phrase``, ``substring`` or ``regex``.
         case_sensitive: Whether casing must match, for acronyms whose lowercase form is a
             common word.
         case_sensitive_exception: Whether the curator has knowingly opted this term out of
             the acronym-only rule that :func:`_check_consistency` enforces under
             ``case_sensitive``.
-        aliases: Spelling variants and inflections that score identically and report
-            :attr:`term_id`.
-        requires: Term ids that must also match before this term contributes any weight.
+        aliases: Spelling variants and inflections that report :attr:`term_id` and are
+            labelled with :attr:`term`, so a case is listed under the curated spelling
+            rather than under whichever inflection the court happened to use.
+        requires: Term ids that must also match before this term counts at all.
         note: The curator's rationale, if recorded.
     """
 
@@ -254,7 +248,6 @@ class KeywordTerm:
     term: str
     lang: str
     category: str
-    weight: float
     match: MatchMode
     case_sensitive: bool
     case_sensitive_exception: bool
@@ -264,7 +257,7 @@ class KeywordTerm:
 
     @property
     def patterns(self) -> tuple[str, ...]:
-        """Return the term and its aliases, which all score identically."""
+        """Return the term and its aliases, which are interchangeable for matching."""
         return (self.term, *self.aliases)
 
 
@@ -434,15 +427,11 @@ class KeywordList:
         list_version: Semantic version of the list, stored with every match.
         updated: ISO 8601 date the list was last curated.
         languages: ISO 639-1 codes the list covers.
-        min_score: Total weight a document must reach to pass.
-        review_band: Width of the band immediately above :attr:`min_score` within which a
-            passing document is additionally flagged for review. Per list, because the
-            evidence that sets it is per corpus; ``0`` disables flagging.
-        count_term_once: Whether repeated occurrences of a term count only once.
-        field_multipliers: Per-field weight multipliers, in curation order. A field absent
-            from this mapping is not scanned at all: the curator decides which fields count.
+        fields: Document fields a term is looked for in, in curation order. A field absent
+            from this tuple is not scanned at all: the curator decides what counts as the
+            text of a judgment.
         terms: The terms, keyed by id, in file order.
-        exclusions: Patterns that veto a document regardless of score.
+        exclusions: Patterns that veto a document however many terms matched.
         source_path: File the list was read from.
         patterns: Compiled term patterns.
         exclusion_patterns: Compiled exclusion patterns, owned by index into
@@ -454,10 +443,7 @@ class KeywordList:
     list_version: str
     updated: str
     languages: tuple[str, ...]
-    min_score: float
-    review_band: float
-    count_term_once: bool
-    field_multipliers: Mapping[str, float]
+    fields: tuple[str, ...]
     terms: Mapping[str, KeywordTerm]
     exclusions: tuple[Exclusion, ...]
     source_path: Path
@@ -480,37 +466,9 @@ class KeywordList:
         return len(self.patterns.buckets) + len(self.patterns.regexes)
 
     @property
-    def review_ceiling(self) -> float:
-        """Return the score at or above which a passing document is *not* flagged.
-
-        Returns:
-            ``min_score + review_band``. The band is the half-open interval
-            ``[min_score, review_ceiling)``, so a document exactly on the ceiling passes
-            confidently and one exactly on ``min_score`` is flagged.
-        """
-        return self.min_score + self.review_band
-
-    def in_review_band(self, score: float) -> bool:
-        """Return whether a score falls in the review band.
-
-        Deterministic given the list version and the score, which is what makes a flag
-        reproducible from the recorded run (``docs/core-document.md`` section 2.8). The
-        epsilon is the one used for ``min_score`` and errs towards review: a total whose
-        float representation lands a fraction under the ceiling is flagged rather than
-        waved through.
-
-        Args:
-            score: Total weight the document accumulated.
-
-        Returns:
-            ``True`` when ``min_score <= score < review_ceiling``.
-        """
-        if self.review_band <= 0:
-            return False
-        return (
-            score + _SCORE_EPSILON >= self.min_score
-            and score + _SCORE_EPSILON < self.review_ceiling
-        )
+    def categories(self) -> tuple[str, ...]:
+        """Return every category the list uses, sorted, for the public filter's options."""
+        return tuple(sorted({term.category for term in self.terms.values()}))
 
     def find_exclusion(self, cased: str, folded: str) -> tuple[Exclusion, int, int] | None:
         """Return the first exclusion vetoing the text, if any.
@@ -698,7 +656,6 @@ def _term_from_raw(raw: Mapping[str, Any]) -> KeywordTerm:
         term=str(raw["term"]),
         lang=str(raw["lang"]),
         category=str(raw["category"]),
-        weight=float(raw["weight"]),
         match=cast(MatchMode, match_mode),
         case_sensitive=bool(raw.get("case_sensitive", False)),
         case_sensitive_exception=bool(raw.get("case_sensitive_exception", False)),
@@ -1020,17 +977,13 @@ def load_keyword_list(path: Path, *, schema_path: Path | None = None) -> Keyword
         for index, exclusion in enumerate(exclusions)
     ]
 
-    scoring = cast(Mapping[str, Any], raw["scoring"])
     keyword_list = KeywordList(
         jurisdiction=str(raw["jurisdiction"]),
         jurisdiction_name=str(raw["jurisdiction_name"]),
         list_version=str(raw["list_version"]),
         updated=str(raw["updated"]),
         languages=tuple(str(code) for code in raw["languages"]),
-        min_score=float(scoring["min_score"]),
-        review_band=float(scoring.get("review_band", DEFAULT_REVIEW_BAND)),
-        count_term_once=bool(scoring.get("count_term_once", True)),
-        field_multipliers={str(name): float(value) for name, value in scoring["fields"].items()},
+        fields=tuple(str(name) for name in raw["fields"]),
         terms={term.term_id: term for term in terms},
         exclusions=exclusions,
         source_path=path,
@@ -1039,16 +992,14 @@ def load_keyword_list(path: Path, *, schema_path: Path | None = None) -> Keyword
     )
     logger.info(
         "Loaded keyword list %s v%s from %s: %d terms, %d literals, %d scans per document; "
-        "min_score %g, review band [%g, %g)",
+        "any term selects; fields %s",
         keyword_list.jurisdiction,
         keyword_list.list_version,
         path.name,
         keyword_list.term_count,
         keyword_list.pattern_count,
         keyword_list.scan_count,
-        keyword_list.min_score,
-        keyword_list.min_score,
-        keyword_list.review_ceiling,
+        ", ".join(keyword_list.fields),
     )
     return keyword_list
 
@@ -1165,21 +1116,21 @@ class KeywordFilter(Filter):
         return self._list
 
     def evaluate(self, case: FilterableDocument) -> FilterResult:
-        """Score one document against the list and decide whether it is in scope.
+        """Match one document against the list and decide whether it is in scope.
 
-        Only the fields named in the list's ``scoring.fields`` are read, and a field the
-        document does not carry is treated as absent, so a source without an abstract needs
-        no adapter. Fields are scanned one at a time and only counters are kept, so peak
-        memory stays proportional to the largest field rather than to the number of matches.
+        Only the fields named in the list's ``fields`` are read, and a field the document
+        does not carry is treated as absent, so a source without an abstract needs no
+        adapter. Fields are scanned one at a time and only counters are kept, so peak memory
+        stays proportional to the largest field rather than to the number of matches.
 
         Args:
             case: The normalised document to judge.
 
         Returns:
-            The verdict, carrying the score, every term match found and a readable reason.
+            The verdict, carrying every term match found and a readable reason.
         """
         hits: dict[str, dict[str, _Hit]] = {}
-        for field_name in self._list.field_multipliers:
+        for field_name in self._list.fields:
             text = getattr(case, field_name, None)
             if not isinstance(text, str) or not text:
                 continue
@@ -1192,7 +1143,7 @@ class KeywordFilter(Filter):
                 return self._veto(vetoed, reference, field_name)
             self._collect(cased, folded, reference, field_name, hits)
 
-        return self._score(hits)
+        return self._select(hits)
 
     def _veto(
         self,
@@ -1216,7 +1167,7 @@ class KeywordFilter(Filter):
             f"(matched {reference[start:end]!r}): {exclusion.reason}"
         )
         logger.debug("Keyword filter vetoed a document: %s", reason)
-        return FilterResult(passed=False, score=0.0, reason=reason, stage=self.name, matches=())
+        return FilterResult(passed=False, reason=reason, stage=self.name, matches=())
 
     def _collect(
         self,
@@ -1269,34 +1220,32 @@ class KeywordFilter(Filter):
         suffix = "…" if right < len(reference) else ""
         return f"{prefix}{snippet}{suffix}"
 
-    def _score(self, hits: Mapping[str, Mapping[str, _Hit]]) -> FilterResult:
-        """Apply gates, multipliers and ``count_term_once``, then decide.
+    def _select(self, hits: Mapping[str, Mapping[str, _Hit]]) -> FilterResult:
+        """Apply the ``requires`` gates and decide whether any term selected the document.
 
         Args:
             hits: Occurrences per term id and field, as collected from the document.
 
         Returns:
-            The verdict. A gated term is reported with a weight of ``0.0``, so the content
-            manager can see that a homonym was disarmed rather than missed.
+            The verdict. A gated term is reported as gated rather than dropped, so the
+            content manager can see that a homonym was disarmed rather than missed - but it
+            neither selects the document nor labels it.
         """
         matched_ids = set(hits)
         matches: list[TermMatch] = []
-        contributors: list[str] = []
-        score = 0.0
+        selectors: list[str] = []
 
         for term_id, per_field in hits.items():
             term = self._list.terms[term_id]
             gated = any(required not in matched_ids for required in term.requires)
-            weights = self._weights(term, per_field, gated=gated)
             for field_name, hit in per_field.items():
-                applied = weights[field_name]
-                score += applied
                 matches.append(
                     TermMatch(
                         term_id=term_id,
+                        term=term.term,
+                        category=term.category,
                         list_version=self._list.list_version,
                         field=field_name,
-                        weight_applied=applied,
                         snippet=hit.snippet,
                         matched_text=hit.matched_text,
                         occurrences=hit.occurrences,
@@ -1305,91 +1254,31 @@ class KeywordFilter(Filter):
                         gated=gated,
                     )
                 )
-            if not gated and term.weight > 0:
-                contributors.append(term_id)
+            if not gated:
+                selectors.append(term_id)
 
-        passed = score + _SCORE_EPSILON >= self._list.min_score
-        needs_review = passed and self._list.in_review_band(score)
         return FilterResult(
-            passed=passed,
-            score=score,
-            reason=self._reason(score, contributors, passed=passed, needs_review=needs_review),
+            passed=bool(selectors),
+            reason=self._reason(selectors),
             stage=self.name,
             matches=tuple(matches),
-            needs_review=needs_review,
-            threshold=self._list.min_score,
-            review_ceiling=self._list.review_ceiling,
         )
 
-    def _weights(
-        self,
-        term: KeywordTerm,
-        per_field: Mapping[str, _Hit],
-        *,
-        gated: bool,
-    ) -> Mapping[str, float]:
-        """Compute what each field's occurrences of one term contribute.
-
-        Under ``count_term_once`` the term contributes once for the whole document, credited
-        to the field with the highest multiplier so a title hit is not lost behind a
-        full-text hit; the other fields are reported at zero. Otherwise every occurrence
-        counts.
-
-        Args:
-            term: The term being scored.
-            per_field: Its occurrences per field.
-            gated: Whether its ``requires`` gate stayed shut.
-
-        Returns:
-            Weight per field name, summing to the term's contribution to the score.
-        """
-        multipliers = self._list.field_multipliers
-        if gated:
-            return dict.fromkeys(per_field, 0.0)
-        if self._list.count_term_once:
-            best = max(per_field, key=lambda name: multipliers.get(name, 0.0))
-            weights = dict.fromkeys(per_field, 0.0)
-            weights[best] = term.weight * multipliers.get(best, 0.0)
-            return weights
-        return {
-            name: term.weight * multipliers.get(name, 0.0) * hit.occurrences
-            for name, hit in per_field.items()
-        }
-
-    def _reason(
-        self,
-        score: float,
-        contributors: Sequence[str],
-        *,
-        passed: bool,
-        needs_review: bool,
-    ) -> str:
+    def _reason(self, selectors: Sequence[str]) -> str:
         """Phrase the verdict for the pipeline report.
 
         Args:
-            score: Total weight accumulated.
-            contributors: Ids of the terms that contributed weight.
-            passed: Whether the document reached ``min_score``.
-            needs_review: Whether the score fell in the review band.
+            selectors: Ids of the terms that selected the document.
 
         Returns:
-            A one-line explanation naming the list, the score, the driving terms and, for a
-            flagged document, the band it fell in. The band is stated rather than implied so
-            the sentence stands on its own in a match report and on a methodology page.
+            A one-line explanation naming the list and the terms found. It has to stand on
+            its own in a match report and on a methodology page, so it says which terms did
+            the selecting rather than only how many.
         """
         provenance = f"{self._list.jurisdiction} list v{self._list.list_version}"
-        if not contributors:
-            return f"no curated term contributed weight ({provenance})"
-        listing = ", ".join(contributors[:_REASON_TERM_LIMIT])
-        if len(contributors) > _REASON_TERM_LIMIT:
-            listing = f"{listing} and {len(contributors) - _REASON_TERM_LIMIT} more"
-        comparison = "reaches" if passed else "is below"
-        band = (
-            f", inside the review band [{self._list.min_score:g}, {self._list.review_ceiling:g})"
-            if needs_review
-            else ""
-        )
-        return (
-            f"score {score:g} {comparison} min_score {self._list.min_score:g}{band} "
-            f"({provenance}); matched: {listing}"
-        )
+        if not selectors:
+            return f"no curated term matched ({provenance})"
+        listing = ", ".join(selectors[:_REASON_TERM_LIMIT])
+        if len(selectors) > _REASON_TERM_LIMIT:
+            listing = f"{listing} and {len(selectors) - _REASON_TERM_LIMIT} more"
+        return f"matched {len(selectors)} curated term(s) ({provenance}): {listing}"

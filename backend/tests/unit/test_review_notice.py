@@ -60,14 +60,11 @@ def flag(
         source_system="rechtspraak",
         title=f"Borderline case {source_id}",
         needs_review=True,
-        filter_score=3.5,
+        matched_term_count=3,
     )
     case.keyword_matches.append(KeywordMatch(term_id="nl-001", term="drift", field="full_text"))
     case.review = CaseReview(
         status=status,
-        score=3.5,
-        min_score=3.0,
-        band_ceiling=6.0,
         list_version="1.1.0",
         reason="score 3.5 reaches min_score 3, inside the review band [3, 6)",
         flagged_at=flagged_at,

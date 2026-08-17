@@ -384,8 +384,8 @@ class _Run:
                     "context": {
                         "jurisdiction": case.jurisdiction_code,
                         "source_id": case.source_id,
-                        "score": round(result.score, 3),
-                        "terms": len(result.matches),
+                        "terms": result.matched_term_count,
+                        "labels": [match.term for match in result.labels[:8]],
                     }
                 },
             )
@@ -413,7 +413,6 @@ class _Run:
             extra={
                 "context": {
                     "source_id": case.source_id,
-                    "score": round(result.score, 3),
                     "stage": result.stage,
                 }
             },
