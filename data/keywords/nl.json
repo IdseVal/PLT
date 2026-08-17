@@ -2,7 +2,7 @@
   "schema_version": "2.0.0",
   "jurisdiction": "NL",
   "jurisdiction_name": "Netherlands",
-  "list_version": "2.3.0",
+  "list_version": "2.4.0",
   "updated": "2026-08-17",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": [
@@ -473,13 +473,14 @@
       "id": "nl-illegaal-middel",
       "term": "illegale gewasbeschermingsmiddelen",
       "lang": "nl",
-      "category": "general",
+      "category": "product_class",
       "match": "phrase",
       "aliases": [
         "niet-toegelaten middel",
         "niet toegelaten gewasbeschermingsmiddel",
         "verboden bestrijdingsmiddel"
-      ]
+      ],
+      "note": "Recategorised from 'general' on 17 August 2026: it names a class of product, and 'General' tells a reader nothing now that the category is a public label and a filter."
     },
     {
       "id": "nl-wijnsteenzuur",

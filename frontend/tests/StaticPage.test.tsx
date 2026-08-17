@@ -8,7 +8,7 @@
 
 import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import StaticPage from '@/components/StaticPage'
 import { aboutPage } from '@/content/about'
@@ -19,6 +19,21 @@ import type { StaticPageContent } from '@/types/content'
 import { isSafeHref } from '@/utils/links'
 
 const PAGES: readonly StaticPageContent[] = [aboutPage, methodologyPage, faqPage, contactPage]
+
+// The methodology page embeds the keyword index, which requests `GET /api/filters` on
+// mount. These tests are about the renderer and the copy, so the request is left pending:
+// the index stays in its loading state and no state update lands after a test has finished.
+// The index's own states are covered in `tests/KeywordIndex.test.tsx`.
+beforeEach(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => new Promise<Response>(() => undefined)),
+  )
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 function renderPage(content: StaticPageContent): void {
   render(
@@ -149,29 +164,42 @@ describe('page copy', () => {
       'celex',
       'ecli',
       'keyword',
-      'weight',
-      'threshold',
+      'corpus',
       'week',
       'checkpoint',
+      'fingerprint',
       'content manager',
     ]) {
       expect(text).toContain(subject)
     }
   })
 
-  it('states on the methodology page why keyword selection is necessary', () => {
+  it('is structured as a systematic review: corpus, criteria, records, schedule, limits', () => {
     renderPage(methodologyPage)
 
+    expect(screen.getByRole('heading', { level: 2, name: 'The corpus' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Inclusion criteria' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Exclusion criteria' })).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { level: 2, name: 'Why selection is keyword-based' }),
+      screen.getByRole('heading', { level: 2, name: 'What each included case records' }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { level: 2, name: 'The keyword lists' }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 2, name: 'Weekly updates' })).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { level: 2, name: 'Deduplication and revisions' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Update schedule' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Limitations' })).toBeInTheDocument()
+  })
+
+  it('describes a single-match inclusion criterion, not weighted scoring', () => {
+    const text = textOf(methodologyPage)
+
+    // The criterion is one match from a curated list; scoring is mentioned only as the
+    // approach that was removed, so the copy must say so in so many words.
+    expect(text).toContain('no scoring, no weighting and no threshold')
+    expect(text).toContain('weighted scoring was removed')
+  })
+
+  it('embeds the per-jurisdiction keyword index in the methodology page', () => {
+    const blocks = methodologyPage.sections.flatMap((section) => section.blocks)
+
+    expect(blocks.some((block) => block.kind === 'keyword-index')).toBe(true)
   })
 
   it('says that every jurisdiction needs its own keyword list', () => {

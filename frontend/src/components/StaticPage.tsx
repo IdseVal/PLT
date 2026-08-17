@@ -8,6 +8,7 @@
 
 import { Link } from 'react-router-dom'
 
+import KeywordIndex from '@/components/KeywordIndex'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import type { ContentBlock, ContentLink, StaticPageContent } from '@/types/content'
 import { isSafeHref } from '@/utils/links'
@@ -115,6 +116,11 @@ function Block({ block }: { readonly block: ContentBlock }): JSX.Element {
           {block.text}
         </p>
       )
+
+    // The one block whose content is data rather than copy: the component fetches the
+    // curated keyword lists itself, so the content module only marks where they go.
+    case 'keyword-index':
+      return <KeywordIndex />
   }
 }
 

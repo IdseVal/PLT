@@ -32,6 +32,14 @@ export type ContentBlock =
   | { readonly kind: 'links'; readonly items: readonly ContentLink[] }
   /** A short aside, set apart from the running text. */
   | { readonly kind: 'callout'; readonly text: string }
+  /**
+   * The per-jurisdiction keyword index, read live from `GET /api/filters`.
+   *
+   * The terms are curated data, not copy: repeating them in a content module would let the
+   * page drift from the lists the pipeline actually applies, so this block marks where the
+   * index goes and `src/components/KeywordIndex.tsx` fetches and renders it.
+   */
+  | { readonly kind: 'keyword-index' }
 
 /** A section of a static page, rendered with a level-2 heading. */
 export interface ContentSection {
