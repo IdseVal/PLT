@@ -189,6 +189,17 @@ describe('home page search', () => {
 
     expect(currentLocation()).toBe('/cases')
   })
+
+  it('offers a way through to the whole collection without searching first', async () => {
+    // A reader who has no term in mind should not have to invent one to see anything.
+    stubJson({ items: [], page: 1, page_size: 20, total: 0 })
+    const user = renderHome()
+
+    const search = screen.getByRole('search', { name: /search the case law/i })
+    await user.click(within(search).getByRole('link', { name: /browse all cases/i }))
+
+    expect(currentLocation()).toBe('/cases')
+  })
 })
 
 describe('latest-cases sidebar', () => {
