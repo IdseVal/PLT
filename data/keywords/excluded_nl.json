@@ -1,7 +1,7 @@
 {
   "jurisdiction": "NL",
   "excluded_from": "nl.json",
-  "list_version_after": "2.0.0",
+  "list_version_after": "2.3.0",
   "updated": "2026-08-17",
   "why_this_file_exists": "Terms removed when the list moved from weighted scoring to a word search (schema 2.0.0). Under scoring these could corroborate another term without selecting anything on their own; under a word search every term selects, so a term that is not specific to plant protection selects the wrong cases. Kept here so a later curator can see what was considered and why it went.",
   "terms": [
@@ -239,6 +239,18 @@
       ],
       "note": "Contextual: the route by which pesticide offences are prosecuted, but covers all economic offences.",
       "removed_because": "The Economic Offences Act is the procedural vehicle for economic crime of every kind; it selected 577 cases."
+    },
+    {
+      "id": "nl-water",
+      "term": "water",
+      "lang": "nl",
+      "category": "active_substance",
+      "match": "word",
+      "requires": [
+        "nl-gewasbeschermingsmiddel"
+      ],
+      "note": "Ordinary word as well as an approved active substance, so it is gated rather than dropped: it reports its match but cannot qualify a document on its own.",
+      "removed_because": "Water is an approved active substance, so the register put it in the list and a gate kept it from selecting a case on its own. That was enough while a match was only a score. Once every match became a public label it described 307 pesticide judgments as being about the substance water, which none of them were: the gate governs inclusion, and it was never a claim about what a case is about."
     }
   ],
   "aliases_trimmed_from_retained_terms": [

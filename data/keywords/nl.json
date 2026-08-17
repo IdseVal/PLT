@@ -2,7 +2,7 @@
   "schema_version": "2.0.0",
   "jurisdiction": "NL",
   "jurisdiction_name": "Netherlands",
-  "list_version": "2.2.0",
+  "list_version": "2.3.0",
   "updated": "2026-08-17",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": [
@@ -7591,17 +7591,6 @@
       "aliases": [
         "warfarin"
       ]
-    },
-    {
-      "id": "nl-water",
-      "term": "water",
-      "lang": "nl",
-      "category": "active_substance",
-      "match": "word",
-      "requires": [
-        "nl-gewasbeschermingsmiddel"
-      ],
-      "note": "Ordinary word as well as an approved active substance, so it is gated rather than dropped: it reports its match but cannot qualify a document on its own."
     },
     {
       "id": "nl-waterig-extract-van-de-gekiemde-zaden-van-zoete-lupinus-albus",

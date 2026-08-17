@@ -469,17 +469,17 @@ def test_bespuiting_selects_and_lelieteelt_no_longer_does(nl_filter: KeywordFilt
 def test_a_substance_named_like_an_ordinary_word_selects_nothing_alone(
     nl_filter: KeywordFilter,
 ) -> None:
-    """``water`` is an approved active substance and an ordinary word.
+    """``talk`` is an approved active substance and an ordinary Dutch word.
 
-    Without weights, the ``requires`` gate is the only thing standing between that
-    entry in the register and every judgment that mentions water.
+    The ``requires`` gate is the only thing standing between that entry in the register
+    and every judgment that happens to use the word.
     """
-    result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} Er stond water op het perceel."))
+    result = nl_filter.evaluate(Doc(full_text=f"{BOILERPLATE} Er lag talk op de vloer."))
 
     assert not result.passed
     assert result.labels == ()
     gated = {match.term_id for match in result.matches if match.gated}
-    assert "nl-water" in gated, "the homonym must be reported as disarmed, not dropped"
+    assert "nl-talk" in gated, "the homonym must be reported as disarmed, not dropped"
 
 
 def test_a_gated_substance_labels_the_case_once_its_gate_opens(
@@ -489,15 +489,32 @@ def test_a_gated_substance_labels_the_case_once_its_gate_opens(
     result = nl_filter.evaluate(
         Doc(
             full_text=(
-                f"{BOILERPLATE} Het gewasbeschermingsmiddel is met water aangelengd "
-                "voor de bespuiting."
+                f"{BOILERPLATE} Het gewasbeschermingsmiddel bevat talk "
+                "en is toegepast bij de bespuiting."
             )
         )
     )
 
     assert result.passed
-    assert {"nl-water", "nl-gewasbeschermingsmiddel"} <= matched(result)
+    assert {"nl-talk", "nl-gewasbeschermingsmiddel"} <= matched(result)
     assert not any(match.gated for match in result.matches)
+
+
+def test_water_is_out_of_the_list(nl_filter: KeywordFilter) -> None:
+    """A gate governs inclusion; it is not a claim about what a case is about.
+
+    Water is an approved active substance, so the register put it in the list and the gate
+    kept it from selecting a case alone. That held while a match was only a score. As a
+    public label it described 307 pesticide judgments as being about the substance water,
+    so the term went to ``excluded_nl.json``.
+    """
+    result = nl_filter.evaluate(
+        Doc(full_text=f"{BOILERPLATE} Het gewasbeschermingsmiddel is met water aangelengd.")
+    )
+
+    assert result.passed, "the pesticide term still selects the case"
+    assert "nl-water" not in {match.term_id for match in result.matches}
+    assert "water" not in {match.term for match in result.labels}
 
 
 def test_an_exclusion_vetoes_a_document_that_would_otherwise_pass(
