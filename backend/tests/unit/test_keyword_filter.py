@@ -1147,3 +1147,21 @@ def test_no_shipped_label_is_a_pattern(code: str) -> None:
         label = curated.public_label
         assert "(?" not in label, f"{curated.term_id} publishes a pattern: {label!r}"
         assert "\\" not in label, f"{curated.term_id} publishes an escape: {label!r}"
+
+
+def test_a_spray_free_zone_is_not_labelled_a_spray_zone(nl_filter: KeywordFilter) -> None:
+    """The two are opposites, and the label is now what a reader is told the case is about.
+
+    ``spuitvrije zone`` is the area where spraying is forbidden; ``spuitzone`` the area where
+    it is considered. Filing the first as an alias of the second labelled a case with the
+    reverse of its subject.
+    """
+    free = nl_filter.evaluate(
+        Doc(full_text=f"{BOILERPLATE} Rond het perceel geldt een spuitvrije zone van 50 meter.")
+    )
+    zone = nl_filter.evaluate(
+        Doc(full_text=f"{BOILERPLATE} De spuitzone is bij de vergunning beoordeeld.")
+    )
+
+    assert matched(free) == {"nl-spuitvrije-zone"}
+    assert matched(zone) == {"nl-spuitzone"}

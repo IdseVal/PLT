@@ -2,7 +2,7 @@
   "schema_version": "2.0.0",
   "jurisdiction": "NL",
   "jurisdiction_name": "Netherlands",
-  "list_version": "2.4.0",
+  "list_version": "2.5.0",
   "updated": "2026-08-17",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": [
@@ -415,7 +415,6 @@
       "match": "substring",
       "aliases": [
         "spuitzones",
-        "spuitvrije zone",
         "spuitcirkel"
       ]
     },
@@ -7988,6 +7987,18 @@
       "category": "product_class",
       "match": "substring",
       "note": "Its own term rather than an alias of nl-acaricide: a case is labelled with the term that matched, so a different product class filed as an alias would label the case wrongly."
+    },
+    {
+      "id": "nl-spuitvrije-zone",
+      "term": "spuitvrije zone",
+      "lang": "nl",
+      "category": "crop_or_practice",
+      "match": "substring",
+      "aliases": [
+        "spuitvrije zones",
+        "spuitvrije bufferzone"
+      ],
+      "note": "Its own term rather than an alias of nl-spuitzone, from 17 August 2026. A spuitvrije zone is the area where spraying is forbidden and a spuitzone the area where it is considered, so filing one under the other labelled a case with the opposite of what it was about. Neither literal contains the other, so the two terms cannot both claim one mention."
     }
   ],
   "exclusions": [
