@@ -241,3 +241,16 @@ class TestHealth:
         assert payload["status"] == "ok"
         assert payload["database"] == "unavailable"
         assert payload["ingest"] == {}
+
+
+def test_the_keyword_roster_never_publishes_a_pattern(
+    client: FlaskClient, api_corpus: Session
+) -> None:
+    """The dropdown is a list of names, and a regex term's term is not one."""
+    del api_corpus
+    payload = client.get("/api/filters").get_json()
+
+    assert payload["keywords"], "the roster comes from the curated lists, not from the cases"
+    for option in payload["keywords"]:
+        assert "(?" not in option["term"], f"pattern published as a name: {option['term']!r}"
+        assert "\\" not in option["term"], f"escape published as a name: {option['term']!r}"

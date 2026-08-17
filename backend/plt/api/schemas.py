@@ -1222,7 +1222,9 @@ def _keyword_options(facets: FacetValues, settings: Settings) -> list[dict[str, 
         options.extend(
             {
                 "id": term.term_id,
-                "term": term.term,
+                # The label, never the raw term: a regex term's term is a pattern, and this
+                # roster is what the keyword dropdown shows a reader.
+                "term": term.public_label,
                 "category": term.category,
                 "jurisdiction": keyword_list.jurisdiction,
                 "case_count": facets.keyword_counts.get(term.term_id, 0),
