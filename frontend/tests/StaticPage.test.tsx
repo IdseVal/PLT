@@ -200,10 +200,15 @@ describe('page copy', () => {
     expect(blocks.some((block) => block.kind === 'keyword-index')).toBe(true)
   })
 
-  it('embeds the exclusion criteria in the methodology page', () => {
-    const blocks = methodologyPage.sections.flatMap((section) => section.blocks)
+  it('binds every exclusion mechanism to the definition that describes it', () => {
+    const definitions = methodologyPage.sections
+      .flatMap((section) => section.blocks)
+      .flatMap((block) => (block.kind === 'definitions' ? block.items : []))
 
-    expect(blocks.some((block) => block.kind === 'exclusion-index')).toBe(true)
+    // Bound by key rather than by wording, so rewriting the copy cannot silently detach a
+    // list of excluded terms from the paragraph that introduces it.
+    expect(definitions.filter((item) => item.mechanism !== undefined).map((i) => i.mechanism))
+      .toEqual(['left-off', 'gated', 'patterns'])
   })
 
   it('is written as replaceable copy, not as filler', () => {

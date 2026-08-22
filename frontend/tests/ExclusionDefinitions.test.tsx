@@ -15,8 +15,9 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import ExclusionIndex from '@/components/ExclusionIndex'
+import ExclusionDefinitions from '@/components/ExclusionDefinitions'
 import type { ExclusionsResponse } from '@/types/api'
+import type { ContentDefinition } from '@/types/content'
 
 /** Two jurisdictions, one of which has nothing under one of the mechanisms. */
 const PAYLOAD: ExclusionsResponse = {
@@ -106,6 +107,34 @@ async function openDisclosure(name: RegExp): Promise<HTMLElement> {
   return details
 }
 
+/** The three definitions the methodology page binds to the three mechanisms. */
+const ITEMS: readonly ContentDefinition[] = [
+  {
+    term: 'Terms deliberately left off the lists',
+    description: 'A candidate term outside the scope is removed.',
+    mechanism: 'left-off',
+  },
+  {
+    term: 'Gated terms',
+    description: 'An ordinary-word substance stays on the list but cannot admit a case alone.',
+    mechanism: 'gated',
+  },
+  {
+    term: 'Exclusion patterns',
+    description: 'A phrase trap vetoes a document outright.',
+    mechanism: 'patterns',
+  },
+]
+
+/**
+ * Render the definition list with the three mechanisms bound.
+ *
+ * @returns Nothing; assertions read the screen.
+ */
+function renderDefinitions(): void {
+  render(<ExclusionDefinitions items={ITEMS} />)
+}
+
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
@@ -114,7 +143,7 @@ afterEach(() => {
 describe('exclusion index', () => {
   it('asks the API for the criteria', async () => {
     stubJson(PAYLOAD)
-    render(<ExclusionIndex />)
+    renderDefinitions()
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledTimes(1)
@@ -123,20 +152,34 @@ describe('exclusion index', () => {
     expect(String(url)).toContain('/exclusions')
   })
 
-  it('keeps the three mechanisms apart', async () => {
+  it('puts each disclosure under the definition that describes it', async () => {
     stubJson(PAYLOAD)
-    render(<ExclusionIndex />)
+    renderDefinitions()
 
-    expect(await screen.findByText(/terms deliberately left off the lists/i)).toBeInTheDocument()
-    expect(screen.getByText(/gated terms/i)).toBeInTheDocument()
-    expect(screen.getByText(/exclusion patterns/i)).toBeInTheDocument()
+    // The binding that matters: the list of rejected terms belongs to the paragraph about
+    // rejected terms, not to a block of three at the foot of the section.
+    const rejected = await screen.findByText(/show all 3 rejected terms/i)
+    const gated = screen.getByText(/show all 2 gated terms/i)
+    const patterns = screen.getByText(/show all 1 exclusion pattern/i)
+
+    expect(rejected.closest('dd')).toHaveTextContent('A candidate term outside the scope')
+    expect(gated.closest('dd')).toHaveTextContent('cannot admit a case alone')
+    expect(patterns.closest('dd')).toHaveTextContent('vetoes a document outright')
+  })
+
+  it('asks for the criteria once, however many mechanisms the page describes', async () => {
+    stubJson(PAYLOAD)
+    renderDefinitions()
+
+    await screen.findByText(/show all 3 rejected terms/i)
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   it('lists a rejected term with the reason it was rejected', async () => {
     stubJson(PAYLOAD)
-    render(<ExclusionIndex />)
+    renderDefinitions()
 
-    const details = await openDisclosure(/terms deliberately left off the lists/i)
+    const details = await openDisclosure(/show all \d+ rejected terms?/i)
 
     expect(within(details).getByText('werkzame stof')).toBeInTheDocument()
     expect(
@@ -149,9 +192,9 @@ describe('exclusion index', () => {
 
   it('names the gate a gated term depends on, rather than only flagging it', async () => {
     stubJson(PAYLOAD)
-    render(<ExclusionIndex />)
+    renderDefinitions()
 
-    const details = await openDisclosure(/^gated terms/i)
+    const details = await openDisclosure(/show all \d+ gated terms?/i)
 
     expect(within(details).getByText('talk')).toBeInTheDocument()
     expect(within(details).getByText(/gewasbeschermingsmiddel/)).toBeInTheDocument()
@@ -159,9 +202,9 @@ describe('exclusion index', () => {
 
   it('says so when a jurisdiction has nothing under a mechanism', async () => {
     stubJson(PAYLOAD)
-    render(<ExclusionIndex />)
+    renderDefinitions()
 
-    const details = await openDisclosure(/^exclusion patterns/i)
+    const details = await openDisclosure(/show all \d+ exclusion patterns?/i)
 
     expect(within(details).getByText('in een opwelling van drift')).toBeInTheDocument()
     expect(
@@ -171,35 +214,34 @@ describe('exclusion index', () => {
 
   it('counts the entries in each summary', async () => {
     stubJson(PAYLOAD)
-    render(<ExclusionIndex />)
+    renderDefinitions()
 
-    // The heading and the count are separate elements, so the summary is read as a whole.
-    const rejected = await screen.findByText(/terms deliberately left off the lists/i)
-    // Three rejected terms across the two jurisdictions.
-    expect(rejected.closest('summary')).toHaveTextContent('3 entries')
-    expect(screen.getByText(/^exclusion patterns/i).closest('summary')).toHaveTextContent(
-      '1 entry',
-    )
+    // Three rejected terms across the two jurisdictions; one pattern, singular.
+    expect(await screen.findByText(/show all 3 rejected terms/i)).toBeInTheDocument()
+    expect(screen.getByText(/show all 1 exclusion pattern$/i)).toBeInTheDocument()
   })
 
   it('reports a failed request and recovers on retry', async () => {
     const user = userEvent.setup()
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')))
-    render(<ExclusionIndex />)
+    renderDefinitions()
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/could not be loaded/i)
 
     stubJson(PAYLOAD)
     await user.click(screen.getByRole('button', { name: /try again/i }))
 
-    expect(await screen.findByText(/terms deliberately left off the lists/i)).toBeInTheDocument()
+    expect(await screen.findByText(/show all 3 rejected terms/i)).toBeInTheDocument()
   })
 
-  it('says the criteria are unavailable when the payload carries no jurisdiction', async () => {
+  it('still renders the definitions when the payload carries no jurisdiction', async () => {
     stubJson({ jurisdictions: [] })
-    render(<ExclusionIndex />)
+    renderDefinitions()
 
-    expect(await screen.findByText(/not available right now/i)).toBeInTheDocument()
+    // The copy is the page's; only the lists come from the API, so an empty payload costs
+    // the disclosures and nothing else.
+    expect(await screen.findByText('Gated terms')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('renders a hostile reason as text', async () => {
@@ -222,9 +264,9 @@ describe('exclusion index', () => {
         },
       ],
     })
-    const { container } = render(<ExclusionIndex />)
+    const { container } = render(<ExclusionDefinitions items={ITEMS} />)
 
-    await openDisclosure(/terms deliberately left off the lists/i)
+    await openDisclosure(/show all \d+ rejected terms?/i)
 
     expect(container.querySelector('img')).toBeNull()
     expect(screen.getByText(/onerror/)).toBeInTheDocument()

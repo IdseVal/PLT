@@ -22,7 +22,25 @@ export interface ContentLink {
 export interface ContentDefinition {
   readonly term: string
   readonly description: string
+  /**
+   * Names an exclusion mechanism, which renders that mechanism's disclosure under this
+   * definition.
+   *
+   * The binding is this key rather than the definition's wording, so the copy can be
+   * rewritten without silently detaching the list of terms from the paragraph describing
+   * them.
+   */
+  readonly mechanism?: ExclusionMechanism
 }
+
+/**
+ * The exclusion mechanisms `GET /api/exclusions` reports.
+ *
+ * Three genuinely different claims, which is why they are named separately rather than
+ * merged: a term left off a list never runs, a gated term runs but cannot admit a case on
+ * its own, and an exclusion pattern rejects a document other terms had already matched.
+ */
+export type ExclusionMechanism = 'left-off' | 'gated' | 'patterns'
 
 /** One renderable unit of copy. */
 export type ContentBlock =
@@ -40,14 +58,6 @@ export type ContentBlock =
    * index goes and `src/components/KeywordIndex.tsx` fetches and renders it.
    */
   | { readonly kind: 'keyword-index' }
-  /**
-   * The exclusion criteria, mechanism by mechanism, read live from `GET /api/exclusions`.
-   *
-   * Data rather than copy, on the same reasoning as `keyword-index`: which terms were
-   * rejected, which are gated and which phrases veto a document are facts about the
-   * curated lists, and a copy of them in a content module is a copy that can drift.
-   */
-  | { readonly kind: 'exclusion-index' }
 
 /** A section of a static page, rendered with a level-2 heading. */
 export interface ContentSection {

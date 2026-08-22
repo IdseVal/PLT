@@ -126,22 +126,24 @@ export const methodologyPage: StaticPageContent = {
           items: [
             {
               term: 'Terms deliberately left off the lists',
+              mechanism: 'left-off',
               description:
                 'A candidate term that would select cases outside the scope is removed, and the removal and its reason are recorded (in data/keywords/excluded_nl.json and excluded_eu.json). Examples: “werkzame stof” (active substance — a phrase every chemical, pharmaceutical and food case uses), “omwonenden” (neighbours — every planning case), “bufferzone”, “blootstelling” (exposure — asbestos and noise cases), “residu”, crop names such as “lelieteelt” and “boomkwekerij”, the authorities NVWA, EFSA and ECHA, and the Wet op de economische delicten, which alone had pulled in 577 unrelated cases. The Dutch term “water” was removed on the same reasoning: a gate governs whether a term may include a case, not what the case is then said to be about, and as a public label it had described 307 pesticide judgments as being about the substance water.',
             },
             {
               term: 'Gated terms',
+              mechanism: 'gated',
               description:
                 'An active substance whose official name is also an ordinary word — beer, talc, vinegar — stays on the list but is gated: it cannot include a case on its own, and counts only when a plant-protection term is also present in the same document.',
             },
             {
               term: 'Exclusion patterns',
+              mechanism: 'patterns',
               description:
                 'A small number of known phrase traps veto a document outright, however many terms it matched. The clearest example is the standard Dutch toxicology-report sentence “geen aanwijzingen voor de aanwezigheid van geneesmiddelen, drugs en/of bestrijdingsmiddelen”, which names pesticides in order to rule them out and is boilerplate in homicide judgments.',
             },
           ],
         },
-        { kind: 'exclusion-index' },
       ],
     },
     {

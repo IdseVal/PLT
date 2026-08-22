@@ -8,7 +8,7 @@
 
 import { Link } from 'react-router-dom'
 
-import ExclusionIndex from '@/components/ExclusionIndex'
+import ExclusionDefinitions from '@/components/ExclusionDefinitions'
 import KeywordIndex from '@/components/KeywordIndex'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import type { ContentBlock, ContentLink, StaticPageContent } from '@/types/content'
@@ -89,6 +89,12 @@ function Block({ block }: { readonly block: ContentBlock }): JSX.Element {
     }
 
     case 'definitions':
+      // A definition that names an exclusion mechanism carries a list of what that mechanism
+      // keeps out, which has to be fetched. One component renders the whole block in that
+      // case, so the page makes one request however many mechanisms it describes.
+      if (block.items.some((item) => item.mechanism !== undefined)) {
+        return <ExclusionDefinitions items={block.items} />
+      }
       return (
         <dl className="max-w-prose space-y-3">
           {block.items.map((item) => (
@@ -122,9 +128,6 @@ function Block({ block }: { readonly block: ContentBlock }): JSX.Element {
     // curated keyword lists itself, so the content module only marks where they go.
     case 'keyword-index':
       return <KeywordIndex />
-
-    case 'exclusion-index':
-      return <ExclusionIndex />
   }
 }
 
