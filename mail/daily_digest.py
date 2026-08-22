@@ -102,10 +102,17 @@ def run(command: list[str]) -> str:
 def collect_commits(branch: str, since: str, until: str) -> list[Commit]:
     """Read the commits landed on a branch within a window.
 
+    The bounds are handed to git as explicit UTC midnights. A bare ``YYYY-MM-DD`` would be
+    read by git's approxidate parser, which fills the fields a string leaves out from the
+    current clock: asking for ``2026-08-22`` at 18:10 means that day *at 18:10*, not that
+    day's midnight. The window would then slide with the hour the job happened to run, and a
+    digest scheduled for the evening would report only what landed after it - on most days,
+    nothing at all.
+
     Args:
         branch: Branch to read, e.g. ``dev``.
-        since: Inclusive lower bound, ``YYYY-MM-DD``.
-        until: Exclusive upper bound, ``YYYY-MM-DD``.
+        since: Inclusive lower bound, ``YYYY-MM-DD``, read as UTC midnight.
+        until: Exclusive upper bound, ``YYYY-MM-DD``, read as UTC midnight.
 
     Returns:
         One :class:`Commit` per commit, newest first.
@@ -115,8 +122,8 @@ def collect_commits(branch: str, since: str, until: str) -> list[Commit]:
             "git",
             "log",
             branch,
-            f"--since={since}",
-            f"--until={until}",
+            f"--since={since} 00:00:00 +0000",
+            f"--until={until} 00:00:00 +0000",
             "--no-merges",
             f"--pretty=format:%h{FIELD}%an{FIELD}%s{FIELD}%b{RECORD}",
         ]
