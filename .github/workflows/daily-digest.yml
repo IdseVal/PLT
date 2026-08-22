@@ -41,8 +41,13 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          # Dispatch inputs reach the shell as environment values, never spliced into the
+          # script: an expression expanded inline is substituted before bash parses the line,
+          # so a crafted input would be read as shell rather than as an argument.
+          DAY: ${{ inputs.day }}
+          PRINT_ONLY: ${{ inputs.print_only }}
         run: |
           args=(--branch dev)
-          if [ -n "${{ inputs.day }}" ]; then args+=(--day "${{ inputs.day }}"); fi
-          if [ "${{ inputs.print_only }}" = "true" ]; then args+=(--print); fi
+          if [ -n "$DAY" ]; then args+=(--day "$DAY"); fi
+          if [ "$PRINT_ONLY" = "true" ]; then args+=(--print); fi
           python mail/daily_digest.py "${args[@]}"
