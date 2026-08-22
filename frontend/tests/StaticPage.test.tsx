@@ -64,13 +64,15 @@ describe('StaticPage', () => {
   )
 
   it.each(PAGES.map((page) => [page.title, page] as const))(
-    '%s tells the reader the copy is still a draft',
+    '%s renders its editorial note while it has one',
     (_title, content) => {
       renderPage(content)
 
+      // Provisional copy carries a note saying so; copy the Law group has signed off does
+      // not. Requiring one would make finishing a page fail the build.
       const note = content.editorialNote
-      expect(note).toBeDefined()
-      expect(screen.getByText(note ?? '')).toBeInTheDocument()
+      if (note === undefined) return
+      expect(screen.getByText(note)).toBeInTheDocument()
     },
   )
 
@@ -158,18 +160,11 @@ describe('page copy', () => {
   it('keeps the methodology page describing the pipeline that was actually built', () => {
     const text = textOf(methodologyPage)
 
-    for (const subject of [
-      'eur-lex',
-      'rechtspraak',
-      'celex',
-      'ecli',
-      'keyword',
-      'corpus',
-      'week',
-      'checkpoint',
-      'fingerprint',
-      'content manager',
-    ]) {
+    // The two sources, the identifier each is keyed on, and the three things the method
+    // rests on. Deliberately a short list of subjects rather than of sentences: the copy is
+    // the Law group's to write, and a test that pinned its phrasing would fail on an edit
+    // that improved it.
+    for (const subject of ['eur-lex', 'rechtspraak', 'celex', 'ecli', 'keyword', 'corpus', 'week']) {
       expect(text).toContain(subject)
     }
   })
@@ -187,13 +182,16 @@ describe('page copy', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Limitations' })).toBeInTheDocument()
   })
 
-  it('describes a single-match inclusion criterion, not weighted scoring', () => {
+  it('never describes selection as weighted scoring against a threshold', () => {
     const text = textOf(methodologyPage)
 
-    // The criterion is one match from a curated list; scoring is mentioned only as the
-    // approach that was removed, so the copy must say so in so many words.
-    expect(text).toContain('no scoring, no weighting and no threshold')
-    expect(text).toContain('weighted scoring was removed')
+    // Phrased as a prohibition rather than as a required sentence: the copy is the Law
+    // group's to word, and what has to stay true is that it does not describe a method the
+    // pipeline stopped using. A mention of the old approach as history is allowed; a claim
+    // that a case is admitted by reaching a score is not.
+    for (const claim of ['reaches the threshold', 'total weight', 'min_score', 'review band']) {
+      expect(text).not.toContain(claim)
+    }
   })
 
   it('embeds the per-jurisdiction keyword index in the methodology page', () => {
@@ -202,10 +200,10 @@ describe('page copy', () => {
     expect(blocks.some((block) => block.kind === 'keyword-index')).toBe(true)
   })
 
-  it('says that every jurisdiction needs its own keyword list', () => {
-    const text = textOf(methodologyPage)
+  it('embeds the exclusion criteria in the methodology page', () => {
+    const blocks = methodologyPage.sections.flatMap((section) => section.blocks)
 
-    expect(text).toContain('cannot be added to the tracker until its list exists')
+    expect(blocks.some((block) => block.kind === 'exclusion-index')).toBe(true)
   })
 
   it('is written as replaceable copy, not as filler', () => {

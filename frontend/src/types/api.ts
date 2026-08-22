@@ -146,6 +146,51 @@ export interface KeywordMatchRef {
   snippet?: string | null
 }
 
+/** A term that was considered for a list and deliberately left out of it. */
+export interface ExcludedTermRef {
+  id: string
+  term: string
+  category: string
+  /** Why it was rejected. The point of the record: an exclusion nobody can argue with is
+   * an exclusion nobody can check. */
+  reason: string
+}
+
+/** A term that cannot include a case unless another term does so first. */
+export interface GatedTermRef {
+  id: string
+  term: string
+  category: string
+  /** The terms that must also be present. Named, not merely counted. */
+  requires: string[]
+}
+
+/** A phrase that vetoes a document outright, however many terms it matched. */
+export interface ExclusionPatternRef {
+  pattern: string
+  reason: string
+}
+
+/** One jurisdiction's exclusion criteria, from `GET /api/exclusions`. */
+export interface JurisdictionExclusions {
+  code: string
+  name: string
+  list_version: string
+  excluded_terms: ExcludedTermRef[]
+  gated_terms: GatedTermRef[]
+  exclusion_patterns: ExclusionPatternRef[]
+}
+
+/**
+ * Payload of `GET /api/exclusions`.
+ *
+ * Read from the curated lists rather than from the cases, so it describes the criterion as
+ * it stands rather than as some past run applied it.
+ */
+export interface ExclusionsResponse {
+  jurisdictions: JurisdictionExclusions[]
+}
+
 /** One option of the keyword dropdown, taken from the curated list itself. */
 export interface KeywordOption {
   id: string

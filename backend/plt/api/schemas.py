@@ -56,7 +56,11 @@ from plt.db.repositories import (
     ReviewSort,
 )
 from plt.notifications.pseudonyms import normalise_address
-from plt.pipeline.filters.keywords import KeywordListError, load_keyword_list_for
+from plt.pipeline.filters.keywords import (
+    KeywordListError,
+    load_excluded_terms_for,
+    load_keyword_list_for,
+)
 from plt.utils.logging import get_logger
 
 log = get_logger(__name__)
@@ -78,6 +82,7 @@ __all__ = [
     "case_summary_payload",
     "csv_cell",
     "csv_record",
+    "exclusions_payload",
     "export_metadata",
     "export_row",
     "facets_payload",
@@ -1233,6 +1238,78 @@ def _keyword_options(facets: FacetValues, settings: Settings) -> list[dict[str, 
         )
     options.sort(key=lambda option: (str(option["term"]).lower(), str(option["jurisdiction"])))
     return options
+
+
+def exclusions_payload(facets: FacetValues, settings: Settings) -> dict[str, Any]:
+    """Serialise what each jurisdiction's criterion deliberately keeps out.
+
+    An inclusion criterion is only half a method. A systematic review is expected to publish
+    its exclusion criteria too, and a keyword list normally cannot show them: the terms that
+    were considered and rejected leave no trace in the list itself. They leave one here,
+    because the curation record is kept as data.
+
+    Three mechanisms, which are genuinely different and are not merged:
+
+    * ``excluded_terms`` -- considered, rejected, and recorded with the reason.
+    * ``gated_terms`` -- on the list, but unable to include a case unless another term does
+      first. The gate is named, so a reader can see what has to be present.
+    * ``exclusion_patterns`` -- phrases that veto a document outright, however many terms it
+      matched.
+
+    A jurisdiction whose keyword list cannot be read is skipped rather than failing the
+    request: this feeds a page, and one broken list should not take the others down with it.
+
+    Args:
+        facets: Supplies the jurisdictions that have published cases, and their names.
+        settings: Settings resolving the keywords directory.
+
+    Returns:
+        The wire representation of ``/api/exclusions``.
+    """
+    jurisdictions: list[dict[str, Any]] = []
+    for code, name in facets.jurisdictions:
+        try:
+            keyword_list = load_keyword_list_for(code, settings)
+        except KeywordListError:
+            log.warning("no usable keyword list for %s; it is left out of /api/exclusions", code)
+            continue
+        jurisdictions.append(
+            {
+                "code": keyword_list.jurisdiction,
+                "name": name,
+                "list_version": keyword_list.list_version,
+                "excluded_terms": [
+                    {
+                        "id": excluded.term_id,
+                        "term": excluded.term,
+                        "category": excluded.category,
+                        "reason": excluded.reason,
+                    }
+                    for excluded in load_excluded_terms_for(code, settings)
+                ],
+                "gated_terms": [
+                    {
+                        "id": term.term_id,
+                        "term": term.public_label,
+                        "category": term.category,
+                        # The gate is named rather than merely flagged: "cannot stand alone"
+                        # invites the question "alone against what", and this answers it.
+                        "requires": [
+                            keyword_list.terms[gate].public_label
+                            for gate in term.requires
+                            if gate in keyword_list.terms
+                        ],
+                    }
+                    for term in keyword_list.terms.values()
+                    if term.requires
+                ],
+                "exclusion_patterns": [
+                    {"pattern": exclusion.pattern, "reason": exclusion.reason}
+                    for exclusion in keyword_list.exclusions
+                ],
+            }
+        )
+    return {"jurisdictions": jurisdictions}
 
 
 def facets_payload(facets: FacetValues, settings: Settings) -> dict[str, Any]:

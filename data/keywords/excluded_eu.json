@@ -74,7 +74,7 @@
       "aliases": [
         "European Food Safety Authority"
       ],
-      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost. Revisit under issue #24.",
+      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost.",
       "removed_because": "The food safety authority advises on food and health generally, not on pesticides alone."
     },
     {
@@ -89,7 +89,7 @@
       "aliases": [
         "European Chemicals Agency"
       ],
-      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost. Revisit under issue #24.",
+      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost.",
       "removed_because": "The chemicals agency covers industrial chemicals generally."
     },
     {

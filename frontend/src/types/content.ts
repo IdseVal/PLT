@@ -40,6 +40,14 @@ export type ContentBlock =
    * index goes and `src/components/KeywordIndex.tsx` fetches and renders it.
    */
   | { readonly kind: 'keyword-index' }
+  /**
+   * The exclusion criteria, mechanism by mechanism, read live from `GET /api/exclusions`.
+   *
+   * Data rather than copy, on the same reasoning as `keyword-index`: which terms were
+   * rejected, which are gated and which phrases veto a document are facts about the
+   * curated lists, and a copy of them in a content module is a copy that can drift.
+   */
+  | { readonly kind: 'exclusion-index' }
 
 /** A section of a static page, rendered with a level-2 heading. */
 export interface ContentSection {

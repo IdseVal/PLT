@@ -77,6 +77,7 @@ from plt.pipeline.filters.base import Filter, FilterableDocument, FilterResult, 
 __all__ = [
     "DEFAULT_SNIPPET_RADIUS",
     "SCHEMA_FILENAME",
+    "ExcludedTerm",
     "Exclusion",
     "KeywordFilter",
     "KeywordList",
@@ -85,6 +86,7 @@ __all__ = [
     "KeywordListValidationError",
     "KeywordTerm",
     "fold_diacritics",
+    "load_excluded_terms_for",
     "load_keyword_list",
     "load_keyword_list_for",
 ]
@@ -1064,6 +1066,64 @@ def load_keyword_list_for(jurisdiction_code: str, settings: Settings | None = No
         raise KeywordListNotFoundError(message) from error
     schema_path = resolved.keywords_dir / SCHEMA_FILENAME
     return _load_cached(path, schema_path, (stat.st_size, stat.st_mtime_ns))
+
+
+@dataclass(frozen=True, slots=True)
+class ExcludedTerm:
+    """A term that was considered for a list and deliberately left out of it.
+
+    Curation evidence, not pipeline input. Nothing matches on these; they are read only so
+    the methodology page can publish what the criterion rejects alongside what it admits,
+    which is the half of an inclusion criterion a systematic review is normally asked for and
+    the half a keyword list usually cannot show.
+
+    Attributes:
+        term_id: Id the term had while it was in the list.
+        term: The term as it was written.
+        category: The category it was filed under.
+        reason: Why it was taken out. The whole point of the record.
+    """
+
+    term_id: str
+    term: str
+    category: str
+    reason: str
+
+
+def load_excluded_terms_for(
+    jurisdiction_code: str, settings: Settings | None = None
+) -> tuple[ExcludedTerm, ...]:
+    """Read a jurisdiction's record of rejected terms.
+
+    Args:
+        jurisdiction_code: Jurisdiction code such as ``NL`` or ``EU``, case-insensitive.
+        settings: Settings resolving the keywords directory. Defaults to the process-wide
+            settings.
+
+    Returns:
+        The rejected terms, in the order they were recorded. A jurisdiction that has rejected
+        nothing, or whose record cannot be read, yields an empty tuple rather than raising:
+        this feeds a page, and a missing curation note is not a reason to fail a request.
+    """
+    resolved = settings if settings is not None else get_settings()
+    try:
+        raw = json.loads(resolved.excluded_list_path(jurisdiction_code).read_text("utf-8"))
+    except (OSError, ValueError):
+        logger.info("no readable record of excluded terms for %s", jurisdiction_code)
+        return ()
+    entries = raw.get("terms") if isinstance(raw, dict) else None
+    if not isinstance(entries, list):
+        return ()
+    return tuple(
+        ExcludedTerm(
+            term_id=str(entry.get("id", "")),
+            term=str(entry.get("term", "")),
+            category=str(entry.get("category", "")),
+            reason=str(entry.get("removed_because", "")),
+        )
+        for entry in entries
+        if isinstance(entry, dict) and entry.get("term") and entry.get("removed_because")
+    )
 
 
 class KeywordFilter(Filter):

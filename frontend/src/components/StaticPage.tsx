@@ -8,6 +8,7 @@
 
 import { Link } from 'react-router-dom'
 
+import ExclusionIndex from '@/components/ExclusionIndex'
 import KeywordIndex from '@/components/KeywordIndex'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import type { ContentBlock, ContentLink, StaticPageContent } from '@/types/content'
@@ -121,6 +122,9 @@ function Block({ block }: { readonly block: ContentBlock }): JSX.Element {
     // curated keyword lists itself, so the content module only marks where they go.
     case 'keyword-index':
       return <KeywordIndex />
+
+    case 'exclusion-index':
+      return <ExclusionIndex />
   }
 }
 

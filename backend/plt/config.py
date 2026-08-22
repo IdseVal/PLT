@@ -868,6 +868,29 @@ class Settings(BaseSettings):
             raise ValueError(message)
         return self.keywords_dir / f"{code.lower()}.json"
 
+    def excluded_list_path(self, jurisdiction_code: str) -> Path:
+        """Return the path of a jurisdiction's record of rejected terms.
+
+        The file beside the keyword list holding the terms that were considered and left out,
+        each with the reason. It is curation evidence rather than pipeline input: nothing
+        loads it to match with, and the methodology page publishes it so a reader can see what
+        the criterion excludes as well as what it admits.
+
+        Args:
+            jurisdiction_code: Jurisdiction code such as ``NL`` or ``EU``. Case-insensitive.
+
+        Returns:
+            Path to ``<keywords_dir>/excluded_<code lowercased>.json``. The file is not
+            required to exist; a jurisdiction that has rejected nothing has no such file.
+
+        Raises:
+            ValueError: If the code is not two ASCII letters, on the same guard as
+                :meth:`keyword_list_path`.
+        """
+        return self.keyword_list_path(jurisdiction_code).with_name(
+            f"excluded_{jurisdiction_code.strip().lower()}.json"
+        )
+
     def user_agent(self, version: str) -> str:
         """Render the outbound ``User-Agent`` header.
 

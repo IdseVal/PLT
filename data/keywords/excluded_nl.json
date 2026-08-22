@@ -31,7 +31,7 @@
       "aliases": [
         "Nederlandse Voedsel- en Warenautoriteit"
       ],
-      "note": "Contextual: the NVWA appears across food and animal law. Only meaningful alongside a pesticide term. DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost. Revisit under issue #24.",
+      "note": "Contextual: the NVWA appears across food and animal law. Only meaningful alongside a pesticide term. DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost.",
       "removed_because": "The food and product safety authority appears in every case it brings, on any subject."
     },
     {
@@ -48,7 +48,7 @@
         "ECHA",
         "RIVM"
       ],
-      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost. Revisit under issue #24.",
+      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost.",
       "removed_because": "EFSA, ECHA and RIVM advise on chemicals, food and health generally, not on pesticides alone."
     },
     {
@@ -61,7 +61,7 @@
       "requires": [
         "nl-gewasbeschermingsmiddel"
       ],
-      "note": "DOCUMENTED EXCEPTION (docs/jurisdictions/nl.md 5.7, issue #57). Split out of nl-toelating, which it used to be an alias of, so that a gate could be put on it alone. 'Toelating' is admission in general and in Dutch administrative practice a toelatingsbesluit is overwhelmingly an immigration decision, so it no longer qualifies a document by itself: it needs a plant-protection word somewhere in the document, which the authority's own name - College voor de toelating van gewasbeschermingsmiddelen en biociden - already supplies. Same instrument as nl-drift. requires is an AND over one id (issue #24), so a biocide-only authorisation loses these three points and keeps its own weight-3 term.",
+      "note": "DOCUMENTED EXCEPTION (docs/jurisdictions/nl.md 5.7). Split out of nl-toelating, which it used to be an alias of, so that a gate could be put on it alone. 'Toelating' is admission in general and in Dutch administrative practice a toelatingsbesluit is overwhelmingly an immigration decision, so it no longer qualifies a document by itself: it needs a plant-protection word somewhere in the document, which the authority's own name - College voor de toelating van gewasbeschermingsmiddelen en biociden - already supplies. Same instrument as nl-drift. requires is an AND over one id, so a biocide-only authorisation loses these three points and keeps its own weight-3 term.",
       "removed_because": "An authorisation decision is an ordinary administrative act in every licensing field."
     },
     {
@@ -118,7 +118,7 @@
         "glastuinbouw",
         "(?<!\\w)kwekerij"
       ],
-      "note": "DOCUMENTED EXCEPTION (docs/jurisdictions/nl.md 5.5, issue #57). regex rather than substring for one alias only: the bare 'kwekerij' now needs a word boundary on its left, so 'hennepkwekerij' no longer matches while 'kwekerij' and 'kwekerijen' still do. Every other pattern here is an unanchored expression and so keeps substring semantics.",
+      "note": "DOCUMENTED EXCEPTION (docs/jurisdictions/nl.md 5.5). regex rather than substring for one alias only: the bare 'kwekerij' now needs a word boundary on its left, so 'hennepkwekerij' no longer matches while 'kwekerij' and 'kwekerijen' still do. Every other pattern here is an unanchored expression and so keeps substring semantics.",
       "removed_because": "Its aliases reach all of arable farming, orchards, nurseries and greenhouse horticulture."
     },
     {

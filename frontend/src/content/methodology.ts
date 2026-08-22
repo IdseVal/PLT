@@ -26,15 +26,7 @@ export const methodologyPage: StaticPageContent = {
         {
           kind: 'paragraph',
           text: 'The tracker collects public, private and criminal law cases that centre on the effects, governance and/or liability of pesticide admission, trade and/or use. That definition is deliberately broad. It takes in challenges to the authorisation or withdrawal of a plant protection product, enforcement and penalty decisions, disputes between neighbours and growers over spraying and drift, employer and product liability claims, and public-law litigation about buffer zones, water quality and residue limits.',
-        },
-        {
-          kind: 'paragraph',
-          text: 'Cases in which a pesticide is mentioned only in passing — as a detail of a tenancy dispute, say, or as background to an unrelated criminal charge — are outside the scope. Where a judgment sits on the line, the collection errs towards including it and leaving the judgement about relevance to the reader.',
-        },
-        {
-          kind: 'paragraph',
-          text: 'Each jurisdiction is a separate entry in one database. The European Union is treated as a jurisdiction in its own right rather than as the sum of its member states, because EU courts produce their own body of pesticide case law and users generally want to read it as such.',
-        },
+        }
       ],
     },
     {
@@ -43,7 +35,7 @@ export const methodologyPage: StaticPageContent = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'The tracker is built like a systematic review, not like a search engine. For each jurisdiction, the publicly available body of case law is first mirrored in full to local storage, and the pesticide-related cases are then selected from that local copy — every document in the mirror is read. Nothing is sampled, and no topical query is ever sent to a source: none of the source services offers a topical filter for pesticides, and the Dutch open-data service offers no full-text search at all, so the only way to be sure nothing is missed is to hold everything and read it.',
+          text: 'To construct the pesticide litigation corpus, the PLT first collects all publicly available case law from every jurisdiction that is included. Next, the PLT screens all available caselaw on simple keyword filters to determine whether something is a pesticide case or not. What keywords are used for each jurisdiction can be seen below. Currently included are the following jurisdictions:',
         },
         {
           kind: 'definitions',
@@ -62,16 +54,8 @@ export const methodologyPage: StaticPageContent = {
         },
         {
           kind: 'paragraph',
-          text: 'Every document in the corpus is read and judged against the criteria below. The last full run reported “discovered 945,823” for the Netherlands and “discovered 104,143” for the European Union: 1,049,966 documents assessed, with no errors.',
-        },
-        {
-          kind: 'paragraph',
-          text: 'The tracker only collects judgments that the courts themselves publish online, and it collects them from the official open-data services rather than from commercial republishers or news reports. Every record keeps a link back to the source publication, and the full text is shown in the language in which the court issued it.',
-        },
-        {
-          kind: 'paragraph',
-          text: 'Collection is deliberately unhurried: requests are rate-limited, retried gently when a service is busy, and identify the project and a contact address. These are public research services, paid for out of the public purse, and the tracker is a guest on them.',
-        },
+          text: 'The tracker only collects judgments that the courts of these jurisdiction have published online, and it collects them from the official open-data services rather than from commercial republishers or news reports. Every record keeps a link back to the source publication, and the full text is shown in the language in which the court issued it. New cases are collected and screened on a weekly basis.',
+        }
       ],
     },
     {
@@ -80,23 +64,52 @@ export const methodologyPage: StaticPageContent = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'A judgment is included when at least one term from that jurisdiction’s curated keyword list appears in its title, abstract, subject fields or full text. That is the whole criterion. There is no scoring, no weighting and no threshold: a single match suffices, which in turn requires every term on the list to be specific enough to identify a pesticide case on its own.',
-        },
-        {
-          kind: 'callout',
-          text: 'An earlier version of the pipeline scored weighted combinations of terms against a threshold. Weighted scoring was removed on 17 August 2026, because letting vague terms accumulate is precisely how false positives are produced. Under the current criterion a term either carries a case alone or it is not on the list.',
+          text: 'A judgment is included when at least one term from that jurisdiction’s curated keyword list appears in its title, abstract, subject fields or full text. Applied to the corpus above, this criterion currently includes 3,027 Dutch cases and 1,312 EU cases — 4,339 in total.',
         },
         {
           kind: 'paragraph',
-          text: 'Applied to the corpus above, this criterion currently includes 3,027 Dutch cases and 1,312 EU cases — 4,339 in total.',
+          text: 'About 97% of each keyword list consists of active substances, enumerated from the official registers — the Annex to Commission Implementing Regulation (EU) No 540/2011 for the European Union, the Ctgb register for the Netherlands — and deliberately including substances that are no longer approved, because historic liability litigation is largely about withdrawn substances. Other keywords relate to names of regulations, pesticide authorities and specific agricultural practices.',
         },
         {
           kind: 'paragraph',
-          text: 'The Dutch list holds 862 terms; the EU list holds 555, covering English, French, German and Dutch. About 97% of each list consists of active substances, enumerated from the official registers — the Annex to Commission Implementing Regulation (EU) No 540/2011 for the European Union, the Ctgb register for the Netherlands — and deliberately including substances that are no longer approved, because historic liability litigation is largely about withdrawn substances.',
+          text: 'Each jurisdiction has one keyword list, held as a data file in the project repository and versioned alongside the code. The lists are curated by one of the pesticide law experts associated with the PLT project.',
+        },
+      ],
+    },
+    {
+      id: 'keyword-index',
+      heading: 'The keyword lists, term by term',
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: 'Terms do not transfer across borders, so a new jurisdiction will not be added to the tracker until its list exists. This is a standing precondition of the project, for three reasons:',
+        },
+        {
+          kind: 'list',
+          items: [
+            'Language. A Dutch list will not find German, French, Polish or Greek judgments. Each list is written in the working language or languages of that jurisdiction’s courts, and multilingual jurisdictions — Belgium, Luxembourg, Malta, Cyprus, Ireland, and the EU itself — need several language sections in one list.',
+            'Legal system. Lists carry national statutes, authorising bodies and procedures. The Dutch list names the Ctgb and the Wet gewasbeschermingsmiddelen en biociden; a French list would name ANSES and the Code rural. These have no cross-border equivalent translation.',
+            'Agronomy. The crops and practices that generate pesticide litigation differ by country: bulb and lily cultivation in the Netherlands, viticulture in France, olive groves in Greece. The lists are populated specifically for each jurisdiction in collaboration with a pesticide law expert from that jurisdiction.',
+          ],
         },
         {
           kind: 'paragraph',
-          text: 'Each jurisdiction has one keyword list, held as a data file in the project repository and versioned alongside the code. The lists are curated by the project’s content manager, a member of Wageningen Law, and not by the developers: deciding which terms identify pesticide litigation in a given legal system is a legal-domain judgement, not a technical one.',
+          text: 'As part of good methodological practice, the lists are public. The index below is read live from the same lists the pipeline applies, one disclosure per jurisdiction, grouped by category, with the number of published cases each term currently labels.',
+        },
+        { kind: 'keyword-index' },
+      ],
+    },
+    {
+      id: 'recorded',
+      heading: 'What each included case records',
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: 'Every included case is labelled with the term or terms that selected it, and with each term’s category: active substance, product class, statute, authority, procedure, crop or practice, exposure or harm, environment and brand, among others. The labels are public — they are shown on the case page and are filters on the case list — and each label carries the curated spelling, so every spelling of a substance files under one name.',
+        },
+        {
+          kind: 'paragraph',
+          text: 'Alongside those labels, each case carries the classification agreed for the project — jurisdiction; law domain (public, private or criminal); law subfield; the litigating parties; the dates of filing and of judgment — and as much of the source metadata as the publishing service exposes: court and instance, procedure type, case numbers, publication and decision dates, language, legal area, and citations to instruments and to other cases, together with the untouched source response.',
         },
       ],
     },
@@ -106,7 +119,7 @@ export const methodologyPage: StaticPageContent = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'Precision is protected by three distinct mechanisms. Each is recorded in the repository rather than applied silently, so every exclusion can be audited and argued with.',
+          text: 'The approach using extensive lists of keywords will return some false positives. To make the PLT more useful, another exclusion filter must be applied. Precision in this sense is protected by three distinct mechanisms:',
         },
         {
           kind: 'definitions',
@@ -128,47 +141,7 @@ export const methodologyPage: StaticPageContent = {
             },
           ],
         },
-      ],
-    },
-    {
-      id: 'keyword-index',
-      heading: 'The keyword lists, term by term',
-      blocks: [
-        {
-          kind: 'paragraph',
-          text: 'Terms do not transfer across borders, so a new jurisdiction cannot be added to the tracker until its list exists. This is a standing precondition of the project, for three reasons:',
-        },
-        {
-          kind: 'list',
-          items: [
-            'Language. A Dutch list will not find German, French, Polish or Greek judgments. Each list is written in the working language or languages of that jurisdiction’s courts, and multilingual jurisdictions — Belgium, Luxembourg, Malta, Cyprus, Ireland, and the EU itself — need several language sections in one list.',
-            'Legal system. Lists carry national statutes, authorising bodies and procedures. The Dutch list names the Ctgb and the Wet gewasbeschermingsmiddelen en biociden; a French list would name ANSES and the Code rural. These have no cross-border equivalent.',
-            'Agronomy. The crops and practices that generate pesticide litigation differ by country: bulb and lily cultivation in the Netherlands, viticulture in France, olive groves in Greece.',
-          ],
-        },
-        {
-          kind: 'paragraph',
-          text: 'The lists themselves are public. The index below is read live from the same lists the pipeline applies, one disclosure per jurisdiction, grouped by category, with the number of published cases each term currently labels.',
-        },
-        { kind: 'keyword-index' },
-      ],
-    },
-    {
-      id: 'recorded',
-      heading: 'What each included case records',
-      blocks: [
-        {
-          kind: 'paragraph',
-          text: 'Every included case is labelled with the term or terms that selected it, and with each term’s category: active substance, product class, statute, authority, procedure, crop or practice, exposure or harm, environment and brand, among others. The labels are public — they are shown on the case page and are filters on the case list — and each label carries the curated spelling, so every spelling of a substance files under one name.',
-        },
-        {
-          kind: 'paragraph',
-          text: 'Alongside those labels, each case carries the classification agreed for the project — jurisdiction; law domain (public, private or criminal); law subfield; the litigating parties; the dates of filing and of judgment — and as much of the source metadata as the publishing service exposes: court and instance, procedure type, case numbers, publication and decision dates, language, legal area, and citations to instruments and to other cases, together with the untouched source response.',
-        },
-        {
-          kind: 'paragraph',
-          text: 'Keeping the raw source response matters for a database that expects to be reclassified: when the classification scheme is refined, the existing collection can be re-labelled from what is already stored, without going back to the courts’ servers.',
-        },
+        { kind: 'exclusion-index' },
       ],
     },
     {
@@ -177,11 +150,11 @@ export const methodologyPage: StaticPageContent = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'A scheduled job runs weekly for each jurisdiction. It resumes from a checkpoint — the newest source modification date the last successful run reached — and asks the source only for what has been published or amended since. A run that fails does not advance the checkpoint, so the next run covers the same ground again rather than leaving a hole in the collection.',
+          text: 'New cases in the different jurisdictions get published regularly. To stay up to date, the PLT runs a scheduled weekly job to ingest new caselaw into the corpus of each jurisdiction. Next, the methodological pipeline discussed above runs on the new part of the corpus to track new pesticide litigation.',
         },
         {
           kind: 'paragraph',
-          text: 'Cases are deduplicated on the identifier their own court system gives them — the ECLI in the Netherlands, the CELEX number for EU documents — so a repeated read never creates a second copy. A fingerprint of each document’s content then distinguishes a genuine upstream revision, which updates the existing record in place, from an unchanged re-read, which only refreshes the record’s “last seen” date.',
+          text: 'Occasionally, the keyword list of a jurisdiction might change based on new insights, new pesticides or other. When this happens, the methodological pipeline will be ran on the entire corpus to come up with the new filtered corpus of the PLT.',
         },
       ],
     },
@@ -191,34 +164,39 @@ export const methodologyPage: StaticPageContent = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'The tracker is an aid to research, not an authority, and it is worth being explicit about what it cannot do.',
+          text: 'The PLT is in essence not more than a tool that presents a corpus resulting from a systematic litigation review. The tracker is meant as an aid to research, and is by no means an authority. In this respect, it is worth being explicit about what it cannot do:',
         },
         {
           kind: 'list',
           items: [
-            'It can only hold what courts publish online. In most member states the published record is a selection rather than the whole docket, and first-instance judgments are published unevenly or not at all.',
-            'The local mirror is reconciled against the source’s own index rather than assumed to be a perfect copy. The last reconciliation of the Dutch mirror found a contiguous gap of a few thousand identifiers in a single date window (19 February to 10 March 2026), of which only two carried judgment text. That gap is known and not yet repaired. The EU mirror is complete apart from a single document that CELLAR lists but does not serve.',
-            'Recall depends on the keyword lists. A pesticide judgment written in unusual vocabulary is missed, and the lists are revised as such gaps are found.',
+            'The PLT only holds what courts publish online. In most member states the published record is a selection rather than the complete corpus, and first-instance judgments are often published unevenly or not at all. This also means coverage begins at different dates in different jurisdictions, depending on how far back the source service’s own archive reaches.',
+            'Filtering is based on text-strings in the keyword lists. A pesticide judgment written in unusual vocabulary, or containing misspellings of keyword terms, is missed. The lists are revised as such gaps are found.',
             'Precision is imperfect. A judgment that merely mentions a pesticide in passing can be included, which is why every record links to its source text and invites the reader to judge for themselves.',
             'Substring matching can attribute a case to a related substance as well as the one it names: a case about alpha-cypermethrin is also labelled cypermethrin.',
-            'Coverage begins at different dates in different jurisdictions, depending on how far back the source service’s own archive reaches.',
             'Only two jurisdictions are covered so far. Terms do not transfer across borders, so each new jurisdiction needs its own keyword list before it can be added.',
           ],
         },
         {
           kind: 'paragraph',
-          text: 'Corrections are welcome and are the fastest way the collection improves. If a case is missing, wrongly included, or wrongly classified, please tell us.',
+          text: 'Corrections are welcome and are the fastest way the collection improves. If a case is missing, wrongly included, or wrongly classified, please tell us by reaching out:',
         },
         {
           kind: 'links',
           items: [
             { label: 'Report a case or a classification error', to: '/contact' },
+          ],
+        },
+                {
+          kind: 'paragraph',
+          text: 'Answers to other questions can be found in our FAQ. If your question has not been answered there, feel free to reach out to us as well.',
+        },
+        {
+          kind: 'links',
+          items: [
             { label: 'Frequently asked questions', to: '/faq' },
           ],
         },
       ],
     },
   ],
-  editorialNote:
-    'Draft text, written from the pipeline as built and the current keyword lists. It is intended to be reviewed and rewritten by Wageningen Law before launch; the figures and the description of the selection criteria should be checked against the implementation whenever a source, a list or a filter stage changes.',
 }

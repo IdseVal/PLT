@@ -10,6 +10,7 @@ import type {
   ApiErrorEnvelope,
   CaseRecord,
   CaseSummary,
+  ExclusionsResponse,
   ExportFormat,
   FilterFacets,
   HealthResponse,
@@ -241,6 +242,21 @@ export function getCase(
  */
 export function getFilters(signal?: AbortSignal): Promise<FilterFacets> {
   return request<FilterFacets>('/filters', signal === undefined ? {} : { signal })
+}
+
+/**
+ * Fetch the exclusion criteria of every jurisdiction (`GET /api/exclusions`).
+ *
+ * Read by the methodology page. Separate from `getFilters` because it answers a different
+ * question — what the criterion keeps out, rather than what a reader may filter by — and
+ * the filter controls should not pay for it.
+ *
+ * @param signal - Optional abort signal.
+ * @returns The exclusion payload.
+ * @throws {ApiError} If the request fails.
+ */
+export function getExclusions(signal?: AbortSignal): Promise<ExclusionsResponse> {
+  return request<ExclusionsResponse>('/exclusions', signal === undefined ? {} : { signal })
 }
 
 /**
