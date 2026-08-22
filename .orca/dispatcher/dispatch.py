@@ -253,6 +253,34 @@ class State:
 # ------------------------------------------------------------------------------------------
 
 
+def main_worktree(start: Path) -> Path:
+    """Find the repository's main checkout, from anywhere inside it.
+
+    Orca registers the main checkout, not the linked worktrees cut from it. Running the
+    poller from inside a worktree - which is exactly where an agent runs - would otherwise
+    hand Orca a path it has never heard of and every dispatch would fail ``repo_not_found``.
+
+    ``--git-common-dir`` resolves to the shared ``.git`` of the main checkout from any linked
+    worktree, so its parent is the path Orca knows.
+
+    Args:
+        start: Any directory inside the repository.
+
+    Returns:
+        The main checkout, or ``start`` unchanged when git cannot answer.
+    """
+    try:
+        common = subprocess.run(
+            ["git", "-C", str(start), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            capture_output=True, text=True, timeout=30, check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return start
+    if common.returncode != 0 or not common.stdout.strip():
+        return start
+    return Path(common.stdout.strip()).parent
+
+
 def _executable(name: str) -> str:
     """Resolve a command to a full path.
 
@@ -750,8 +778,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="owner/name for gh. Default: inferred from the checkout.",
     )
     parser.add_argument(
-        "--repo-path", type=Path, default=REPO_ROOT,
-        help="Repository path handed to Orca. Default: this checkout.",
+        "--repo-path", type=Path, default=None,
+        help="Repository path handed to Orca. Default: the main checkout, found from here.",
     )
     parser.add_argument(
         "--config", type=Path, default=REPO_ROOT / ".orca" / "dispatch.yml",
@@ -795,6 +823,9 @@ def main(argv: list[str] | None = None) -> int:
         log.critical("%s", exc)
         return 1
 
+    if args.repo_path is None:
+        args.repo_path = main_worktree(REPO_ROOT)
+
     state = State.load(args.state)
 
     if args.reopen is not None:
@@ -810,8 +841,8 @@ def main(argv: list[str] | None = None) -> int:
 
     install_signal_handlers()
     log.info(
-        "dispatcher up: base=%s ready=%s max_cycles=%s%s",
-        config.base_branch, config.ready_label, config.max_cycles,
+        "dispatcher up: repo=%s base=%s ready=%s max_cycles=%s%s",
+        args.repo_path, config.base_branch, config.ready_label, config.max_cycles,
         " (DRY RUN)" if args.dry_run else "",
     )
 
