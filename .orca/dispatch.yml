@@ -5,24 +5,20 @@ branches:
   protected: [main]          # no agent may merge into these
   worktree_prefix: feature/
 
+# Role prompts are HOST-LEVEL at ~/.orca/roles/ and shared across every project.
+# The dispatcher process reads them from there; nothing here names a repo-relative path.
 roles:
   po-analyst:
-    prompt: .orca/system_prompts/po-analyst.md
     skills: [handoff, grill-with-docs, domain-modeling]
   architect:
-    prompt: .orca/system_prompts/architect.md
     skills: [handoff, improve-codebase-architecture, codebase-design]
   researcher:
-    prompt: .orca/system_prompts/researcher.md
     skills: [handoff, just-scrape, diagnosing-bugs]
   developer:
-    prompt: .orca/system_prompts/developer.md
     skills: [handoff]        # baseline; labels add to it
   tester:
-    prompt: .orca/system_prompts/tester.md
     skills: [handoff, tdd, webapp-testing]
   reviewer:
-    prompt: .orca/system_prompts/reviewer.md
     skills: [handoff, code-review]
 
 # A label is a claim about the work. It earns the skills that work needs and no others:
@@ -50,6 +46,12 @@ pipelines:
   trivial:
     stages: [developer, reviewer]
     forbid_labels: [ui, scraper, data]
+
+# The labels the poller reads. Named here rather than baked into the script so a repo
+# with its own label vocabulary is a configuration change, not a code change.
+dispatch:
+  ready_label: ready
+  escalated_label: escalated
 
 circuit_breaker:
   max_cycles: 3
