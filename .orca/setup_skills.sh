@@ -11,11 +11,13 @@
 # `diagnose` is really `diagnosing-bugs`. Re-run that check before adding a skill — a name
 # that is wrong here fails the container build for everyone.
 #
-# Node >= 22.20.0 is required by the CLI. The image pins Node 22 for exactly this reason.
+# Node >= 22.20.0 is required by the CLI, and the `1-22` base image ships 22.16, so the
+# Dockerfile pins it upward with `n`. The agent id is `claude-code`; plain `claude` is
+# rejected as an invalid agent, which fails every install in this file at once.
 set -uo pipefail
 
 SKILLS_CLI="${SKILLS_CLI:-npx -y skills@latest}"
-AGENT="${SKILLS_AGENT:-claude}"
+AGENT="${SKILLS_AGENT:-claude-code}"
 
 failed=()
 

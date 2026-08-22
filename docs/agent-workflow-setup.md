@@ -6,7 +6,7 @@ run and the reasons behind the choices that are not obvious.
 Written to be project-agnostic. Where something is specific to the project it lives in, it is
 marked **[project-specific]** and says what to substitute.
 
-Verified on 22 August 2026 against the live tooling. Package names, CLI verbs and skill names
+Verified on 22 August 2026 by building the image and running the project inside it: 1,104 backend tests, 442 frontend tests, lint and types clean, and all fourteen skills installed from all six repositories. Package names, CLI verbs and skill names
 were each read back from the tool rather than copied from a plan — four things in the original
 design turned out not to exist, and the section [What this corrects](#what-this-corrects)
 records them so nobody rediscovers them the hard way.
@@ -92,8 +92,13 @@ mkdir -p .devcontainer .orca/system_prompts docs/adrs docs/specs mail .github/wo
 Copy `.devcontainer/` from this repository and change three things.
 
 **The base image.** `mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm` suits a
-Node + Python project. Node **22**, not 20 — the `skills` CLI requires ≥ 22.20.0 and refuses
-to start below it. Bookworm carries Python 3.11.
+Node + Python project, and Bookworm carries Python 3.11.
+
+Note what the tag does *not* give you: it ships Node **22.16**, which is below the 22.20.0 the
+`skills` CLI declares. npm runs it anyway with an `EBADENGINE` warning, and a toolchain that
+works by warning breaks the day npm enforces it — so the Dockerfile pins the interpreter
+upward with `n`, and the container test asserts the result. Do not assume a major-version tag
+clears a minor-version floor.
 
 **The Python virtualenv lives outside the workspace.** `/opt/venv`, never `/workspace/.venv`.
 A bind-mounted workspace shared with a Windows or macOS host would otherwise have the
@@ -134,11 +139,12 @@ npx skills list
 
 The CLI is [`skills`](https://github.com/vercel-labs/skills) from vercel-labs.
 
-**Its verb is `add`, not `install`, and there is no `--target`.** Scope is project by default,
+**Its verb is `add`, not `install`; there is no `--target`; and the agent is `claude-code`,
+not `claude`.** Scope is project by default,
 or `--global`. Skills land in the agent directories `--agent` selects.
 
 ```bash
-npx -y skills@latest add <owner>/<repo> --skill <skill-name> --agent claude --yes
+npx -y skills@latest add <owner>/<repo> --skill <skill-name> --agent claude-code --yes
 ```
 
 **Read the skill names back before you commit them.** A wrong name fails the container build
@@ -285,10 +291,31 @@ building, which cost an hour and saved a container nobody could open.
 | `npx skills install <repo>/<skill> --target <dir>` | The verb is `add`; the flag is `--skill`; there is no `--target`. |
 | Base image `typescript-node:1-20-bullseye` | `skills` requires Node ≥ 22.20.0. Node 20 fails with `EBADENGINE`. |
 | Skill `diagnose` | It is called `diagnosing-bugs`. |
+| `--agent claude` | Rejected as an invalid agent. The id is **`claude-code`**, and getting it wrong fails every install at once. |
+| Base tag `1-22` satisfies the Node floor | It ships **22.16**, below the 22.20 the CLI declares. The Dockerfile pins it upward with `n`. |
+| A shell script just works in the container | Not from a Windows working tree. CRLF fails as `set: pipefail: invalid option name`, which names nothing near the cause. |
 
 The general lesson is the one the evidence gates encode: **check the thing, do not trust the
 description of the thing** — including this document. If a command here fails, the tool has
 moved and the document is wrong.
+
+### Line endings, if your host is Windows
+
+The dev container bind-mounts your **working tree**, not a fresh checkout, so a shell script
+carrying CRLF reaches bash on Linux unchanged. It fails as:
+
+```
+setup_skills.sh: line 17: set: pipefail: invalid option name
+setup_skills.sh: line 25: syntax error near unexpected token `$'{
+''
+```
+
+which points nowhere near line endings. `.gitattributes` pins `*.sh` to LF; if you create a
+script outside git's checkout filter, convert it before you trust it:
+
+```bash
+file .orca/setup_skills.sh    # want: "Bourne-Again shell script", not "with CRLF line terminators"
+```
 
 ---
 
