@@ -1,19 +1,8 @@
-# The daily digest of what landed on dev.
-#
-# It sends nothing on a quiet day. A scheduled mail that arrives empty is a mail people learn
-# to skim past, and a report nobody reads is worse than no report: it looks like oversight.
-#
-# The digest is derived from commit and pull-request history rather than from logs the agents
-# write, so there is nothing for an agent to forget and nothing for two parallel worktrees to
-# conflict over. See mail/daily_digest.py.
-
 name: Daily agent digest
 
 on:
   schedule:
-    # 18:10 UTC. Off the hour deliberately: GitHub queues scheduled jobs heavily on the hour,
-    # and a digest that arrives late enough to miss the evening is a digest read tomorrow.
-    - cron: '10 18 * * *'
+    - cron: '10 18 * * *'      # off the hour: GitHub queues the hour heavily
   workflow_dispatch:
     inputs:
       day:
@@ -21,11 +10,10 @@ on:
         type: string
         default: ''
       print_only:
-        description: 'Render the digest into the log and send no mail'
+        description: 'Render into the log and send no mail'
         type: boolean
         default: true
 
-# One digest at a time. Two runs for the same day would send the same mail twice.
 concurrency:
   group: daily-digest
   cancel-in-progress: false
@@ -40,18 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # The digest reads a day of history on dev. A shallow clone would report an empty
-          # day on every run, which is the failure that looks exactly like success.
-          fetch-depth: 0
+          fetch-depth: 0        # a shallow clone reports an empty day, every day
           ref: dev
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: Render and send
         env:
-          # gh is pre-installed on the runner; this is what authenticates it.
           GH_TOKEN: ${{ github.token }}
           SMTP_SENDER_EMAIL: ${{ secrets.SMTP_SENDER_EMAIL }}
           SMTP_RECEIVER_EMAIL: ${{ secrets.SMTP_RECEIVER_EMAIL }}

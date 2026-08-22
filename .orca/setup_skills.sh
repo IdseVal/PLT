@@ -2,18 +2,11 @@
 #
 # Fetch every agent skill this workspace dispatches, into the project scope.
 #
-# The CLI is `skills` from vercel-labs (npm: `skills`), and its verb is **add**, not install.
-# There is no --target flag: scope is project (default, inside a project) or --global. Skills
-# land in the agent directories the tool knows about, which is what --agent selects.
+# The CLI verb is `add`, not install. There is no --target. The agent id is `claude-code`.
+# Node >= 22.20.0 is required; the Dockerfile pins it upward with `n`.
 #
-# Every skill name below was read back from the repository with `skills add <repo> --list` on
-# 22 August 2026 rather than copied from a plan. One in the original plan did not exist:
-# `diagnose` is really `diagnosing-bugs`. Re-run that check before adding a skill — a name
-# that is wrong here fails the container build for everyone.
-#
-# Node >= 22.20.0 is required by the CLI, and the `1-22` base image ships 22.16, so the
-# Dockerfile pins it upward with `n`. The agent id is `claude-code`; plain `claude` is
-# rejected as an invalid agent, which fails every install in this file at once.
+# Every skill name here was read back from the repository with `--list` rather than copied
+# from a plan. A name that is wrong fails the container build for everyone.
 set -uo pipefail
 
 SKILLS_CLI="${SKILLS_CLI:-npx -y skills@latest}"
@@ -36,29 +29,17 @@ add() {
 
 echo "Installing agent skills (agent: $AGENT)"
 
-# Every role. Context compaction and clean transfer between agents.
 add mattpocock/skills handoff
-
-# Product owner and analyst: discovery, ubiquitous language, the first ADRs.
 add mattpocock/skills grill-with-docs domain-modeling
-
-# Architect: system boundaries, contracts, refactoring direction.
 add mattpocock/skills improve-codebase-architecture codebase-design
-
-# Developer. Loaded selectively by the dispatcher from the issue's labels — see
-# .orca/dispatch.yml — so a typo fix does not pay for the whole design stack.
 add anthropics/skills frontend-design
 add vercel-labs/agent-skills web-design-guidelines
 add leonxlnx/taste-skill high-end-visual-design
 add coreyhaines31/marketingskills seo-audit
 add scrapegraphai/just-scrape just-scrape
 add mattpocock/skills diagnosing-bugs
-
-# Tester.
 add mattpocock/skills tdd
 add anthropics/skills webapp-testing
-
-# Reviewer.
 add mattpocock/skills code-review
 
 echo

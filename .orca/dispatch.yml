@@ -1,24 +1,10 @@
-# How the dispatcher routes an issue: which agents see it, which skills they load, and when
-# it stops trying and hands the work back to a person.
-#
-# Data rather than prose, because the dispatcher reads it and a human argues with it. Adding
-# a skill to a role is an edit here plus a line in .orca/setup_skills.sh, and nothing else.
-
 version: 1
 
-# --------------------------------------------------------------------------------------
-# Branch policy
-# --------------------------------------------------------------------------------------
 branches:
   base: dev
-  # main is promoted by a person, never by an agent. No role below may open, prepare or
-  # merge a pull request into it. This is the one rule the whole setup exists to protect.
-  protected: [main]
+  protected: [main]          # no agent may merge into these
   worktree_prefix: feature/
 
-# --------------------------------------------------------------------------------------
-# Roles, and the skills each one always loads
-# --------------------------------------------------------------------------------------
 roles:
   po-analyst:
     prompt: .orca/system_prompts/po-analyst.md
@@ -31,8 +17,7 @@ roles:
     skills: [handoff, just-scrape, diagnosing-bugs]
   developer:
     prompt: .orca/system_prompts/developer.md
-    # Baseline only. The labels below add to it.
-    skills: [handoff]
+    skills: [handoff]        # baseline; labels add to it
   tester:
     prompt: .orca/system_prompts/tester.md
     skills: [handoff, tdd, webapp-testing]
@@ -40,12 +25,8 @@ roles:
     prompt: .orca/system_prompts/reviewer.md
     skills: [handoff, code-review]
 
-# --------------------------------------------------------------------------------------
-# Issue labels, and what they add
-# --------------------------------------------------------------------------------------
-# A label is a claim about the work, so it earns the developer the skills that work needs and
-# nothing else. Loading the whole design stack for a typo is how an agent setup becomes too
-# expensive to use for small things, which is how small things stop getting done.
+# A label is a claim about the work. It earns the skills that work needs and no others:
+# loading the whole design stack for a typo is how small work becomes too expensive to do.
 labels:
   ui:
     skills: [frontend-design, web-design-guidelines, high-end-visual-design]
@@ -58,30 +39,19 @@ labels:
   data:
     skills: [codebase-design]
 
-# --------------------------------------------------------------------------------------
-# Pipelines
-# --------------------------------------------------------------------------------------
 pipelines:
-  # The ordinary path.
   default:
     stages: [developer, tester, reviewer]
 
-  # `trivial` skips the tester. For a typo, a comment, a version bump or a doc edit, a test
-  # author has nothing to write, and the reviewer still reads every line before it lands.
-  #
-  # It is the *reviewer's* job to refuse this label when it is wrong: an issue tagged trivial
-  # that turns out to touch behaviour goes back to the default pipeline rather than through.
-  # The label is a request, not a permission.
+  # `trivial` skips the TESTER, never the reviewer. For a typo, a comment, a version bump or
+  # a doc edit a test author has nothing to write, and every line is still read before it
+  # lands. The REVIEWER refuses the label when the change turns out to touch behaviour: it is
+  # a request, not a permission.
   trivial:
     stages: [developer, reviewer]
     forbid_labels: [ui, scraper, data]
 
-# --------------------------------------------------------------------------------------
-# Circuit breaker
-# --------------------------------------------------------------------------------------
 circuit_breaker:
-  # Three round trips between developer, tester and reviewer. On the fourth the worktree is
-  # frozen, automated execution halts, and the diff plus the failing output go to a person.
   max_cycles: 3
   on_trip:
     freeze_worktree: true
@@ -89,23 +59,12 @@ circuit_breaker:
     assign_to: human
     attach: [diff, test_output, agent_transcript_tail]
 
-# --------------------------------------------------------------------------------------
-# Evidence gates
-# --------------------------------------------------------------------------------------
-# A bounce counter catches thrashing. It does not catch the failure this project actually
-# produces, which is a run that reports success while being wrong: a corpus walk that
-# announced "success, 0 failures" while dropping 14.9% of what it was asked for; a filter
-# that passed every test while selecting 41 judgments on a Luxembourg street name.
-#
-# So a reviewer may not merge on green tests alone. The claim has to be checked against
-# something that was not produced by the same code path — architecture rule 2.11, an artefact
-# describes itself by observation, not by declaration.
 evidence_gates:
   - id: counts-reconciled
     applies_to: [data, pipeline]
     requires: >-
-      A count from the run reconciled against a count from the source or the store, both
-      quoted in the pull request. "It completed" is not a count.
+      A count from the run reconciled against a count from an independent source, both quoted
+      in the pull request. "It completed" is not a count.
   - id: output-sampled
     applies_to: [data, ui]
     requires: >-
