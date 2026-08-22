@@ -22,11 +22,6 @@ name: Weekly ingest
 #     real network and database work and finishes; the later run waits.
 
 on:
-  schedule:
-    # Mondays, 04:20 UTC. Off the hour on purpose: GitHub queues the top of the hour
-    # heavily, and a delayed scan is a scan that ran against a different window than the
-    # one its log claims.
-    - cron: '20 4 * * 1'
   workflow_dispatch:
     inputs:
       jurisdiction:
