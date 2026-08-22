@@ -2,7 +2,7 @@
 
 A mirror is not an ingestion. It stores what a source served, unfiltered and unclassified,
 so that everything downstream can be re-run over an **identical** corpus. That is what
-``docs/core-document.md`` section 2.8 asks for and what a live endpoint cannot give: two
+``docs/CORE_DOCUMENT.md`` section 2.8 asks for and what a live endpoint cannot give: two
 keyword lists scored against CELLAR a week apart are not comparable, because the repository
 moved underneath them. Scored against a mirror they are, and the difference between them is
 the list rather than the day.

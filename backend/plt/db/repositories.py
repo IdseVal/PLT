@@ -730,7 +730,7 @@ def record_review_decision(
     The case's ``needs_review`` flag is deliberately **not** cleared. It states what the
     filter concluded about the text, and re-running the same window over the same corpus has
     to produce the same flags whether or not anyone has decided in the meantime
-    (``docs/core-document.md`` section 2.8). The workflow lives in ``case_review.status``.
+    (``docs/CORE_DOCUMENT.md`` section 2.8). The workflow lives in ``case_review.status``.
 
     Args:
         session: Open database session.

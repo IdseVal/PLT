@@ -516,7 +516,7 @@ def _default_chain(jurisdiction_code: str, settings: Settings) -> FilterChain:
     """Build the filter chain for a jurisdiction.
 
     Stage 1 is the curated keyword matcher. Later stages append here and nowhere else, which
-    is what "the chain is pluggable" means in practice (``docs/core-document.md`` 2.5).
+    is what "the chain is pluggable" means in practice (``docs/CORE_DOCUMENT.md`` 2.5).
 
     Args:
         jurisdiction_code: Jurisdiction whose list to load.

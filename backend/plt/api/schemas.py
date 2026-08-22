@@ -1119,7 +1119,7 @@ def review_item_payload(review: CaseReview) -> dict[str, Any]:
     against the band it was judged in, the list version that produced the flag, and the
     matched terms with their fields, weights and snippets. None of it is recomputed — it is
     what the run recorded, which is what makes an individual verdict explainable after the
-    list has moved on (``docs/core-document.md`` section 2.8).
+    list has moved on (``docs/CORE_DOCUMENT.md`` section 2.8).
 
     Args:
         review: The review item, loaded with its case, that case's keyword matches and its

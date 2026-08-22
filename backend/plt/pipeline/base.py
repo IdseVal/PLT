@@ -12,7 +12,7 @@ The stage order the runner drives is::
 
 which is why the three methods are separate: ``discover`` must be cheap enough to run over a
 whole window, so that :meth:`SourceConnector.fetch` is never called for a document the
-database already holds unchanged (``docs/core-document.md`` section 2.6).
+database already holds unchanged (``docs/CORE_DOCUMENT.md`` section 2.6).
 
 Two properties of :class:`NormalisedCase` are worth reading before writing a connector:
 

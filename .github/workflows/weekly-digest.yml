@@ -1,6 +1,6 @@
 name: Weekly digest
 
-# The subscriber alert promised in docs/core-document.md section 2.4, scheduled per
+# The subscriber alert promised in docs/CORE_DOCUMENT.md section 2.4, scheduled per
 # docs/architecture.md section 7.
 #
 # Like weekly-ingest.yml this workflow is a *trigger*, not a second implementation: it shells

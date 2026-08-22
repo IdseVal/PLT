@@ -6,7 +6,7 @@ on merge. Changing a contract in this file means updating this file in the same 
 saying so in the PR description.
 
 Companion documents: [`README.md`](../README.md) (what the app is),
-[`docs/core-document.md`](core-document.md) (project blueprint).
+[`docs/CORE_DOCUMENT.md`](CORE_DOCUMENT.md) (project blueprint).
 
 ---
 
@@ -798,7 +798,7 @@ behalf, and each requires a JSON body, which an HTML form cannot send and a cros
   `/api/stats/jurisdictions`. An **EU logo positioned in the North Sea** is hoverable on the
   same footing and links through to `/cases?jurisdiction=EU`. Jurisdictions with no data
   render in a muted "no cases yet" state rather than disappearing. Keyboard-accessible: the
-  hover affordance must have a focus equivalent. Coverage is `docs/core-document.md` Annex 2
+  hover affordance must have a focus equivalent. Coverage is `docs/CORE_DOCUMENT.md` Annex 2
   and comes from the geometry, not from the response, so a jurisdiction the API does not
   mention is still drawn. The geometry is a **generated local asset**
   (`frontend/src/components/map/geometry.generated.ts`, written by

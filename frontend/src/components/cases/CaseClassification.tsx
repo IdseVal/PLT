@@ -1,7 +1,7 @@
 /**
  * The classification block of a case.
  *
- * This is the classification of `docs/core-document.md` section 2.2 — jurisdiction, law
+ * This is the classification of `docs/CORE_DOCUMENT.md` section 2.2 — jurisdiction, law
  * domain, law subfield, litigating parties, the filing and decision dates, and topic — plus
  * the source metadata section 2.2 goes on to require the pipeline to keep: court, procedure
  * type, case numbers, publication date, language and outcome.

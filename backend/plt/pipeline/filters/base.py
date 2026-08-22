@@ -5,7 +5,7 @@
     class Filter(ABC):
         def evaluate(self, case: NormalisedCase) -> FilterResult: ...
 
-The chain is pluggable by design (``docs/core-document.md`` section 2.5, point 4): a later
+The chain is pluggable by design (``docs/CORE_DOCUMENT.md`` section 2.5, point 4): a later
 stage - a classifier, a citation filter, a manual review queue - is added by appending
 another :class:`Filter` to a :class:`FilterChain`, never by touching a connector.
 
@@ -144,7 +144,7 @@ class FilterResult:
 
     *Passed* decides whether the document enters the database at all, and selection is a word
     search: one curated term matching is enough, because a term that could not carry a case on
-    its own does not belong in the list (``docs/core-document.md`` section 2.5). Precision is
+    its own does not belong in the list (``docs/CORE_DOCUMENT.md`` section 2.5). Precision is
     bought in curation, by removing the term, rather than in arithmetic.
 
     *Needs review* survives as the content manager's own flag. Nothing raises it

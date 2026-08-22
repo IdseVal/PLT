@@ -1,6 +1,6 @@
 name: Weekly ingest
 
-# The weekly scan promised in docs/core-document.md section 2.6, scheduled per
+# The weekly scan promised in docs/CORE_DOCUMENT.md section 2.6, scheduled per
 # docs/architecture.md section 7.
 #
 # This workflow is a *trigger*, not a second implementation: every job below shells out to

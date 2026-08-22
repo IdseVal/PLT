@@ -2,7 +2,7 @@
 
 Neither source endpoint offers a topical filter for pesticides, so every candidate is
 selected here, client-side, by matching curated terms against its text
-(``docs/core-document.md`` section 2.5). This module therefore decides what is and is not in
+(``docs/CORE_DOCUMENT.md`` section 2.5). This module therefore decides what is and is not in
 the database: it is judged on precision, on recall and on speed, since it runs over the full
 text of every judgment fetched.
 
@@ -145,7 +145,7 @@ class KeywordListError(Exception):
 class KeywordListNotFoundError(KeywordListError):
     """A jurisdiction has no keyword list file.
 
-    A jurisdiction cannot be onboarded before its list exists (``docs/core-document.md``
+    A jurisdiction cannot be onboarded before its list exists (``docs/CORE_DOCUMENT.md``
     section 2.5), so this is an onboarding error, not a reason to fall back to matching
     nothing.
     """

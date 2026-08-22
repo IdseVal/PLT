@@ -1,7 +1,7 @@
 /**
  * The All-cases filter panel.
  *
- * The filters are the classification of `docs/core-document.md` section 2.2 — jurisdiction,
+ * The filters are the classification of `docs/CORE_DOCUMENT.md` section 2.2 — jurisdiction,
  * law domain, law subfield, topic, court, language and the decision-date range — plus the
  * full-text query. Their values come from `GET /api/filters`, which returns only values that
  * occur on a published case, so the panel cannot offer a filter that yields nothing.

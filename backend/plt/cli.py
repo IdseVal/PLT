@@ -28,7 +28,7 @@ That is the right behaviour for an operator watching the output, and it is 0 by 
 because the run did complete. It is the wrong answer for a weekly unattended job: a
 jurisdiction whose window has been frozen for a month reports green every Monday while the
 tracker quietly stops gaining cases, which is precisely the failure
-``docs/core-document.md`` section 2.7 says is the expensive one — nobody can audit an
+``docs/CORE_DOCUMENT.md`` section 2.7 says is the expensive one — nobody can audit an
 absence. ``--fail-on-partial`` makes that visible without changing the exit code any existing
 caller sees, and the scheduled workflow passes it.
 """

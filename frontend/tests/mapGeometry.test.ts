@@ -44,7 +44,7 @@ import {
 import { GEOMETRY_BY_JURISDICTION } from '../scripts/generate-map-geometry.mjs'
 
 /** The document that decides the coverage. Vitest runs with `frontend/` as its directory. */
-const ANNEX_PATH = resolve(process.cwd(), '..', 'docs', 'core-document.md')
+const ANNEX_PATH = resolve(process.cwd(), '..', 'docs', 'CORE_DOCUMENT.md')
 
 /** Heading the jurisdiction table sits under. */
 const ANNEX_HEADING = '## Annex 2: project data sources'

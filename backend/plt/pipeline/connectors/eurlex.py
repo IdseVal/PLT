@@ -1,7 +1,7 @@
 """European Union connector: EUR-Lex through the CELLAR repository.
 
 The EU is a jurisdiction in its own right in this database, never an aggregate of its member
-states (``docs/core-document.md`` section 3.3), so this connector produces ``EU`` cases on
+states (``docs/CORE_DOCUMENT.md`` section 3.3), so this connector produces ``EU`` cases on
 exactly the same footing as the Dutch one produces ``NL`` cases.
 
 Two endpoints, both recorded in Annex 2a of the core document:

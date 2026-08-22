@@ -1,6 +1,6 @@
 """Filter stage 1: the curated keyword matcher.
 
-The matcher decides what enters the database (``docs/core-document.md`` section 2.5), so
+The matcher decides what enters the database (``docs/CORE_DOCUMENT.md`` section 2.5), so
 these tests exercise the semantics the curated lists rely on - every ``match`` mode,
 ``aliases``, ``requires``, ``exclusions``, the scanned fields and diacritic folding - against
 the two shipped lists and against synthetic lists written into ``tmp_path``.

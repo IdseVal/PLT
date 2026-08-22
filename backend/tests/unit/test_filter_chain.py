@@ -1,7 +1,7 @@
 """The filter chain contract from ``docs/architecture.md`` section 4.
 
 Stage 1 is the keyword matcher, but the chain itself must stay pluggable: a later stage has
-to slot in behind the same ABC without a connector changing (``docs/core-document.md``
+to slot in behind the same ABC without a connector changing (``docs/CORE_DOCUMENT.md``
 section 2.5, point 4). These tests pin that property with stages that have nothing to do
 with keywords.
 """

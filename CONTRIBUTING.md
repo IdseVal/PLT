@@ -152,7 +152,7 @@ geometry or contacts a tile server, so the map works offline. Do not edit the ge
 change the script and re-run it. `--check` fails when the committed file is out of date, and
 the script needs the network only on a first run, after which the source data is cached.
 
-Which jurisdictions the map draws is decided by `docs/core-document.md` Annex 2, which both the
+Which jurisdictions the map draws is decided by `docs/CORE_DOCUMENT.md` Annex 2, which both the
 script and `tests/mapGeometry.test.ts` read. The annex carries names only — no ISO codes and no
 geometry — so a member state added to it needs two things written in the test as well as in the
 script's `GEOMETRY_BY_JURISDICTION`, on purpose:
@@ -271,7 +271,7 @@ passing anywhere. Real font files will end this.
 
 ## 5. Running the ingestion pipeline
 
-The weekly scan (`docs/core-document.md` §2.6, `docs/architecture.md` §7) is `plt ingest`.
+The weekly scan (`docs/CORE_DOCUMENT.md` §2.6, `docs/architecture.md` §7) is `plt ingest`.
 The scheduled workflow, a server cron and your terminal all call that one command — the
 scheduler is a trigger, never a second implementation, so anything you can reproduce here is
 what the weekly job does.

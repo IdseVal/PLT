@@ -1,6 +1,6 @@
 """The review queue: the flag, the decision and the endpoint that serves them.
 
-``docs/core-document.md`` section 2.7 buys precision back by review, so the properties
+``docs/CORE_DOCUMENT.md`` section 2.7 buys precision back by review, so the properties
 asserted here are the ones that policy stands on:
 
 * a flagged case is published exactly like any other — the flag adds a review, it does not

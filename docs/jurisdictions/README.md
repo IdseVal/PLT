@@ -12,7 +12,7 @@ which source, against which terms, and what the tracker is known not to hold.
 | `EU` | European Union | [`eu.md`](eu.md) | `data/keywords/eu.json` | 4 August 2026 |
 
 The EU is a jurisdiction in its own right, never a total of its member states
-(`docs/core-document.md` §3.3). A case decided by the Court of Justice is an `EU` case; a
+(`docs/CORE_DOCUMENT.md` §3.3). A case decided by the Court of Justice is an `EU` case; a
 case decided by a Dutch court applying Regulation (EC) No 1107/2009 is an `NL` case. Neither
 document counts the other's cases.
 
@@ -30,7 +30,7 @@ Every document uses the same five sections, so that a reader who knows one knows
    overclaiming.
 
 [`TEMPLATE.md`](TEMPLATE.md) is that structure, ready to fill in. The requirement for these
-documents is `docs/core-document.md` §2.9; the rule that selection works identically
+documents is `docs/CORE_DOCUMENT.md` §2.9; the rule that selection works identically
 everywhere, and that anything else is an explicit documented exception, is §2.10.
 
 ## Adding a jurisdiction
@@ -44,5 +44,5 @@ everywhere, and that anything else is an explicit documented exception, is §2.1
 4. Write the keyword list (`data/keywords/README.md`), run it over a sample period, and
    report what it measured in §3.
 5. Record any exception in §4 with its cost. Keyword lists are curated by the content
-   manager (`docs/core-document.md` §2.3), so a jurisdiction document presents the evidence
+   manager (`docs/CORE_DOCUMENT.md` §2.3), so a jurisdiction document presents the evidence
    and the trade; it does not decide.

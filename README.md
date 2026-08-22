@@ -10,7 +10,7 @@ automated ingestion pipeline rather than by manual entry.
 
 > **This README is the maintained project overview.** The full project blueprint —
 > goals, functional requirements, user roles, timeline and data sources — lives in
-> [`docs/core-document.md`](docs/core-document.md) and is the living successor to the
+> [`docs/CORE_DOCUMENT.md`](docs/CORE_DOCUMENT.md) and is the living successor to the
 > original `Core document.pdf`. Update the Markdown, not the PDF.
 
 ---
@@ -74,7 +74,7 @@ Launch jurisdictions:
 | **Netherlands** (`NL`) | Rechtspraak.nl Open Data | `https://data.rechtspraak.nl/uitspraken/zoeken` (Atom) + `/uitspraken/content?id=<ECLI>` (Rechtspraak XML with Dublin Core metadata) |
 | **European Union** (`EU`) | EUR-Lex / CELLAR | CELLAR SPARQL endpoint `https://publications.europa.eu/webapi/rdf/sparql` for enumeration + CELLAR REST `http://publications.europa.eu/resource/celex/<CELEX>` for notices and full text |
 
-The full member-state source table is in [Annex 2 of the core document](docs/core-document.md#annex-2-project-data-sources).
+The full member-state source table is in [Annex 2 of the core document](docs/CORE_DOCUMENT.md#annex-2-project-data-sources).
 
 ## 4. Keyword filters
 
@@ -84,7 +84,7 @@ validated against [`data/keywords/schema.json`](data/keywords/schema.json).
 **Every jurisdiction added to the database needs its own list**, written in the working
 language(s) of that jurisdiction's courts — a Dutch list will not find German cases. This
 is a standing precondition for onboarding a jurisdiction, recorded in
-[§2.5 of the core document](docs/core-document.md#25-linguistic-filtering-and-per-jurisdiction-keyword-lists).
+[§2.5 of the core document](docs/CORE_DOCUMENT.md#25-linguistic-filtering-and-per-jurisdiction-keyword-lists).
 
 Terms are weighted so that unambiguous terms (`glyfosaat`, `gewasbeschermingsmiddel`)
 qualify a document on their own, while contextual terms (`lelieteelt`, `spuitzone`,
@@ -114,13 +114,13 @@ The PLT is a **Wageningen Law** project. Styling documentation, asset files and 
 be supplied by the Law group; until they arrive the front-end runs on a neutral academic
 placeholder palette and a system font stack, defined once as Tailwind theme tokens so the
 styling package drops in as a single change. Do not derive or approximate WUR corporate
-branding in the meantime — see [core document §3.2](docs/core-document.md#32-design-brief).
+branding in the meantime — see [core document §3.2](docs/CORE_DOCUMENT.md#32-design-brief).
 
 ## 8. Project status
 
 Startup phase (June–September 2026): first iteration of the database and data pipeline,
 first visual impression of the website. See the
-[project timeline](docs/core-document.md#annex-1-project-timeline) for the full schedule
+[project timeline](docs/CORE_DOCUMENT.md#annex-1-project-timeline) for the full schedule
 through launch in September 2027.
 
 ## 9. Credits

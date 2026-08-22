@@ -97,7 +97,7 @@ Selection works the same way in every jurisdiction. Each fetched decision is sco
 that jurisdiction's keyword list; a decision reaching the threshold is selected, and one
 scoring just above it is additionally marked for a content manager to confirm or reject. The
 threshold is not raised to improve precision, because a missed judgment is the expensive
-error (`docs/core-document.md` §2.7).
+error (`docs/CORE_DOCUMENT.md` §2.7).
 
 **The list.** `data/keywords/nl.json` holds the terms, all of them Dutch; read the file for
 the count, which changes with every curation pass. Most of it is the active substances of

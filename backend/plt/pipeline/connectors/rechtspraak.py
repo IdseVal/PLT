@@ -21,7 +21,7 @@ Three endpoints, all resolved from :class:`~plt.config.Settings` and none hard-c
 
 **There is no full-text search on this API.** Nothing in the query string can express
 "pesticides", which is why topical selection happens client-side in the keyword filter
-(``docs/core-document.md`` section 2.5) and why this connector's job is to hand the filter
+(``docs/CORE_DOCUMENT.md`` section 2.5) and why this connector's job is to hand the filter
 every scrap of text and classification the endpoint exposes.
 
 Five properties of the endpoint drove the design, each verified against the live service on
@@ -34,7 +34,7 @@ Five properties of the endpoint drove the design, each verified against the live
    caller asked for is the window it gets.
 2. **``return=DOC`` restricts the feed to the ECLIs that carry text, and ``DOC`` is the only
    value the parameter accepts** — ``META`` is answered with a ``400``. Excluding the rest is
-   a deliberate decision under the no-false-negatives policy of ``docs/core-document.md``
+   a deliberate decision under the no-false-negatives policy of ``docs/CORE_DOCUMENT.md``
    section 2.7, and it rests on two measurements rather than on convenience. First, the
    excluded records carry **no text at all**: 42 of 42 sampled across 2015, 2020 and 2026 had
    neither an ``inhoudsindicatie`` nor a body, a median of 1.8 kB of registration metadata

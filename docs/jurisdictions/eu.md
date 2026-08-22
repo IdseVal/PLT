@@ -21,7 +21,7 @@ General. Opinions are not judgments and are stored as opinions, but in pesticide
 are often the fullest statement of the legal argument.
 
 **The European Union is a jurisdiction in its own right, never a total of its member
-states** (`docs/core-document.md` §3.3). The map shows the EU beside the member states rather
+states** (`docs/CORE_DOCUMENT.md` §3.3). The map shows the EU beside the member states rather
 than colouring them, and an EU case is counted once, as an EU case.
 
 A case belongs to the jurisdiction of the court that decided it. A Court of Justice ruling on
@@ -98,7 +98,7 @@ Selection works the same way in every jurisdiction. Each fetched decision is sco
 that jurisdiction's keyword list; a decision reaching the threshold is selected, and one
 scoring just above it is additionally marked for a content manager to confirm or reject. The
 threshold is not raised to improve precision, because a missed judgment is the expensive
-error (`docs/core-document.md` §2.7).
+error (`docs/CORE_DOCUMENT.md` §2.7).
 
 **The list.** `data/keywords/eu.json` holds the terms; read the file for the count, which
 changes with every curation pass. Most of it is the active substances approved under
@@ -159,7 +159,7 @@ no term.
 | The ISO common name *metam* inside longer words | It was an alias of *fipronil* and matched on word fragments because that name, at eight characters, can carry them. Five characters cannot: Dutch is one of this list's languages, and across 150,000 Dutch judgments 214 of the 217 documents holding the fragment hold *metamfetamine*, *metamorfose* or *trometamol*, against three holding the substance. Nothing gates the term, so at weight 3 each of those would have been selected on the fragment alone | Nothing measurable. Matched as a whole word it still finds *metam*, and *metam-sodium* and *metam natrium* with it, because a hyphen and a space are not word characters. The EU corpus itself has not been measured; the figures above are from the Dutch one |
 
 Two weaknesses in the list are known and are being weighed by the content manager, who owns
-curation (`docs/core-document.md` §2.3):
+curation (`docs/CORE_DOCUMENT.md` §2.3):
 
 - **A word spelled the same way in several languages is counted several times.** *Pesticide*
   is both English and French, so one occurrence scores three times the threshold. Nine

@@ -1,7 +1,7 @@
 # Keyword filter lists
 
 Stage 1 of the PLT ingestion filter chain. See
-[`docs/core-document.md` §2.5](../../docs/core-document.md#25-linguistic-filtering-and-per-jurisdiction-keyword-lists)
+[`docs/CORE_DOCUMENT.md` §2.5](../../docs/CORE_DOCUMENT.md#25-linguistic-filtering-and-per-jurisdiction-keyword-lists)
 for why this exists.
 
 ## Files
@@ -148,7 +148,7 @@ If the answer is no, the term does not go in at a discount — it does not go in
 ### What this replaced, and why
 
 The lists used to weight terms 1 to 3 and admit a document that reached a score threshold.
-It was removed on 17 August 2026 ([core document §2.13](../../docs/core-document.md)) after
+It was removed on 17 August 2026 ([core document §2.13](../../docs/CORE_DOCUMENT.md)) after
 the first full run over both corpora. Weighting had let terms stay in the lists that could
 never carry a case — `werkzame stof`, `omwonenden`, `bufferzone`, `NVWA`, `EFSA`, `Wet op de
 economische delicten` — on the reasoning that they were harmless below the threshold. They
@@ -188,7 +188,7 @@ on the case page and both are filters on the case list, so two things follow for
 
 ## The review queue
 
-The queue still exists ([core document §2.7](../../docs/core-document.md)) and still
+The queue still exists ([core document §2.7](../../docs/CORE_DOCUMENT.md)) and still
 publishes, records and audits decisions. What changed is that **nothing raises a flag
 automatically**. "Borderline" meant "just above the threshold", and there is no threshold; a
 content manager raises the flag, and `scoring.review_band` is gone from the schema.

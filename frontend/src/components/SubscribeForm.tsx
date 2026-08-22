@@ -2,7 +2,7 @@
  * Front-page signup for the weekly email alert.
  *
  * Placed in the home page's right-hand column, directly beneath the latest-cases sidebar, so
- * the agreed layout (`docs/core-document.md` section 3.3: title, search bar, map, twenty
+ * the agreed layout (`docs/CORE_DOCUMENT.md` section 3.3: title, search bar, map, twenty
  * latest cases) is untouched — the form sits *after* all four, next to the feed it is an
  * email version of.
  *

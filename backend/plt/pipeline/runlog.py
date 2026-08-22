@@ -1,7 +1,7 @@
 """The record one mirror run leaves behind, written for a person rather than a parser.
 
 ``plt mirror`` is going onto a weekly schedule, which means nobody will be watching it. That
-is the shape of failure ``docs/core-document.md`` section 2.7 calls the expensive one: a job
+is the shape of failure ``docs/CORE_DOCUMENT.md`` section 2.7 calls the expensive one: a job
 whose failure looks exactly like its success. A quiet week and a week where discovery
 enumerated nothing both leave a store that has not changed; a run that gave up after four
 hours leaves one too.
