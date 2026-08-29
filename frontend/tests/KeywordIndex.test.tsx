@@ -134,7 +134,7 @@ describe('keyword index', () => {
     ])
 
     // Terms are alphabetical within their category, each with its case count.
-    const substanceList = categories[0].nextElementSibling as HTMLElement
+    const substanceList = categories[0]?.nextElementSibling as HTMLElement
     const terms = within(substanceList)
       .getAllByRole('listitem')
       .map((item) => item.textContent)
