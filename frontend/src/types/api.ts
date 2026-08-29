@@ -127,17 +127,78 @@ export interface CaseDocumentRef {
   retrieved_at?: string | null
 }
 
-/** A term the keyword filter matched on a case (section 5.1). */
+/**
+ * A curated term that selected a case, which is also one of its public labels (section 5.1).
+ *
+ * `term` is the term as the curator wrote it, not the inflection found in the judgment, so
+ * every spelling of a substance files under one label.
+ */
 export interface KeywordMatchRef {
   term_id: string
   term?: string | null
+  /** The term's category, e.g. `active_substance`. The case's second label. */
+  category?: string | null
   list_version?: string | null
   /** Which field the term was found in, e.g. `title` or `full_text`. */
   field?: string | null
-  weight_applied?: number | null
   match_count?: number | null
   /** Untrusted: an excerpt of the judgment around the match. */
   snippet?: string | null
+}
+
+/** A term that was considered for a list and deliberately left out of it. */
+export interface ExcludedTermRef {
+  id: string
+  term: string
+  category: string
+  /** Why it was rejected. The point of the record: an exclusion nobody can argue with is
+   * an exclusion nobody can check. */
+  reason: string
+}
+
+/** A term that cannot include a case unless another term does so first. */
+export interface GatedTermRef {
+  id: string
+  term: string
+  category: string
+  /** The terms that must also be present. Named, not merely counted. */
+  requires: string[]
+}
+
+/** A phrase that vetoes a document outright, however many terms it matched. */
+export interface ExclusionPatternRef {
+  pattern: string
+  reason: string
+}
+
+/** One jurisdiction's exclusion criteria, from `GET /api/exclusions`. */
+export interface JurisdictionExclusions {
+  code: string
+  name: string
+  list_version: string
+  excluded_terms: ExcludedTermRef[]
+  gated_terms: GatedTermRef[]
+  exclusion_patterns: ExclusionPatternRef[]
+}
+
+/**
+ * Payload of `GET /api/exclusions`.
+ *
+ * Read from the curated lists rather than from the cases, so it describes the criterion as
+ * it stands rather than as some past run applied it.
+ */
+export interface ExclusionsResponse {
+  jurisdictions: JurisdictionExclusions[]
+}
+
+/** One option of the keyword dropdown, taken from the curated list itself. */
+export interface KeywordOption {
+  id: string
+  term: string
+  category: string
+  jurisdiction: string
+  /** Published cases carrying this label. Zero means the term has never found anything. */
+  case_count: number
 }
 
 /** An instrument or judgment a case cites (section 5.1). */
@@ -277,6 +338,10 @@ export interface FilterFacets {
   law_domains: string[]
   law_subfields: string[]
   languages: string[]
+  /** Every curated term, whether or not any case carries it. */
+  keywords?: KeywordOption[]
+  /** The categories actually present on cases. */
+  categories?: string[]
   sorts?: string[]
   export_formats?: string[]
   /** Decision dates bounding the collection, for the date-range inputs. */

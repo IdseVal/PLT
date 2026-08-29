@@ -1,7 +1,7 @@
 /**
  * The map of jurisdictions: the home page's signature element.
  *
- * A map of Europe with one hoverable shape per jurisdiction of `docs/core-document.md`
+ * A map of Europe with one hoverable shape per jurisdiction of `docs/CORE_DOCUMENT.md`
  * Annex 2, shaded by how many cases the tracker holds for it, plus the European Union as a
  * mark in the North Sea — a jurisdiction in its own right, never the sum of its member
  * states (core document section 3.3). Selecting a jurisdiction opens its cases.

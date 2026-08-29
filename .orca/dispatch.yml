@@ -1,0 +1,78 @@
+version: 1
+
+branches:
+  base: dev
+  protected: [main]          # no agent may merge into these
+  worktree_prefix: feature/
+
+# Role prompts are HOST-LEVEL at ~/.orca/roles/ and shared across every project.
+# The dispatcher process reads them from there; nothing here names a repo-relative path.
+roles:
+  po-analyst:
+    skills: [handoff, grill-with-docs, domain-modeling]
+  architect:
+    skills: [handoff, improve-codebase-architecture, codebase-design]
+  researcher:
+    skills: [handoff, just-scrape, diagnosing-bugs]
+  developer:
+    skills: [handoff]        # baseline; labels add to it
+  tester:
+    skills: [handoff, tdd, webapp-testing]
+  reviewer:
+    skills: [handoff, code-review]
+
+# A label is a claim about the work. It earns the skills that work needs and no others:
+# loading the whole design stack for a typo is how small work becomes too expensive to do.
+labels:
+  ui:
+    skills: [frontend-design, web-design-guidelines, high-end-visual-design]
+  seo:
+    skills: [seo-audit]
+  scraper:
+    skills: [just-scrape]
+  bug:
+    skills: [diagnosing-bugs]
+  data:
+    skills: [codebase-design]
+
+pipelines:
+  default:
+    stages: [developer, tester, reviewer]
+
+  # `trivial` skips the TESTER, never the reviewer. For a typo, a comment, a version bump or
+  # a doc edit a test author has nothing to write, and every line is still read before it
+  # lands. The REVIEWER refuses the label when the change turns out to touch behaviour: it is
+  # a request, not a permission.
+  trivial:
+    stages: [developer, reviewer]
+    forbid_labels: [ui, scraper, data]
+
+# The labels the poller reads. Named here rather than baked into the script so a repo
+# with its own label vocabulary is a configuration change, not a code change.
+dispatch:
+  ready_label: ready
+  escalated_label: escalated
+
+circuit_breaker:
+  max_cycles: 3
+  on_trip:
+    freeze_worktree: true
+    halt_automation: true
+    assign_to: human
+    attach: [diff, test_output, agent_transcript_tail]
+
+evidence_gates:
+  - id: counts-reconciled
+    applies_to: [data, pipeline]
+    requires: >-
+      A count from the run reconciled against a count from an independent source, both quoted
+      in the pull request. "It completed" is not a count.
+  - id: output-sampled
+    applies_to: [data, ui]
+    requires: >-
+      A sample of the actual output pasted into the pull request. Enough rows that a wrong
+      one would be visible.
+  - id: cost-measured
+    applies_to: [pipeline]
+    requires: >-
+      The measured cost of the change against its budget, where one is documented.

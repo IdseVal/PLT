@@ -1,10 +1,10 @@
-"""The review queue: the band, the flag, the decision and the endpoint that serves them.
+"""The review queue: the flag, the decision and the endpoint that serves them.
 
-``docs/core-document.md`` section 2.7 makes selection generous and buys precision back by
-review, so the properties asserted here are the ones that policy stands on:
+``docs/CORE_DOCUMENT.md`` section 2.7 buys precision back by review, so the properties
+asserted here are the ones that policy stands on:
 
-* a case inside its list's band is flagged, one above it is not, and neither is affected in
-  whether it is *published*;
+* a flagged case is published exactly like any other — the flag adds a review, it does not
+  withhold the case;
 * a decision, once taken, survives the weekly run over the same content;
 * a genuine upstream revision puts the case back in the queue instead of letting the new text
   inherit the old verdict;
@@ -12,9 +12,14 @@ review, so the properties asserted here are the ones that policy stands on:
 * re-running a window produces the same flags — section 2.8's repeatability requirement,
   asserted rather than assumed.
 
-The band tests run against synthetic keyword lists written into ``tmp_path``. The shipped
-lists are curated data and their numbers are the content manager's to change; a test that
-depended on them would turn a curation decision into a build failure.
+**Nothing raises a flag automatically any more.** "Borderline" meant "just above the
+threshold", and selection is now a word search with no threshold to be near, so the flag is
+the content manager's to raise.
+
+:class:`FlagsAlfa` stands in for whatever raises it, which is what keeps everything downstream
+of the flag under test. The stage tests run against synthetic keyword lists written into
+``tmp_path``. The shipped lists are curated data and their contents are the content manager's to
+change; a test that depended on them would turn a curation decision into a build failure.
 """
 
 from __future__ import annotations
@@ -56,12 +61,7 @@ from plt.db.repositories import (
 from plt.db.session import create_session_factory, make_engine
 from plt.extensions import dispose_database
 from plt.pipeline.filters.base import Filter, FilterableDocument, FilterChain, FilterResult
-from plt.pipeline.filters.keywords import (
-    DEFAULT_REVIEW_BAND,
-    KeywordFilter,
-    load_keyword_list,
-    load_keyword_list_for,
-)
+from plt.pipeline.filters.keywords import KeywordFilter, load_keyword_list
 from plt.pipeline.runner import IngestReport, run_jurisdiction
 from tests.conftest import REPO_ROOT, build_settings
 from tests.fakes import EPOCH, FakeConnector, FakeDocument
@@ -77,13 +77,13 @@ BOILERPLATE = (
     "kunnen komen en dat het beroep ongegrond is. "
 )
 
-#: Scores 3.0 against the synthetic list below: inside the band [3, 6).
+#: Names the term the flagging stage below reacts to.
 BAND_TEXT = f"{BOILERPLATE} Het geschil betreft alfamiddel in de sloot."
 
-#: Scores 9.0: clear of the band.
+#: Selected by the list, but not flagged.
 CLEAR_TEXT = f"{BOILERPLATE} Het geschil betreft betamiddel in de sloot."
 
-#: Scores 0: rejected outright, and therefore never a review item.
+#: Matches no term: rejected outright, and therefore never a review item.
 UNRELATED_TEXT = f"{BOILERPLATE} Het geschil betreft een huurovereenkomst."
 
 
@@ -92,44 +92,35 @@ UNRELATED_TEXT = f"{BOILERPLATE} Het geschil betreft een huurovereenkomst."
 # ----------------------------------------------------------------------------------------
 
 
-def make_list(**scoring: Any) -> dict[str, Any]:  # noqa: ANN401 - passes schema fields through
-    """Build a schema-valid Dutch list with two terms and a configurable scoring block.
-
-    Args:
-        **scoring: Overrides merged into the ``scoring`` object.
+def make_list() -> dict[str, Any]:
+    """Build a schema-valid Dutch list with two terms.
 
     Returns:
         The list document.
+
+    Both terms select on their own, which is the whole of the selection rule now; ``alfamiddel``
+    is the one the flagging stage below reacts to.
     """
-    block: dict[str, Any] = {
-        "min_score": 3,
-        "review_band": 3,
-        "count_term_once": True,
-        "fields": {"title": 1.5, "abstract": 1.5, "full_text": 1.0},
-    }
-    block.update(scoring)
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "2.0.0",
         "jurisdiction": "NL",
         "jurisdiction_name": "Netherlands",
         "list_version": "9.9.9",
-        "updated": "2026-08-05",
+        "updated": "2026-08-17",
         "languages": ["nl"],
-        "scoring": block,
+        "fields": ["title", "abstract", "full_text"],
         "terms": [
             {
                 "id": "nl-alfa",
                 "term": "alfamiddel",
                 "lang": "nl",
                 "category": "product_class",
-                "weight": 3,
             },
             {
                 "id": "nl-beta",
                 "term": "betamiddel",
                 "lang": "nl",
                 "category": "product_class",
-                "weight": 9,
             },
         ],
     }
@@ -177,107 +168,68 @@ class Doc:
 
 
 # ----------------------------------------------------------------------------------------
-# The band
+# Flagging
 # ----------------------------------------------------------------------------------------
 
 
-def test_a_case_inside_the_band_is_admitted_and_flagged(tmp_path: Path) -> None:
+class FlagsAlfa(Filter):
+    """A stage that flags any case labelled ``nl-alfa`` for review.
+
+    Nothing in the pipeline raises a review flag by itself any more.
+
+    "Borderline" meant "only just above the threshold", and a word search has no threshold, so
+    the flag became the content manager's to raise. This stage stands in for whatever raises it
+    - a rule, a person, a later classifier - so that everything downstream of the flag stays
+    under test.
+    """
+
+    name = "flags-alfa"
+
+    def evaluate(self, case: FilterableDocument) -> FilterResult:
+        """Pass every document, flagging the ones a curator would want to look at."""
+        text = (getattr(case, "full_text", None) or "").lower()
+        return FilterResult(
+            passed=True,
+            reason="flagged for review" if "alfamiddel" in text else "not flagged",
+            stage=self.name,
+            needs_review="alfamiddel" in text,
+        )
+
+
+def test_nothing_is_flagged_by_the_keyword_stage_alone(tmp_path: Path) -> None:
+    """The keyword stage selects; it no longer decides that a case looks uncertain."""
     stage = build_filter(tmp_path, make_list())
 
-    result = stage.evaluate(Doc(full_text=BAND_TEXT))
+    flagged = stage.evaluate(Doc(full_text=BAND_TEXT))
+    clear = stage.evaluate(Doc(full_text=CLEAR_TEXT))
 
-    assert result.passed, "the band flags, it never rejects"
-    assert result.needs_review
-    assert not result.passed_confidently
-    assert result.score == pytest.approx(3.0)
-    assert result.threshold == pytest.approx(3.0)
-    assert result.review_ceiling == pytest.approx(6.0)
-    assert "review band [3, 6)" in result.reason
-
-
-def test_a_case_above_the_band_is_not_flagged(tmp_path: Path) -> None:
-    stage = build_filter(tmp_path, make_list())
-
-    result = stage.evaluate(Doc(full_text=CLEAR_TEXT))
-
-    assert result.passed
-    assert result.passed_confidently
-    assert not result.needs_review
-    assert "review band" not in result.reason
+    assert flagged.passed
+    assert clear.passed
+    assert not flagged.needs_review
+    assert not clear.needs_review
 
 
 def test_a_rejected_case_is_never_flagged(tmp_path: Path) -> None:
     stage = build_filter(tmp_path, make_list())
 
-    result = stage.evaluate(Doc(full_text=UNRELATED_TEXT))
+    result = stage.evaluate(Doc(full_text=f"{BOILERPLATE} Een gewoon huurgeschil."))
 
     assert not result.passed
     assert not result.needs_review
 
 
-def test_the_band_is_half_open_at_its_ceiling(tmp_path: Path) -> None:
-    """A score exactly on the ceiling is confident; one exactly on min_score is flagged."""
-    keyword_list = load_keyword_list(write_list(tmp_path, make_list()))
-
-    assert keyword_list.in_review_band(3.0)
-    assert keyword_list.in_review_band(5.999)
-    assert not keyword_list.in_review_band(6.0)
-    assert not keyword_list.in_review_band(2.999)
-
-
-def test_the_band_is_per_list_configuration(tmp_path: Path) -> None:
-    narrow = build_filter(tmp_path / "narrow", make_list(review_band=0.5))
-    wide = build_filter(tmp_path / "wide", make_list(review_band=7))
-
-    assert narrow.evaluate(Doc(full_text=BAND_TEXT)).needs_review, "3.0 is inside [3, 3.5)"
-    assert not narrow.evaluate(Doc(full_text=CLEAR_TEXT)).needs_review, "9.0 is not"
-    assert wide.evaluate(Doc(full_text=CLEAR_TEXT)).needs_review, "9.0 is inside [3, 10)"
-
-
-def test_a_band_of_zero_disables_flagging(tmp_path: Path) -> None:
-    stage = build_filter(tmp_path, make_list(review_band=0))
-
-    result = stage.evaluate(Doc(full_text=BAND_TEXT))
-
-    assert result.passed
-    assert not result.needs_review
-
-
-def test_a_list_without_a_band_inherits_the_documented_default(tmp_path: Path) -> None:
-    document = make_list()
-    del document["scoring"]["review_band"]
-
-    keyword_list = load_keyword_list(write_list(tmp_path, document))
-
-    assert keyword_list.review_band == DEFAULT_REVIEW_BAND
-    assert keyword_list.review_ceiling == keyword_list.min_score + DEFAULT_REVIEW_BAND
-
-
-@pytest.mark.parametrize("code", ["NL", "EU"])
-def test_the_shipped_lists_declare_their_own_band(code: str) -> None:
-    """Both lists carry a band, derived from their own dry run rather than each other's."""
-    keyword_list = load_keyword_list_for(code, build_settings())
-
-    assert keyword_list.review_band > 0
-    assert keyword_list.review_ceiling > keyword_list.min_score
-
-
 def test_a_chain_keeps_a_flag_raised_by_an_earlier_stage(tmp_path: Path) -> None:
-    """A later stage must not be able to empty the queue by simply not knowing about it."""
+    """A flag is a statement about the document, not about the stage that noticed it.
 
-    class Passthrough(Filter):
-        name = "passthrough"
-
-        def evaluate(self, case: FilterableDocument) -> FilterResult:
-            del case
-            return FilterResult(passed=True, score=1.0, reason="fine", stage=self.name)
-
-    chain = FilterChain.of(build_filter(tmp_path, make_list()), Passthrough())
+    A later stage that passes the document must not erase it, or appending a stage would
+    quietly empty the queue.
+    """
+    chain = FilterChain.of(FlagsAlfa(), build_filter(tmp_path, make_list()))
 
     result = chain.evaluate(Doc(full_text=BAND_TEXT))
 
     assert result.passed
-    assert result.needs_review
+    assert result.needs_review, "the later stage passed it; the earlier stage's flag stands"
 
 
 # ----------------------------------------------------------------------------------------
@@ -296,7 +248,7 @@ class Snapshot:
 
     published: bool
     needs_review: bool
-    filter_score: float | None
+    matched_term_count: int | None
     revision: int
     content_hash: str | None
     status: ReviewStatus | None = None
@@ -304,9 +256,6 @@ class Snapshot:
     decided_by: str | None = None
     decided_revision: int | None = None
     decision_note: str | None = None
-    score: float | None = None
-    min_score: float | None = None
-    band_ceiling: float | None = None
     list_version: str | None = None
     flagged_at: datetime | None = None
     flagged_revision: int | None = None
@@ -328,14 +277,14 @@ def _snapshot(case: Case) -> Snapshot:
         return Snapshot(
             published=case.is_published,
             needs_review=case.needs_review,
-            filter_score=case.filter_score,
+            matched_term_count=case.matched_term_count,
             revision=case.revision,
             content_hash=case.content_hash,
         )
     return Snapshot(
         published=case.is_published,
         needs_review=case.needs_review,
-        filter_score=case.filter_score,
+        matched_term_count=case.matched_term_count,
         revision=case.revision,
         content_hash=case.content_hash,
         status=review.status,
@@ -343,9 +292,6 @@ def _snapshot(case: Case) -> Snapshot:
         decided_by=review.decided_by,
         decided_revision=review.decided_revision,
         decision_note=review.decision_note,
-        score=review.score,
-        min_score=review.min_score,
-        band_ceiling=review.band_ceiling,
         list_version=review.list_version,
         flagged_at=review.flagged_at,
         flagged_revision=review.flagged_revision,
@@ -407,7 +353,7 @@ def harness(tmp_path: Path) -> Iterator[Harness]:
             )
         )
         session.commit()
-    chain = FilterChain.of(build_filter(tmp_path / "keywords", make_list()))
+    chain = FilterChain.of(FlagsAlfa(), build_filter(tmp_path / "keywords", make_list()))
     try:
         yield Harness(settings=settings, factory=factory, chain=chain)
     finally:
@@ -441,12 +387,9 @@ def test_a_flagged_case_is_ingested_published_and_queued(harness: Harness) -> No
 
     assert stored.published, "a flag adds a review; it does not withhold the case"
     assert stored.needs_review
-    assert stored.filter_score == pytest.approx(3.0)
+    assert stored.matched_term_count == 1, "one curated term selected it"
     assert stored.status is ReviewStatus.PENDING
     assert stored.decision is None
-    assert stored.score == pytest.approx(3.0)
-    assert stored.min_score == pytest.approx(3.0)
-    assert stored.band_ceiling == pytest.approx(6.0)
     assert stored.list_version == "9.9.9"
     assert stored.flagged_revision == 1
     assert stored.flagged_content_hash == stored.content_hash
@@ -570,12 +513,12 @@ def test_re_running_a_window_produces_identical_flags(harness: Harness) -> None:
     second = harness.snapshots()
 
     assert {
-        source_id: (stored.needs_review, stored.filter_score, stored.status)
+        source_id: (stored.needs_review, stored.matched_term_count, stored.status)
         for source_id, stored in first.items()
     } == {
-        "ECLI:NL:RBTEST:2026:1": (True, 3.0, ReviewStatus.PENDING),
-        "ECLI:NL:RBTEST:2026:2": (False, 9.0, None),
-        "ECLI:NL:RBTEST:2026:4": (True, 3.0, ReviewStatus.PENDING),
+        "ECLI:NL:RBTEST:2026:1": (True, 1, ReviewStatus.PENDING),
+        "ECLI:NL:RBTEST:2026:2": (False, 1, None),
+        "ECLI:NL:RBTEST:2026:4": (True, 1, ReviewStatus.PENDING),
     }
     assert second == first, "the second run reproduced the first exactly"
 
@@ -588,8 +531,9 @@ def test_the_match_report_records_the_flag(harness: Harness) -> None:
     lines = [json.loads(line) for line in report_path.read_text(encoding="utf-8").splitlines()]
     judged = [line for line in lines if line["type"] == "case"]
     assert judged[0]["needs_review"] is True
-    assert judged[0]["threshold"] == 3.0
-    assert judged[0]["review_ceiling"] == 6.0
+    assert judged[0]["matched_term_count"] == 1
+    assert [entry["term"] for entry in judged[0]["terms"]] == ["alfamiddel"]
+    assert [entry["category"] for entry in judged[0]["terms"]] == ["product_class"]
 
 
 # ----------------------------------------------------------------------------------------
@@ -630,22 +574,28 @@ def test_an_empty_queue_is_one_empty_page(harness: Harness) -> None:
     assert not page.has_next
 
 
-def test_the_queue_can_be_ordered_by_score(harness: Harness) -> None:
+def test_the_queue_can_be_ordered_newest_first(harness: Harness) -> None:
+    """A queue is ordered by when it was flagged.
+
+    The score orderings went with the band: they ranked items by distance from a
+    threshold, and there is no longer a threshold to be at a distance from.
+    """
     harness.run(
         FakeConnector(
             docs=[
-                document("ECLI:NL:RBTEST:2026:1", text=f"{BAND_TEXT} alfamiddel opnieuw"),
+                document("ECLI:NL:RBTEST:2026:1"),
                 document("ECLI:NL:RBTEST:2026:2"),
             ]
         )
     )
 
     with harness.session() as session:
-        ascending = search_reviews(session, ReviewSearchCriteria(sort=ReviewSort.SCORE_ASC))
-        scores = [item.score for item in ascending.items if item.score is not None]
+        newest = search_reviews(session, ReviewSearchCriteria(sort=ReviewSort.FLAGGED_DESC))
+        oldest = search_reviews(session, ReviewSearchCriteria(sort=ReviewSort.FLAGGED_ASC))
 
-    assert len(scores) == 2
-    assert scores == sorted(scores)
+    assert [item.case.source_id for item in newest.items] == list(
+        reversed([item.case.source_id for item in oldest.items])
+    )
 
 
 # ----------------------------------------------------------------------------------------
@@ -672,27 +622,24 @@ def queued(seeded_session: Session) -> Session:
         source_system="fake",
         title="Borderline case",
         content_hash="hash-1",
-        filter_score=3.0,
         needs_review=True,
+        matched_term_count=1,
     )
     borderline.keyword_matches.append(
         KeywordMatch(
             term_id="nl-alfa",
             term="alfamiddel",
             list_version="9.9.9",
+            category="product_class",
             field="full_text",
-            weight_applied=3.0,
             match_count=1,
             snippet="… alfamiddel in de sloot …",
         )
     )
     borderline.review = CaseReview(
         status=ReviewStatus.PENDING,
-        score=3.0,
-        min_score=3.0,
-        band_ceiling=6.0,
         list_version="9.9.9",
-        reason="score 3 reaches min_score 3, inside the review band [3, 6)",
+        reason="matched 1 curated term (NL list v9.9.9): nl-alfa",
         flagged_revision=1,
         flagged_content_hash="hash-1",
     )
@@ -702,8 +649,8 @@ def queued(seeded_session: Session) -> Session:
         source_system="fake",
         title="Rejected case",
         content_hash="hash-2",
-        filter_score=3.5,
         needs_review=True,
+        matched_term_count=1,
         is_published=False,
     )
     rejected.review = CaseReview(
@@ -711,9 +658,6 @@ def queued(seeded_session: Session) -> Session:
         decision=ReviewDecision.REJECTED,
         decided_by="content-manager",
         decided_revision=1,
-        score=3.5,
-        min_score=3.0,
-        band_ceiling=6.0,
         list_version="9.9.9",
         flagged_revision=1,
         flagged_content_hash="hash-2",
@@ -777,9 +721,7 @@ def test_the_queue_lists_pending_items_with_their_evidence(
 
     item = payload["items"][0]
     assert item["status"] == "pending"
-    assert item["score"] == 3.0
-    assert item["min_score"] == 3.0
-    assert item["band_ceiling"] == 6.0
+    assert item["matched_term_count"] == 1
     assert item["list_version"] == "9.9.9"
     assert item["decision"] is None, "a field with no value is present and null"
     assert item["decided_by"] is None
@@ -790,9 +732,9 @@ def test_the_queue_lists_pending_items_with_their_evidence(
         {
             "term_id": "nl-alfa",
             "term": "alfamiddel",
+            "category": "product_class",
             "list_version": "9.9.9",
             "field": "full_text",
-            "weight_applied": 3.0,
             "match_count": 1,
             "snippet": "… alfamiddel in de sloot …",
         }

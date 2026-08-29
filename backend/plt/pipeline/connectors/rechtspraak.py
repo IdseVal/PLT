@@ -8,9 +8,10 @@ courts would miss the bulk of the corpus.
 
 Three endpoints, all resolved from :class:`~plt.config.Settings` and none hard-coded:
 
-* ``settings.rechtspraak_search_url`` — an Atom feed, paged with ``max`` (at most 1000) and
-  ``from``, windowed on ``modified`` and sorted with ``sort=ASC``. The ``subtitle`` element
-  carries the total number of hits.
+* ``settings.rechtspraak_search_url`` — an Atom feed, windowed on ``modified``, sorted with
+  ``sort=ASC`` and sliced with ``max`` (at most 1000) and ``from``. The ``subtitle`` element
+  carries the total number of hits for the window, which is what :meth:`discover` sizes a
+  window against so that it never has to use ``from`` at all; see its docstring for why.
 * ``settings.rechtspraak_content_url`` — one document, as Rechtspraak XML: a Dublin Core
   ``rdf:Description`` metadata block, an optional ``inhoudsindicatie`` (abstract) and an
   optional ``uitspraak`` or ``conclusie`` body.
@@ -20,11 +21,11 @@ Three endpoints, all resolved from :class:`~plt.config.Settings` and none hard-c
 
 **There is no full-text search on this API.** Nothing in the query string can express
 "pesticides", which is why topical selection happens client-side in the keyword filter
-(``docs/core-document.md`` section 2.5) and why this connector's job is to hand the filter
+(``docs/CORE_DOCUMENT.md`` section 2.5) and why this connector's job is to hand the filter
 every scrap of text and classification the endpoint exposes.
 
-Four properties of the endpoint drove the design, each verified against the live service on
-4 August 2026:
+Five properties of the endpoint drove the design, each verified against the live service on
+4 August 2026 unless another date is given:
 
 1. **``modified`` is expressed in Europe/Amsterdam local time, while the feed's Atom
    ``updated`` is UTC.** A ``Z`` or an offset in the parameter is ignored rather than
@@ -33,7 +34,7 @@ Four properties of the endpoint drove the design, each verified against the live
    caller asked for is the window it gets.
 2. **``return=DOC`` restricts the feed to the ECLIs that carry text, and ``DOC`` is the only
    value the parameter accepts** — ``META`` is answered with a ``400``. Excluding the rest is
-   a deliberate decision under the no-false-negatives policy of ``docs/core-document.md``
+   a deliberate decision under the no-false-negatives policy of ``docs/CORE_DOCUMENT.md``
    section 2.7, and it rests on two measurements rather than on convenience. First, the
    excluded records carry **no text at all**: 42 of 42 sampled across 2015, 2020 and 2026 had
    neither an ``inhoudsindicatie`` nor a body, a median of 1.8 kB of registration metadata
@@ -52,6 +53,14 @@ Four properties of the endpoint drove the design, each verified against the live
    withdrawn are normalised into a case with a ``case_document`` row holding the raw XML and
    no ``full_text``, so nothing is lost, nothing crashes, and the filter is never handed an
    empty string to score.
+5. **``sort=ASC`` is not a total order, and there is no key to page by** (8 August 2026). It
+   sorts on ``updated``, which is not unique — 950,077 text-bearing ECLIs share far fewer
+   distinct timestamps than that, and a tie's internal order is the endpoint's to choose. The
+   feed offers ``from`` and ``max`` and nothing to page *after*, so the EU connector's cure
+   for the same defect is unavailable here. What is available is the ``subtitle`` count and
+   both ``modified`` bounds being inclusive to the second: a window can be measured before it
+   is read, and split at a second boundary, which no tie can straddle. :meth:`discover`
+   therefore narrows rather than pages.
 
 XML from a remote endpoint is parsed with entity resolution, DTD loading and network access
 all disabled, which is what rules out XXE and entity-expansion attacks; ``xml.etree`` is not
@@ -79,10 +88,12 @@ from plt.pipeline.base import (
     NormalisedDocument,
     RawDocument,
     SourceConnector,
+    SourceTraffic,
     SourceUnavailableError,
 )
 from plt.pipeline.dedup import content_hash
 from plt.pipeline.http import PoliteClient
+from plt.pipeline.windows import Window
 from plt.utils.logging import get_logger
 
 if TYPE_CHECKING:  # pragma: no cover - imported for typing only
@@ -137,7 +148,9 @@ _CITATION_SCHEMES: Final[Mapping[str, str]] = {
 # -- Source protocol constants --------------------------------------------------------
 
 #: Largest page the search endpoint serves. Asking for more is silently clamped, so the
-#: connector clamps first and keeps ``pipeline_page_size`` an honest description of a page.
+#: connector clamps first and keeps ``rechtspraak_page_size`` an honest description of one
+#: request — which matters more than tidiness here, because that setting is also the size a
+#: window is narrowed to fit inside.
 _MAX_PAGE_SIZE: Final[int] = 1000
 
 #: Timezone the ``modified`` query parameter is read in. The feed's ``updated`` elements are
@@ -150,12 +163,30 @@ _SOURCE_TIMEZONE: Final[str] = "Europe/Amsterdam"
 #: entries' own UTC timestamps, so the window a caller asked for is the window it gets.
 _CLOCK_MARGIN: Final[timedelta] = timedelta(hours=2)
 
-#: Lower bound sent when a caller asks only for an upper one: a single ``modified`` value is
-#: read by the endpoint as a lower bound, so a range needs both ends.
-_EARLIEST_WINDOW: Final[str] = "1900-01-01T00:00:00"
+#: Where a walk with no lower bound starts. Nothing in the feed is older — the earliest
+#: ``modified`` measured on 8 August 2026 was in 2013 — and the walk widens its own windows,
+#: so the empty century between the two costs a few dozen requests rather than one a day.
+_EARLIEST: Final[datetime] = datetime(1900, 1, 1, tzinfo=UTC)
 
 #: Format the endpoint accepts for a ``modified`` bound; an offset suffix is ignored.
 _WINDOW_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S"
+
+#: Resolution of a ``modified`` bound, and therefore the smallest step between two windows.
+#: The parameter is expressed to the second, so a bound *is* a second: adjacent windows that
+#: meet at ``stop`` and ``stop + 1s`` cover everything between them and nothing twice, whatever
+#: sub-second precision the source keeps internally.
+_TICK: Final[timedelta] = timedelta(seconds=1)
+
+#: Fill below which the next window is widened, and above which it is narrowed, as fractions
+#: of a page. The gap between them is deliberate: a walk that resized after every window would
+#: oscillate across a boundary instead of settling near it.
+_GROW_BELOW: Final[float] = 0.25
+_SHRINK_ABOVE: Final[float] = 0.75
+
+#: The number the feed states in its ``atom:subtitle``: ``Aantal gevonden ECLI's: 57``. It is
+#: the source's own count of the window, arrived at without paging, which is what lets the
+#: connector decide whether a window fits in one request before it asks for it.
+_STATED_TOTAL: Final[re.Pattern[str]] = re.compile(r"(\d+)")
 
 #: Shape of a European Case Law Identifier. Applied before a candidate costs a request, so a
 #: malformed identifier in a feed is reported as one unavailable document rather than sent on
@@ -430,6 +461,10 @@ def _describe(element: etree._Element) -> dict[str, list[dict[str, Any]]]:
 #: One projected ``rdf:Description``, as :func:`_describe` returns it.
 Described = Mapping[str, Sequence[Mapping[str, Any]]]
 
+#: One Atom search entry, reduced to the five fields discovery reads. The parse tree it came
+#: from is released as it is read, so a window costs its entries rather than its XML.
+Entry = Mapping[str, str | None]
+
 
 def _values(described: Described, key: str) -> list[str]:
     """Return every text value recorded for one element name.
@@ -594,24 +629,23 @@ def _source_timezone() -> ZoneInfo | None:
         return None
 
 
-def _window_bound(moment: datetime, *, upper: bool) -> str:
-    """Render one end of the window in the local time the endpoint expects.
+def _window_bound(moment: datetime) -> str:
+    """Render one end of a window in the local time the endpoint expects.
 
     Args:
         moment: The instant, timezone-aware.
-        upper: Whether this is the upper bound, which is the end that has to be widened when
-            the zone cannot be resolved.
 
     Returns:
         A ``YYYY-MM-DDTHH:MM:SS`` string in Europe/Amsterdam local time. Without a timezone
-        database the UTC instant is sent for the lower bound and pushed forward by the largest
-        Dutch offset for the upper one, so the requested window is always covered.
+        database the UTC clock value is sent instead, which asks the endpoint for a window
+        shifted one or two hours early; :meth:`RechtspraakConnector.discover` compensates by
+        extending the *whole walk* by :data:`_CLOCK_MARGIN` rather than by widening each
+        window, which would make consecutive windows overlap by two hours each.
     """
     zone = _source_timezone()
-    if zone is not None:
-        return moment.astimezone(zone).strftime(_WINDOW_FORMAT)
-    widened = moment.astimezone(UTC) + (_CLOCK_MARGIN if upper else timedelta())
-    return widened.strftime(_WINDOW_FORMAT)
+    return (moment.astimezone(zone) if zone is not None else moment.astimezone(UTC)).strftime(
+        _WINDOW_FORMAT
+    )
 
 
 def _extract_text(element: etree._Element) -> str:
@@ -773,21 +807,50 @@ class RechtspraakConnector(SourceConnector):
         self._owns_client = client is None
         self._courts: dict[str, CourtRecord] | None = None
 
+    @property
+    def traffic(self) -> SourceTraffic:
+        """Return what this connector has asked of Rechtspraak.nl so far."""
+        return self._client.traffic
+
     # -- Discovery --------------------------------------------------------------------
 
     def discover(self, since: datetime | None, until: datetime | None) -> Iterator[Candidate]:
-        """Yield every document modified in the window, oldest first, one page at a time.
+        """Yield every document modified in the window, oldest first, one window at a time.
 
-        The feed is requested with ``sort=ASC``, so entries arrive in ascending order of the
-        modification timestamp the checkpoint records — which is what makes an interrupted run
-        resume from the right place. Pages are consumed one at a time and each entry is
-        yielded as it is parsed, so the memory a run holds is one page of candidates however
-        long the window is (``docs/architecture.md`` rule 2.3).
+        **The walk does not page.** The range is cut into windows narrow enough that the feed
+        answers each of them in a single request, because paging this feed means trusting an
+        order it does not offer: ``sort=ASC`` sorts on ``updated``, which is not unique, and
+        where two entries share a timestamp their relative order is the endpoint's to choose.
+        Choose differently on either side of a page boundary and one entry comes back twice
+        while another never comes back at all — the defect that cost the EU corpus a sixth of
+        its cases, reported as ``success`` with zero failures throughout. CELLAR
+        could be re-paged by CELEX number; this feed offers ``from`` and ``max`` and nothing
+        to page *after*, so there is no key to page by and the only cure is not to page.
+
+        The window a walk asks for is not the window it is given. The feed states its own
+        total for any window in ``atom:subtitle``, so each window is measured before it is
+        trusted: one that holds more than a page is halved and measured again until it fits,
+        and one that holds almost nothing widens the next, which is how a backfill crosses
+        the empty century before 2013 in a few dozen requests instead of forty thousand. Two
+        entries that share a timestamp always land in the same window, because a window
+        boundary is a whole second and so is a tie — which is what makes "does not page" a
+        property of the arithmetic rather than a hope about the endpoint.
+
+        One second holding more than a page is the single case this cannot solve; it is paged,
+        and it is logged, because a window nobody can enumerate exactly must not be
+        indistinguishable from one that came back whole.
+
+        Entries arrive in ascending order of the modification timestamp the checkpoint
+        records, within a window and across windows, which is what makes an interrupted run
+        resume from the right place. Memory is one window's entries — at most
+        ``rechtspraak_page_size`` of them, and the setting is capped at the endpoint's own
+        maximum of 1000 (``docs/architecture.md`` rule 2.3).
 
         Args:
-            since: Only documents modified at or after this instant, inclusive. ``None`` for
-                no lower bound.
-            until: Only documents modified at or before this instant, or ``None``.
+            since: Only documents modified at or after this instant, inclusive. ``None`` walks
+                from :data:`_EARLIEST`.
+            until: Only documents modified at or before this instant, inclusive, or ``None``
+                for "up to now".
 
         Yields:
             One :class:`~plt.pipeline.base.Candidate` per document, carrying the ECLI, the
@@ -796,45 +859,286 @@ class RechtspraakConnector(SourceConnector):
         Raises:
             SourceUnavailableError: If the feed cannot be read at all.
         """
-        page_size = max(1, min(self.settings.pipeline_page_size, _MAX_PAGE_SIZE))
-        offset = 0
-        while True:
-            entries = self._page(page_size, offset, since, until)
-            if not entries:
-                return
+        start = since if since is not None else _EARLIEST
+        stop = until if until is not None else datetime.now(UTC)
+        if _source_timezone() is None:
+            # Every bound is being sent one or two hours early. Extending the end of the walk
+            # is what brings the far edge back into range; the near edge is already covered,
+            # and both are trimmed exactly against each entry's own UTC timestamp below.
+            stop = stop + _CLOCK_MARGIN
+        if start > stop:
+            log.info(
+                "empty discovery window",
+                extra={"context": {"since": start.isoformat(), "until": stop.isoformat()}},
+            )
+            return
+        for window, entries in self._windows(start, stop):
             for position, entry in enumerate(entries):
-                candidate = self._candidate(entry, offset + position)
+                candidate = self._candidate(entry, window, position)
                 if candidate is None:
                     continue
                 moment = candidate.modified_at
-                if since is not None and moment is not None and moment < since:
-                    continue
-                if until is not None and moment is not None and moment > until:
-                    return
+                if moment is not None:
+                    if since is not None and moment < since:
+                        continue
+                    if until is not None and moment > until:
+                        continue
                 yield candidate
-            if len(entries) < page_size:
-                return
-            offset += len(entries)
 
-    def _page(
-        self,
-        page_size: int,
-        offset: int,
-        since: datetime | None,
-        until: datetime | None,
-    ) -> list[dict[str, str | None]]:
-        """Fetch and parse one page of the search feed.
+    def enumerate_identifiers(
+        self, since: datetime | None = None, until: datetime | None = None
+    ) -> Iterator[Candidate]:
+        """List the ECLIs the feed holds, which for this source *is* discovery.
+
+        The cheapest-method rule (``docs/architecture.md`` rule 2.10) asks for the least
+        expensive request that answers "what does the source hold". For CELLAR that is a
+        different query from discovery, and much cheaper. Here it is the same request: one
+        search returns up to a thousand Atom entries, each already carrying the ECLI, the
+        portal link and the ``updated`` marker, and there is nothing to strip out — no count
+        pass to skip, no aggregate, no join. A second walk written to "list identifiers
+        cheaply" would send the identical requests to the identical endpoint and parse fewer
+        fields out of the identical answers.
+
+        So this delegates, and the saving a repair makes here is a different one: it is in
+        what gets **fetched**. A ``--since/--until`` re-walk re-offers every ECLI in the range
+        and the store skips the ones it holds; a repair narrows the same listing and fetches
+        precisely the absences, which is the same traffic to the search feed and none of the
+        guesswork about where a gap begins and ends.
 
         Args:
-            page_size: Number of entries to request.
-            offset: Zero-based offset of the first entry.
-            since: Lower bound of the window, or ``None``.
-            until: Upper bound of the window, or ``None``.
+            since: Only identifiers modified at or after this instant, inclusive. ``None``
+                lists the whole feed, which is ~950 requests — pass the band a gap is known
+                to lie in.
+            until: Only identifiers modified at or before this instant, inclusive.
+
+        Yields:
+            One candidate per document in the range, oldest first.
+
+        Raises:
+            SourceUnavailableError: If the feed cannot be read at all.
+        """
+        yield from self.discover(since, until)
+
+    def _windows(self, start: datetime, stop: datetime) -> Iterator[tuple[Window, list[Entry]]]:
+        """Yield each window of the walk with the entries it holds, oldest first.
+
+        The windows are **inclusive of both ends**, which is how the endpoint reads a pair of
+        ``modified`` values, and the next one starts one second after the last one stopped.
+        Because a bound resolves to the second, that covers the range exactly: no instant the
+        endpoint can express falls between two windows, and none falls in both.
+
+        The width is not configuration so much as a starting guess. It doubles while windows
+        come back under a quarter full and halves while they come back over three-quarters
+        full, so the walk settles near one request per window over dense years and crosses
+        sparse ones in strides. ``rechtspraak_window_days`` only says where it starts looking.
+
+        Args:
+            start: Inclusive lower bound of the walk.
+            stop: Inclusive upper bound.
+
+        Yields:
+            Each window and its entries, covering the range without gaps or overlap.
+
+        Raises:
+            SourceUnavailableError: If the feed cannot be read at all.
+        """
+        page_size = max(1, min(self.settings.rechtspraak_page_size, _MAX_PAGE_SIZE))
+        floor = timedelta(seconds=self.settings.rechtspraak_min_window_seconds)
+        ceiling = max(timedelta(days=self.settings.rechtspraak_max_window_days), floor)
+        width = min(max(timedelta(days=self.settings.rechtspraak_window_days), floor), ceiling)
+        log.info(
+            "discovering Dutch case law",
+            extra={
+                "context": {
+                    "connector": self.name,
+                    "since": start.isoformat(),
+                    "until": stop.isoformat(),
+                    "page_size": page_size,
+                    "window_days": width.total_seconds() / 86400,
+                }
+            },
+        )
+        cursor = start
+        while cursor <= stop:
+            window = Window(cursor, min(cursor + width, stop))
+            total, entries = self._search(window, page_size)
+            # Short of what the feed counted, rather than short of the page: the two are the
+            # same thing whenever the endpoint is behaving, and where they differ it is the
+            # count that says whether anything was left behind.
+            if total is None or total > len(entries):
+                window, total, entries = self._fit(window, total, entries, page_size, floor)
+            yield window, entries
+            width = self._next_width(max(window.width, floor), total, page_size, floor, ceiling)
+            cursor = window.stop + _TICK
+
+    def _fit(
+        self,
+        window: Window,
+        total: int | None,
+        entries: list[Entry],
+        page_size: int,
+        floor: timedelta,
+    ) -> tuple[Window, int | None, list[Entry]]:
+        """Narrow a window that did not fit in one request until it does, and read it.
+
+        Args:
+            window: The window that overflowed.
+            total: What the feed said the window holds, or ``None`` when it said nothing a
+                number could be read out of — in which case the window cannot be measured and
+                so cannot be narrowed to fit, and is paged instead.
+            entries: What the first read of the window returned, which is the answer already
+                when there turns out to be nothing to narrow.
+            page_size: Entries one request returns.
+            floor: Narrowest the window may become.
 
         Returns:
-            One mapping per Atom entry, holding its identifier, title, summary, modification
-            timestamp and alternate link. Entries are released as they are read, so a page
-            costs its entries rather than its parse tree.
+            The window actually read, the total the feed stated for it, and its entries.
+
+        Raises:
+            SourceUnavailableError: If the feed cannot be read at all.
+        """
+        if total is not None and total <= page_size:
+            # Fewer entries than the feed's own count, in a window it says fits in one
+            # request. Nothing here can fix that, and asking again would only ask the same
+            # question — but a corpus short of what its source counted should say so.
+            log.warning(
+                "the feed answered a window with fewer entries than it counted; the walk "
+                "returns what arrived",
+                extra={
+                    "context": {
+                        "connector": self.name,
+                        "window": window.cursor(0),
+                        "counted": total,
+                        "returned": len(entries),
+                    }
+                },
+            )
+            return window, total, entries
+        while total is not None and total > page_size and window.width > floor:
+            window = window.halved(floor)
+            total = self._count(window)
+        if total is None:
+            log.warning(
+                "the feed stated no total for a window, so it cannot be measured before it is "
+                "read; paging it instead, over an order the endpoint does not guarantee",
+                extra={"context": {"connector": self.name, "window": window.cursor(0)}},
+            )
+            return window, None, self._paged(window, page_size, None)
+        if total > page_size:
+            log.warning(
+                "a single second holds more entries than one request returns, so this window "
+                "has to be paged over a sort that is not a total order; entries sharing an "
+                "updated timestamp may be returned twice or not at all. Raise "
+                "PLT_RECHTSPRAAK_PAGE_SIZE if it is below the endpoint maximum of "
+                f"{_MAX_PAGE_SIZE}",
+                extra={
+                    "context": {
+                        "connector": self.name,
+                        "window": window.cursor(0),
+                        "entries": total,
+                        "page_size": page_size,
+                    }
+                },
+            )
+            return window, total, self._paged(window, page_size, total)
+        _, entries = self._search(window, page_size)
+        return window, total, entries
+
+    @staticmethod
+    def _next_width(
+        width: timedelta,
+        total: int | None,
+        page_size: int,
+        floor: timedelta,
+        ceiling: timedelta,
+    ) -> timedelta:
+        """Return the width to try for the next window.
+
+        Args:
+            width: Width of the window just read.
+            total: How many entries it held, or ``None`` when the feed did not say.
+            page_size: Entries one request returns.
+            floor: Narrowest a window may become.
+            ceiling: Widest a window may become.
+
+        Returns:
+            The next width: doubled while windows come back nearly empty, halved while they
+            come back nearly full, unchanged in between. An unmeasurable window leaves the
+            width alone, because there is nothing to conclude from it.
+        """
+        if total is None:
+            return width
+        if total <= page_size * _GROW_BELOW:
+            return min(width * 2, ceiling)
+        if total >= page_size * _SHRINK_ABOVE:
+            return max(width / 2, floor)
+        return width
+
+    def _count(self, window: Window) -> int | None:
+        """Return the number of entries the feed says a window holds.
+
+        Asked with ``max=1``, so measuring a window that is about to be discarded costs one
+        entry rather than a page.
+
+        Args:
+            window: The window to measure.
+
+        Returns:
+            The stated total, or ``None`` when the feed stated none.
+
+        Raises:
+            SourceUnavailableError: If the feed cannot be read at all.
+        """
+        total, _ = self._search(window, 1)
+        return total
+
+    def _paged(self, window: Window, page_size: int, total: int | None) -> list[Entry]:
+        """Read a window that could not be narrowed to fit, by offset.
+
+        The one place in this connector that still depends on the endpoint holding an order
+        steady across requests. Two things reach it, both of them a window that cannot be
+        narrowed to fit: one already at ``rechtspraak_min_window_seconds``, and one the feed
+        stated no total for and so cannot be measured at all. :meth:`_fit` logs either before
+        calling this.
+
+        Args:
+            window: The window to read.
+            page_size: Entries one request returns.
+            total: How many entries the feed says the window holds, or ``None`` to read on
+                until a short page ends it.
+
+        Returns:
+            Every entry the pages held, in the order they arrived.
+
+        Raises:
+            SourceUnavailableError: If the feed cannot be read at all.
+        """
+        entries: list[Entry] = []
+        offset = 0
+        while True:
+            _, page = self._search(window, page_size, offset)
+            if not page:
+                return entries
+            entries.extend(page)
+            offset += len(page)
+            if len(page) < page_size or (total is not None and offset >= total):
+                return entries
+
+    def _search(
+        self, window: Window, page_size: int, offset: int = 0
+    ) -> tuple[int | None, list[Entry]]:
+        """Fetch and parse one search request.
+
+        Args:
+            window: The window to ask for, both ends inclusive.
+            page_size: Number of entries to request.
+            offset: Zero-based offset of the first entry.
+
+        Returns:
+            The total the feed states for the window and one mapping per Atom entry, holding
+            its identifier, title, summary, modification timestamp and alternate link. Entries
+            are released as they are read, so a request costs its entries rather than its
+            parse tree.
 
         Raises:
             SourceUnavailableError: If the feed cannot be read or is not well-formed. A broken
@@ -847,20 +1151,20 @@ class RechtspraakConnector(SourceConnector):
         ]
         if self.settings.rechtspraak_documents_only:
             params.append(("return", "DOC"))
-        if since is not None or until is not None:
-            lower = _window_bound(since, upper=False) if since is not None else _EARLIEST_WINDOW
-            params.append(("modified", lower))
-            if until is not None:
-                params.append(("modified", _window_bound(until, upper=True)))
+        params.append(("modified", _window_bound(window.start)))
+        params.append(("modified", _window_bound(window.stop)))
         response = self._client.get(
             self.settings.rechtspraak_search_url, params=httpx.QueryParams(tuple(params))
         )
         try:
             feed = etree.fromstring(_as_bytes(response.content), parser=_parser())
         except etree.XMLSyntaxError as error:
-            message = f"the Rechtspraak search feed at offset {offset} is not well-formed: {error}"
+            message = (
+                f"the Rechtspraak search feed for {window.cursor(offset)} is not well-formed: "
+                f"{error}"
+            )
             raise SourceUnavailableError(message) from error
-        entries: list[dict[str, str | None]] = []
+        entries: list[Entry] = []
         for entry in feed.iterfind(f"{{{_ATOM}}}entry"):
             entries.append(
                 {
@@ -872,18 +1176,21 @@ class RechtspraakConnector(SourceConnector):
                 }
             )
             entry.clear()
+        subtitle = (feed.findtext(f"{{{_ATOM}}}subtitle") or "").strip()
+        stated = _STATED_TOTAL.search(subtitle)
+        total = int(stated.group(1)) if stated is not None else None
         log.debug(
-            "search page read",
+            "search request read",
             extra={
                 "context": {
                     "connector": self.name,
-                    "offset": offset,
+                    "window": window.cursor(offset),
                     "entries": len(entries),
-                    "total": (feed.findtext(f"{{{_ATOM}}}subtitle") or "").strip() or None,
+                    "total": total,
                 }
             },
         )
-        return entries
+        return total, entries
 
     @staticmethod
     def _alternate_link(entry: etree._Element) -> str | None:
@@ -900,21 +1207,25 @@ class RechtspraakConnector(SourceConnector):
                 return link.get("href")
         return None
 
-    def _candidate(self, entry: Mapping[str, str | None], position: int) -> Candidate | None:
+    def _candidate(self, entry: Entry, window: Window, position: int) -> Candidate | None:
         """Turn one parsed Atom entry into a candidate.
 
         Args:
             entry: The parsed entry.
-            position: Its zero-based offset in the window, recorded as the cursor so an
-                interrupted run's position is legible.
+            window: The window it was found in, which the cursor names so an interrupted run's
+                position says *where* it stopped rather than only how far in.
+            position: Its zero-based offset within that window.
 
         Returns:
             The candidate, or ``None`` when the entry carries no usable identifier — which
-            costs one skipped entry rather than the whole page.
+            costs one skipped entry rather than the whole window.
         """
         identifier = (entry.get("id") or "").strip()
         if not identifier:
-            log.warning("feed entry without an identifier", extra={"context": {"at": position}})
+            log.warning(
+                "feed entry without an identifier",
+                extra={"context": {"at": window.cursor(position)}},
+            )
             return None
         summary = (entry.get("summary") or "").strip() or None
         return Candidate(
@@ -924,7 +1235,7 @@ class RechtspraakConnector(SourceConnector):
             # The Atom ``updated`` is the source's own revision marker, so the pre-fetch check
             # can skip an unchanged document without spending a request on it.
             content_hash=self._revision_hash(identifier, entry.get("updated")),
-            cursor=str(position),
+            cursor=window.cursor(position),
             title=(entry.get("title") or "").strip() or None,
             source_url=(entry.get("link") or "").strip() or None,
             source_metadata={"summary": summary},

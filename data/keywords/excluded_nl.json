@@ -1,0 +1,281 @@
+{
+  "jurisdiction": "NL",
+  "excluded_from": "nl.json",
+  "list_version_after": "2.3.0",
+  "updated": "2026-08-17",
+  "why_this_file_exists": "Terms removed when the list moved from weighted scoring to a word search (schema 2.0.0). Under scoring these could corroborate another term without selecting anything on their own; under a word search every term selects, so a term that is not specific to plant protection selects the wrong cases. Kept here so a later curator can see what was considered and why it went.",
+  "terms": [
+    {
+      "id": "nl-werkzame-stof",
+      "term": "werkzame stof",
+      "lang": "nl",
+      "category": "product_class",
+      "weight": 2,
+      "match": "phrase",
+      "aliases": [
+        "werkzame stoffen",
+        "actieve stof",
+        "actieve stoffen"
+      ],
+      "removed_because": "Every chemical, pharmaceutical and food case names an active substance."
+    },
+    {
+      "id": "nl-nvwa-gewas",
+      "term": "NVWA",
+      "lang": "nl",
+      "category": "authority",
+      "weight": 1,
+      "match": "word",
+      "case_sensitive": true,
+      "case_sensitive_exception": true,
+      "aliases": [
+        "Nederlandse Voedsel- en Warenautoriteit"
+      ],
+      "note": "Contextual: the NVWA appears across food and animal law. Only meaningful alongside a pesticide term. DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost.",
+      "removed_because": "The food and product safety authority appears in every case it brings, on any subject."
+    },
+    {
+      "id": "nl-efsa",
+      "term": "EFSA",
+      "lang": "nl",
+      "category": "authority",
+      "weight": 1,
+      "match": "word",
+      "case_sensitive": true,
+      "case_sensitive_exception": true,
+      "aliases": [
+        "Europese Autoriteit voor voedselveiligheid",
+        "ECHA",
+        "RIVM"
+      ],
+      "note": "DOCUMENTED EXCEPTION to the acronyms-only rule; see 'Known exceptions' in the keyword README for the measured cost.",
+      "removed_because": "EFSA, ECHA and RIVM advise on chemicals, food and health generally, not on pesticides alone."
+    },
+    {
+      "id": "nl-toelatingsbesluit",
+      "term": "toelatingsbesluit",
+      "lang": "nl",
+      "category": "procedure",
+      "weight": 3,
+      "match": "phrase",
+      "requires": [
+        "nl-gewasbeschermingsmiddel"
+      ],
+      "note": "DOCUMENTED EXCEPTION (docs/jurisdictions/nl.md 5.7). Split out of nl-toelating, which it used to be an alias of, so that a gate could be put on it alone. 'Toelating' is admission in general and in Dutch administrative practice a toelatingsbesluit is overwhelmingly an immigration decision, so it no longer qualifies a document by itself: it needs a plant-protection word somewhere in the document, which the authority's own name - College voor de toelating van gewasbeschermingsmiddelen en biociden - already supplies. Same instrument as nl-drift. requires is an AND over one id, so a biocide-only authorisation loses these three points and keeps its own weight-3 term.",
+      "removed_because": "An authorisation decision is an ordinary administrative act in every licensing field."
+    },
+    {
+      "id": "nl-wederzijdse-erkenning",
+      "term": "wederzijdse erkenning",
+      "lang": "nl",
+      "category": "procedure",
+      "weight": 1,
+      "match": "phrase",
+      "note": "Contextual: also used in unrelated internal-market cases.",
+      "removed_because": "Mutual recognition is a general principle of EU internal-market law."
+    },
+    {
+      "id": "nl-lelieteelt",
+      "term": "lelieteelt",
+      "lang": "nl",
+      "category": "crop_or_practice",
+      "weight": 1,
+      "match": "substring",
+      "aliases": [
+        "lelievelden",
+        "lelieveld",
+        "lelieperceel"
+      ],
+      "note": "Contextual: the Drenthe/Gelderland lily cases are a core NL line of pesticide litigation, but the word alone also appears in tenancy and zoning disputes.",
+      "removed_because": "Naming a crop does not make a case about what was sprayed on it."
+    },
+    {
+      "id": "nl-bollenteelt",
+      "term": "bollenteelt",
+      "lang": "nl",
+      "category": "crop_or_practice",
+      "weight": 1,
+      "match": "substring",
+      "aliases": [
+        "bloembollenteelt",
+        "bloembollen",
+        "bollenveld",
+        "bollenperceel"
+      ],
+      "removed_because": "Naming a crop does not make a case about what was sprayed on it."
+    },
+    {
+      "id": "nl-boomkwekerij",
+      "term": "boomkwekerij",
+      "lang": "nl",
+      "category": "crop_or_practice",
+      "weight": 1,
+      "match": "regex",
+      "aliases": [
+        "fruitteelt",
+        "boomgaard",
+        "akkerbouw",
+        "glastuinbouw",
+        "(?<!\\w)kwekerij"
+      ],
+      "note": "DOCUMENTED EXCEPTION (docs/jurisdictions/nl.md 5.5). regex rather than substring for one alias only: the bare 'kwekerij' now needs a word boundary on its left, so 'hennepkwekerij' no longer matches while 'kwekerij' and 'kwekerijen' still do. Every other pattern here is an unanchored expression and so keeps substring semantics.",
+      "removed_because": "Its aliases reach all of arable farming, orchards, nurseries and greenhouse horticulture."
+    },
+    {
+      "id": "nl-drift",
+      "term": "drift",
+      "lang": "nl",
+      "category": "environment",
+      "weight": 1,
+      "match": "word",
+      "requires": [
+        "nl-bespuiting"
+      ],
+      "note": "Homonym trap: 'drift' also means anger/impulse in criminal judgments. Only counts alongside a spraying term.",
+      "removed_because": "'Drift' on its own is an ordinary Dutch word."
+    },
+    {
+      "id": "nl-bufferzone",
+      "term": "bufferzone",
+      "lang": "nl",
+      "category": "environment",
+      "weight": 1,
+      "match": "substring",
+      "aliases": [
+        "afstandsnorm",
+        "minimale afstand tot",
+        "50 meter zone"
+      ],
+      "removed_because": "A buffer zone and a minimum distance are planning instruments used for noise, odour and safety alike."
+    },
+    {
+      "id": "nl-omwonenden",
+      "term": "omwonenden",
+      "lang": "nl",
+      "category": "exposure_or_harm",
+      "weight": 1,
+      "match": "substring",
+      "aliases": [
+        "omwonende"
+      ],
+      "note": "Contextual: central to the Dutch residents-exposure line of cases, but generic in planning law.",
+      "removed_because": "Neighbours appear in every planning and nuisance case."
+    },
+    {
+      "id": "nl-blootstelling",
+      "term": "blootstelling",
+      "lang": "nl",
+      "category": "exposure_or_harm",
+      "weight": 1,
+      "match": "substring",
+      "aliases": [
+        "blootgesteld",
+        "blootstellingsrisico"
+      ],
+      "removed_because": "Exposure is the language of asbestos, noise and radiation cases as much as of pesticides."
+    },
+    {
+      "id": "nl-bijensterfte",
+      "term": "bijensterfte",
+      "lang": "nl",
+      "category": "exposure_or_harm",
+      "weight": 2,
+      "match": "substring",
+      "aliases": [
+        "bijenvolken",
+        "insectensterfte"
+      ],
+      "removed_because": "Bee mortality is an ecological subject; a case that is also about pesticides names one."
+    },
+    {
+      "id": "nl-residu",
+      "term": "residu",
+      "lang": "nl",
+      "category": "exposure_or_harm",
+      "weight": 1,
+      "match": "substring",
+      "aliases": [
+        "residuen",
+        "residugehalte"
+      ],
+      "removed_because": "A residue is any trace of anything."
+    },
+    {
+      "id": "nl-normoverschrijding-water",
+      "term": "normoverschrijding oppervlaktewater",
+      "lang": "nl",
+      "category": "environment",
+      "weight": 2,
+      "match": "phrase",
+      "aliases": [
+        "waterkwaliteitsnorm",
+        "emissie naar oppervlaktewater"
+      ],
+      "removed_because": "Water quality standards are not specific to plant protection."
+    },
+    {
+      "id": "nl-krw",
+      "term": "Kaderrichtlijn Water",
+      "lang": "nl",
+      "category": "environment",
+      "weight": 1,
+      "match": "phrase",
+      "aliases": [
+        "KRW",
+        "grondwaterrichtlijn",
+        "drinkwaterwinning"
+      ],
+      "removed_because": "The Water Framework Directive governs water quality generally."
+    },
+    {
+      "id": "nl-wed",
+      "term": "Wet op de economische delicten",
+      "lang": "nl",
+      "category": "statute",
+      "weight": 1,
+      "match": "phrase",
+      "aliases": [
+        "WED"
+      ],
+      "note": "Contextual: the route by which pesticide offences are prosecuted, but covers all economic offences.",
+      "removed_because": "The Economic Offences Act is the procedural vehicle for economic crime of every kind; it selected 577 cases."
+    },
+    {
+      "id": "nl-water",
+      "term": "water",
+      "lang": "nl",
+      "category": "active_substance",
+      "match": "word",
+      "requires": [
+        "nl-gewasbeschermingsmiddel"
+      ],
+      "note": "Ordinary word as well as an approved active substance, so it is gated rather than dropped: it reports its match but cannot qualify a document on its own.",
+      "removed_because": "Water is an approved active substance, so the register put it in the list and a gate kept it from selecting a case on its own. That was enough while a match was only a score. Once every match became a public label it described 307 pesticide judgments as being about the substance water, which none of them were: the gate governs inclusion, and it was never a claim about what a case is about."
+    }
+  ],
+  "aliases_trimmed_from_retained_terms": [
+    {
+      "term_id": "nl-spuitdrift",
+      "aliases": [
+        "afdrift"
+      ],
+      "removed_because": "'afdrift' is ordinary Dutch for drifting off course."
+    },
+    {
+      "term_id": "nl-toelating",
+      "aliases": [
+        "toelatingshouder",
+        "toelatingsaanvraag"
+      ],
+      "removed_because": "Ordinary licensing vocabulary, used in every authorisation regime."
+    },
+    {
+      "term_id": "nl-vrijstelling-art38",
+      "aliases": [
+        "vrijstellingsbesluit",
+        "artikel 53 verordening"
+      ],
+      "removed_because": "An exemption decision and a bare article reference name no subject."
+    }
+  ]
+}

@@ -18,6 +18,7 @@ import pytest
 from plt.db.models import DocumentType
 from plt.pipeline.base import (
     Candidate,
+    IdentifierListUnavailableError,
     NormalisedCase,
     NormalisedDocument,
     RawDocument,
@@ -102,18 +103,23 @@ def test_a_term_in_any_language_version_qualifies_the_case() -> None:
     assert {match.field for match in result.matches} == {"full_text"}
 
 
-def test_the_subject_field_is_scored() -> None:
-    """``subject`` is the rechtsgebied for NL: on its own it reaches min_score."""
+def test_the_subject_field_is_scanned() -> None:
+    """``subject`` is the rechtsgebied for NL: on its own it selects the case."""
     stage = KeywordFilter.for_jurisdiction("NL", settings=build_settings())
     subject = case(subject="Gewasbeschermingsmiddelen en biociden")
 
     result = stage.evaluate(subject)
 
     assert result.passed
-    assert {match.field for match in result.matches if match.weight_applied > 0} == {"subject"}
+    assert {match.field for match in result.labels} == {"subject"}
 
 
-def test_the_eu_list_weights_the_subject_field_above_full_text() -> None:
+def test_the_eu_list_reads_the_subject_field_and_the_full_text_alike() -> None:
+    """Where a term is found no longer changes what it is worth.
+
+    The subject-matter heading used to be weighted above the prose; with the weighting gone,
+    both select, and each match still names its own field.
+    """
     stage = KeywordFilter.for_jurisdiction("EU", settings=build_settings())
 
     in_subject = stage.evaluate(case(jurisdiction_code="EU", subject="Pesticides"))
@@ -124,10 +130,10 @@ def test_the_eu_list_weights_the_subject_field_above_full_text() -> None:
         )
     )
 
-    # The EU list gives subject 1.2 and full text 1.0, so the same term in the
-    # subject-matter heading counts for a fifth more than in the prose.
-    assert in_text.score > 0
-    assert in_subject.score == pytest.approx(in_text.score * 1.2)
+    assert in_subject.passed
+    assert in_text.passed
+    assert {match.field for match in in_subject.labels} == {"subject"}
+    assert {match.field for match in in_text.labels} == {"full_text"}
 
 
 def test_a_candidate_rejects_a_naive_timestamp() -> None:
@@ -170,6 +176,20 @@ def test_a_connector_is_a_context_manager_that_closes_itself() -> None:
         assert opened is connector
 
     assert connector.closed
+
+
+def test_a_connector_that_cannot_list_cheaply_says_so_rather_than_walking() -> None:
+    """A repair that fell back to discovery would cost more than the walk it replaces."""
+
+    class Silent(FakeConnector):
+        """A connector that inherits the default listing, i.e. offers none."""
+
+        name = "silent"
+
+    connector = Silent(docs=[FakeDocument(source_id="ECLI:NL:RBTEST:2026:1")])
+
+    with pytest.raises(IdentifierListUnavailableError, match="without walking discovery"):
+        list(connector.enumerate_identifiers())
 
 
 def test_the_fake_connector_implements_the_interface() -> None:

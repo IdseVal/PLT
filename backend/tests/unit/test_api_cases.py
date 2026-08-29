@@ -405,9 +405,9 @@ class TestPayloadContract:
                 {
                     "term_id",
                     "term",
+                    "category",
                     "list_version",
                     "field",
-                    "weight_applied",
                     "match_count",
                     "snippet",
                 },

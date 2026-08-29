@@ -2,7 +2,7 @@
  * The site menu, defined once and consumed by both the header and the footer.
  *
  * These four items, their wording and their order are fixed by the design brief
- * (`docs/core-document.md` section 3.3) and repeated in `docs/architecture.md` section 6 and
+ * (`docs/CORE_DOCUMENT.md` section 3.3) and repeated in `docs/architecture.md` section 6 and
  * in the README. They are not an editorial choice: do not rename, reorder or extend this
  * list without a change to those documents.
  */

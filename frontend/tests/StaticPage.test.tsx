@@ -8,7 +8,7 @@
 
 import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import StaticPage from '@/components/StaticPage'
 import { aboutPage } from '@/content/about'
@@ -19,6 +19,21 @@ import type { StaticPageContent } from '@/types/content'
 import { isSafeHref } from '@/utils/links'
 
 const PAGES: readonly StaticPageContent[] = [aboutPage, methodologyPage, faqPage, contactPage]
+
+// The methodology page embeds the keyword index, which requests `GET /api/filters` on
+// mount. These tests are about the renderer and the copy, so the request is left pending:
+// the index stays in its loading state and no state update lands after a test has finished.
+// The index's own states are covered in `tests/KeywordIndex.test.tsx`.
+beforeEach(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => new Promise<Response>(() => undefined)),
+  )
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 function renderPage(content: StaticPageContent): void {
   render(
@@ -49,13 +64,15 @@ describe('StaticPage', () => {
   )
 
   it.each(PAGES.map((page) => [page.title, page] as const))(
-    '%s tells the reader the copy is still a draft',
+    '%s renders its editorial note while it has one',
     (_title, content) => {
       renderPage(content)
 
+      // Provisional copy carries a note saying so; copy the Law group has signed off does
+      // not. Requiring one would make finishing a page fail the build.
       const note = content.editorialNote
-      expect(note).toBeDefined()
-      expect(screen.getByText(note ?? '')).toBeInTheDocument()
+      if (note === undefined) return
+      expect(screen.getByText(note)).toBeInTheDocument()
     },
   )
 
@@ -143,41 +160,55 @@ describe('page copy', () => {
   it('keeps the methodology page describing the pipeline that was actually built', () => {
     const text = textOf(methodologyPage)
 
-    for (const subject of [
-      'eur-lex',
-      'rechtspraak',
-      'celex',
-      'ecli',
-      'keyword',
-      'weight',
-      'threshold',
-      'week',
-      'checkpoint',
-      'content manager',
-    ]) {
+    // The two sources, the identifier each is keyed on, and the three things the method
+    // rests on. Deliberately a short list of subjects rather than of sentences: the copy is
+    // the Law group's to write, and a test that pinned its phrasing would fail on an edit
+    // that improved it.
+    for (const subject of ['eur-lex', 'rechtspraak', 'celex', 'ecli', 'keyword', 'corpus', 'week']) {
       expect(text).toContain(subject)
     }
   })
 
-  it('states on the methodology page why keyword selection is necessary', () => {
+  it('is structured as a systematic review: corpus, criteria, records, schedule, limits', () => {
     renderPage(methodologyPage)
 
+    expect(screen.getByRole('heading', { level: 2, name: 'The corpus' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Inclusion criteria' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Exclusion criteria' })).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { level: 2, name: 'Why selection is keyword-based' }),
+      screen.getByRole('heading', { level: 2, name: 'What each included case records' }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { level: 2, name: 'The keyword lists' }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 2, name: 'Weekly updates' })).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { level: 2, name: 'Deduplication and revisions' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Update schedule' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Limitations' })).toBeInTheDocument()
   })
 
-  it('says that every jurisdiction needs its own keyword list', () => {
+  it('never describes selection as weighted scoring against a threshold', () => {
     const text = textOf(methodologyPage)
 
-    expect(text).toContain('cannot be added to the tracker until its list exists')
+    // Phrased as a prohibition rather than as a required sentence: the copy is the Law
+    // group's to word, and what has to stay true is that it does not describe a method the
+    // pipeline stopped using. A mention of the old approach as history is allowed; a claim
+    // that a case is admitted by reaching a score is not.
+    for (const claim of ['reaches the threshold', 'total weight', 'min_score', 'review band']) {
+      expect(text).not.toContain(claim)
+    }
+  })
+
+  it('embeds the per-jurisdiction keyword index in the methodology page', () => {
+    const blocks = methodologyPage.sections.flatMap((section) => section.blocks)
+
+    expect(blocks.some((block) => block.kind === 'keyword-index')).toBe(true)
+  })
+
+  it('binds every exclusion mechanism to the definition that describes it', () => {
+    const definitions = methodologyPage.sections
+      .flatMap((section) => section.blocks)
+      .flatMap((block) => (block.kind === 'definitions' ? block.items : []))
+
+    // Bound by key rather than by wording, so rewriting the copy cannot silently detach a
+    // list of excluded terms from the paragraph that introduces it.
+    expect(definitions.filter((item) => item.mechanism !== undefined).map((i) => i.mechanism))
+      .toEqual(['left-off', 'gated', 'patterns'])
   })
 
   it('is written as replaceable copy, not as filler', () => {

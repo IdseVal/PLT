@@ -1,6 +1,11 @@
 # Normalise line endings: LF in the repository, on every platform.
 * text=auto eol=lf
 
+# Executed inside the Linux dev container, which bind-mounts the working tree rather than
+# a fresh checkout. A CRLF here is invisible on Windows and fails in the container with
+# `set: pipefail: invalid option name`, which points nowhere near the real cause.
+*.sh text eol=lf
+
 *.png binary
 *.jpg binary
 *.jpeg binary

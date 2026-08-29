@@ -2,7 +2,7 @@
  * The circle of twelve stars, as an SVG path.
  *
  * The European Union is a jurisdiction of its own on this map rather than the sum of its
- * member states (`docs/core-document.md` section 3.3), so it needs a mark of its own: a disc
+ * member states (`docs/CORE_DOCUMENT.md` section 3.3), so it needs a mark of its own: a disc
  * in the North Sea carrying the emblem, hoverable and clickable exactly like a country.
  *
  * The proportions are those of the emblem itself — the stars sit on a circle of two thirds

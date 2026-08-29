@@ -245,17 +245,20 @@ def _rebuild_children(row: Case, case: NormalisedCase, result: FilterResult, now
         for ordinal, party in enumerate(case.parties)
     ]
     row.citations = _unique_citations(case)
+    # One row per term that selected the case, not per term-and-field: this table is the
+    # case's list of labels, and a term found in both the title and the body is one label.
+    # A term whose ``requires`` gate stayed shut selected nothing and is not a label at all.
     row.keyword_matches = [
         KeywordMatch(
             term_id=_clip(match.term_id, _IDENTIFIER_LEN) or match.term_id,
-            term=_clip(match.matched_text, _LABEL_LEN),
+            term=_clip(match.term, _LABEL_LEN),
+            category=_clip(match.category, _SHORT_LEN),
             list_version=_clip(match.list_version, _SHORT_LEN),
             field=_clip(match.field, _SHORT_LEN),
-            weight_applied=match.weight_applied,
             match_count=match.occurrences,
             snippet=match.snippet,
         )
-        for match in result.matches
+        for match in result.labels
     ]
 
 
@@ -303,7 +306,7 @@ def apply_review(
         content_hash: The revision fingerprint stored on the case.
         now: Timestamp used for the flag.
     """
-    row.filter_score = result.score
+    row.matched_term_count = result.matched_term_count
     row.needs_review = result.needs_review
     review = row.review
 
@@ -318,14 +321,10 @@ def apply_review(
             review.flagged_at = now
             review.flagged_revision = row.revision
             review.flagged_content_hash = content_hash
-            review.score = result.score
-            review.min_score = result.threshold
-            review.band_ceiling = result.review_ceiling
             review.list_version = _clip(_list_version(result), _SHORT_LEN)
             review.reason = result.reason
     elif review is not None and review.is_open and review.decision is None:
         review.status = ReviewStatus.WITHDRAWN
-        review.score = result.score
         review.reason = result.reason
 
     if review is not None:

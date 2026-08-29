@@ -1,0 +1,43 @@
+{
+  "name": "PLT agent workspace",
+
+  "build": { "dockerfile": "Dockerfile" },
+  "workspaceFolder": "/workspace",
+
+  // The corpus mirror is source data measured in hundreds of gigabytes and lives on its own
+  // volume, so it is mounted rather than copied — and mounted READ-ONLY, because a container
+  // that can delete it can destroy something that takes days of polite requests to rebuild.
+  // Ingestion only ever reads it; `plt mirror` writes it and is a host-side job.
+  //
+  // PLT_CORPUS_HOST_DIR is read from the environment of whoever opens the container, so this
+  // file carries no machine-specific path. Set it before opening (on this machine it is
+  // D:/CaseLawStore). Leave it unset and the mount resolves to nothing, the container still
+  // opens, and only the pipeline commands are unavailable.
+  "mounts": [
+    "source=${localEnv:PLT_CORPUS_HOST_DIR},target=/corpus,type=bind,readonly"
+  ],
+
+  // No docker.sock. Mounting it would hand anything in here root-equivalent control of the
+  // host daemon, which is a large hole to open for a convenience nothing currently needs.
+  // Add it deliberately, and document why, if container-in-container testing ever arrives.
+
+  "remoteEnv": {
+    "PLT_CORPUS_STORE_DIR": "/corpus"
+  },
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/opt/venv/bin/python"
+      }
+    }
+  }
+}

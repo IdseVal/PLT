@@ -4,11 +4,19 @@
  * Submitting navigates to `/cases?q=…`; the home page never renders results in place
  * (`docs/architecture.md` section 6). That keeps one page responsible for searching,
  * filtering and pagination, and makes every result set a shareable URL.
+ *
+ * The hint beneath the field carries a link through to the same page unsearched. A reader who
+ * does not yet have a term in mind — which is most of them, on a database of a subject rather
+ * than of a case they already know — otherwise has to guess a word before the collection will
+ * show them anything. The sidebar's "All cases" button goes to the same place; this is the
+ * route for someone whose eye is on the search field, and it names what is there.
  */
 
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { createSearchParams, useNavigate } from 'react-router-dom'
+import { createSearchParams, Link, useNavigate } from 'react-router-dom'
+
+import { LINK } from '@/components/cases/controls'
 
 /** Identifier tying the visible label to the field. */
 const FIELD_ID = 'home-search-query'
@@ -64,7 +72,11 @@ export default function SearchBar(): JSX.Element {
         </button>
       </div>
       <p id={`${FIELD_ID}-hint`} className="text-plt-muted text-sm">
-        Searches case titles, abstracts and full texts across every jurisdiction in the tracker.
+        Searches case titles, abstracts and full texts across every jurisdiction in the tracker.{' '}
+        <Link className={LINK} to="/cases">
+          Browse all cases
+        </Link>{' '}
+        to filter by jurisdiction, court, keyword, category or date instead.
       </p>
     </form>
   )

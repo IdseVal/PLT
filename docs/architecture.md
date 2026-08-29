@@ -6,7 +6,7 @@ on merge. Changing a contract in this file means updating this file in the same 
 saying so in the PR description.
 
 Companion documents: [`README.md`](../README.md) (what the app is),
-[`docs/core-document.md`](core-document.md) (project blueprint).
+[`docs/CORE_DOCUMENT.md`](CORE_DOCUMENT.md) (project blueprint).
 
 ---
 
@@ -49,6 +49,7 @@ backend/
       runner.py             Orchestrator: run_jurisdiction(code, since=None)
       base.py               SourceConnector ABC + RawDocument/NormalisedCase dataclasses
       checkpoint.py         Per-connector checkpoint read/write
+      mirror.py             The corpus mirror: source payloads on disk, verbatim (§9)
       dedup.py              Source-identifier and content-hash deduplication
       filters/
         base.py             Filter ABC (the chain is pluggable)
@@ -88,7 +89,15 @@ docs/
 2. **Interruptible.** Every long-running loop handles `SIGINT`/`KeyboardInterrupt`, finishes
    the item in flight, writes its checkpoint, and exits cleanly.
 3. **Incremental, not in-memory.** The pipeline streams page by page and commits per batch.
-   Never accumulate a full corpus in memory or in one transaction.
+   Never accumulate a full corpus in memory or in one transaction. Where a source cannot be
+   walked a page at a time without losing rows, a connector may hold one discovery *window*
+   — but only against a configured ceiling on how large a window may be, so that what it
+   holds is bounded by a setting rather than by how much case law the window happens to
+   contain, and it must say in the log when a window exceeds that ceiling anyway.
+   `EurLexConnector` does this against `eurlex_max_results`; `RechtspraakConnector` does it
+   against `rechtspraak_page_size`, which is at once the ceiling on a window and the reason
+   for it — a window narrowed to fit inside one request is a window that is never paged, and
+   Rechtspraak offers no key to page a window by.
 4. **Resumable.** Every connector run writes a checkpoint; a re-run after an interruption
    resumes rather than restarting.
 5. **Politeness to sources.** Configurable request rate, retry with exponential backoff and
@@ -99,6 +108,68 @@ docs/
 7. **Logging.** Structured, levelled, no PII from case texts in logs beyond identifiers.
 8. **Tests are part of the deliverable.** Network calls are mocked against recorded fixtures
    in unit tests; integration tests hitting live endpoints are marked and opt-in.
+9. **A fake is evidence about payloads, never about behaviour.** A recording pins what a
+   source *returns* and stays true offline. It cannot pin how the source *behaves* —
+   ordering, paging, retry semantics, what a second identical request does — because none of
+   that is in a payload, so the double has to invent it, and a double that invents something
+   better behaved than the real endpoint makes a broken connector pass. Wherever a fake
+   models behaviour, an opt-in integration test pins that behaviour against the live service.
+   The standing instance is **paging integrity**: every connector that walks a window in
+   pages has an integration test asserting the union of the pages equals the window's own
+   count from the source, in both directions — nothing lost and nothing returned twice.
+   Discovery paged by offset over an unstable sort cost the EU corpus 14.9% of its cases
+   while every unit test passed, because the fake CELLAR sorted stably.
+10. **The cheapest request that answers the question, and never re-derive what is already
+    known locally.** Rule 5 is about *how* we ask; this is about *whether we need to*. Before
+    a connector or a job sends anything, two questions: is there a cheaper query that answers
+    this one, and is the answer already on our own disk? A count is cheaper than a page, a
+    plain `SELECT DISTINCT` is cheaper than a `GROUP BY` with optional joins, a listing of
+    identifiers is cheaper than a discovery walk, and a stat call is free. A source may
+    tolerate an expensive query and still refuse a thousand of them, and a rate limit obeyed
+    politely is no defence against work that never needed doing.
+
+    The standing instance is **repairing a partial corpus**. Re-running the discovery walk
+    re-fetches nothing — everything on disk is skipped — but it re-runs every discovery query,
+    which for CELLAR is the most expensive thing the project does. Closing a gap of 4,827
+    cases that way cost 19,524 requests and 3h 23m on 8 August 2026 and ended in
+    `Retry-After: 1800`; the next morning the same walk was refused after 206 requests, while
+    a trivial `SELECT ?s WHERE { ?s ?p ?o } LIMIT 1` returned `200` immediately. The endpoint
+    was not down and the method was not wrong — the *cost* was. `plt mirror --repair`
+    (`plt.pipeline.repair`, §9) is the shape of the answer: list the source's identifiers by
+    the cheapest route it offers, diff against the store, fetch the difference. Every
+    connector should be able to say what it holds without being asked what has changed;
+    `SourceConnector.enumerate_identifiers` is where it says so.
+
+    These are public endpoints belonging to courts and the Publications Office, and this
+    project needs them weekly for years. The cheapest correct method is not an optimisation
+    here — it is the terms on which we are welcome.
+
+11. **An artefact describes itself by observation, not by declaration.** Whenever something
+    this project writes states what it *contains* — a corpus manifest, a term count, a
+    coverage figure in a document — that statement is derived by counting the thing at the
+    moment of writing. It is never taken from the configuration a process ran under. The two
+    answer different questions: settings say what a process was *asked* to do, and a process
+    can be misconfigured, can fail, or can never have run. Only the artefact says what is
+    there, and it is the artefact that gets cited.
+
+    A configuration is still worth recording. It is recorded as a fact about the run, in a
+    block that says so, and never in the place a reader looks for scope. A run that did not
+    complete does not rewrite even that: it has nothing to say about how the corpus was taken.
+
+    The standing instance is **`manifest.json`'s scope**. Two EU captures were launched
+    without `PLT_EURLEX_RESOURCE_TYPES` set, failed within minutes, and each rewrote the
+    manifest's declared scope from `Settings` — leaving a 100,000-case store captured under
+    seventeen resource types describing itself as four. Nothing was corrupted and no run
+    reported an error; the damage was that the next repair to trust the file would have
+    enumerated ~44,000 identifiers, compared them against a 100,000-case store, found nothing
+    missing and reported the corpus **complete**. That is the failure of §2.10's own
+    neighbours — `discovered == mirrored + skipped` holding exactly over the wrong set — and
+    counting the store instead makes it impossible rather than merely visible.
+
+    Counting is what makes this cheap enough to be unconditional. Walking a hundred thousand
+    case records takes a few seconds, sends nothing, and cannot be wrong, so `contents` is
+    re-derived on every write of the manifest — and `plt corpus-manifest` re-derives it on its
+    own, for a store an older version of this code described.
 
 ---
 
@@ -112,12 +183,12 @@ add source-specific fields to `source_metadata`.
 | --- | --- | --- |
 | `jurisdiction` | One row per jurisdiction, EU included as its own row | `code` (PK, `NL`/`EU`), `name`, `type` (`state`\|`supranational`), `iso_alpha2`, `map_feature_id`, `is_active` |
 | `court` | Courts/instances, seeded from source vocabularies | `id`, `jurisdiction_code` (FK), `source_identifier` (unique per jurisdiction), `name`, `level`, `domain`, `source_type` |
-| `case` | The central entity, one row per decision | `id`, `jurisdiction_code` (FK), `source_id` (**unique with jurisdiction**: ECLI or CELEX), `source_system`, `court_id` (FK), `title`, `abstract`, `decision_date`, `filing_date`, `publication_date`, `case_numbers` (JSON), `language`, `law_domain`, `law_subfield`, `procedure_type`, `outcome`, `source_url`, `content_hash`, `first_seen_at`, `last_seen_at`, `updated_at`, `source_metadata` (JSON), `is_published`, `filter_score`, `needs_review` |
+| `case` | The central entity, one row per decision | `id`, `jurisdiction_code` (FK), `source_id` (**unique with jurisdiction**: ECLI or CELEX), `source_system`, `court_id` (FK), `title`, `abstract`, `decision_date`, `filing_date`, `publication_date`, `case_numbers` (JSON), `language`, `law_domain`, `law_subfield`, `procedure_type`, `outcome`, `source_url`, `content_hash`, `first_seen_at`, `last_seen_at`, `updated_at`, `source_metadata` (JSON), `is_published`, `matched_term_count`, `needs_review` |
 | `case_document` | Full texts and attachments per case, per language | `id`, `case_id` (FK), `language`, `doc_type` (`judgment`\|`opinion`\|`summary`), `format`, `full_text`, `raw_payload`, `retrieved_at` |
 | `party` | Litigating parties | `id`, `case_id` (FK), `name`, `role` (`applicant`\|`defendant`\|`intervener`\|`other`), `party_type` |
 | `topic` + `case_topic` | Topic classification (§2.2 label 6), extensible | `id`, `slug`, `label`, `parent_id` |
-| `keyword_match` | Which term ids matched a case, and where | `id`, `case_id` (FK), `term_id`, `list_version`, `field`, `weight_applied`, `snippet` |
-| `case_review` | One row per case flagged for review, and the standing decision on it | `id`, `case_id` (**unique**, FK), `status` (`pending`\|`confirmed`\|`rejected`\|`withdrawn`), `score`, `min_score`, `band_ceiling`, `list_version`, `reason`, `flagged_at`, `flagged_revision`, `flagged_content_hash`, `decision` (`confirmed`\|`rejected`), `decided_by`, `decided_at`, `decided_revision`, `decision_note`, `suppressed_publication` |
+| `keyword_match` | The terms that selected a case — its **public labels** | `id`, `case_id` (FK), `term_id`, `term`, `category`, `list_version`, `field`, `match_count`, `snippet` |
+| `case_review` | One row per case flagged for review, and the standing decision on it | `id`, `case_id` (**unique**, FK), `status` (`pending`\|`confirmed`\|`rejected`\|`withdrawn`), `list_version`, `reason`, `flagged_at`, `flagged_revision`, `flagged_content_hash`, `decision` (`confirmed`\|`rejected`), `decided_by`, `decided_at`, `decided_revision`, `decision_note`, `suppressed_publication` |
 | `case_review_decision` | Append-only history of decisions taken on a review item | `id`, `review_id` (FK), `decision`, `decided_by`, `decided_at`, `note`, `case_revision`, `content_hash` |
 | `citation` | Instruments and cases cited (CELEX/ECLI) | `id`, `case_id` (FK), `target_identifier`, `citation_type` |
 | `ingest_run` | One row per pipeline execution | `id`, `jurisdiction_code`, `connector`, `started_at`, `finished_at`, `status`, `fetched_count`, `matched_count`, `inserted_count`, `updated_count`, `skipped_duplicate_count`, `error_count`, `checkpoint_before`, `checkpoint_after` |
@@ -132,12 +203,13 @@ source identifier.
 **`keyword_match` matters:** it is how the content manager evaluates and tunes the keyword
 lists. Do not treat it as optional.
 
-**The review queue (core document §2.7).** A case that passes its list's `min_score` but
-scores below `min_score + review_band` is stored, published and *additionally* queued. The
-rules the schema enforces:
+**The review queue (core document §2.7).** A queued case is stored and published exactly
+like any other; the flag adds a review, it never withholds a case. **Nothing raises the flag
+automatically** — that was the score band, and §2.13 removed it — so a content manager raises
+it. The rules the schema enforces:
 
-- `case.needs_review` and `case.filter_score` are the filter's own output and are rewritten
-  by every evaluation. They are never changed by a decision: re-running a window must produce
+- `case.needs_review` and `case.matched_term_count` are the filter's own output and are
+  rewritten by every evaluation. They are never changed by a decision: re-running a window must produce
   the same flags whether or not anyone has reviewed in the meantime (§2.8). The workflow
   lives in `case_review.status`.
 - **A decision survives re-ingestion.** `case_review` is not among the child rows a run
@@ -190,7 +262,7 @@ a deliberate minimum and adding to it is a decision, not a convenience:
   confirmation date, unsubscribe date, tenure and digests sent are all on the row, so nothing
   in the reporting path needs the address. It counts what was handed to the mail backend, not
   what was delivered, opened or clicked — none of which is recorded anywhere.
-- **Retention is configuration with no default** (§8, issue #75). `PLT_SUBSCRIBER_RETENTION_DAYS`
+- **Retention is configuration with no default** (§8). `PLT_SUBSCRIBER_RETENTION_DAYS`
   drops the digest from an unsubscribed row, leaving dates and the counter;
   `PLT_SUBSCRIBER_UNCONFIRMED_EXPIRY_DAYS` deletes a row that never confirmed. Unset means
   **not enforced**, never a guessed number: both periods are the Law group's to decide.
@@ -298,6 +370,13 @@ class SourceConnector(ABC):
         """Map source fields onto the schema in section 3, preserving everything else
         in source_metadata."""
 
+    def enumerate_identifiers(
+        self, since: datetime | None = None, until: datetime | None = None
+    ) -> Iterator[Candidate]:
+        """List what the source holds, by its cheapest route (rule 2.10). Not discovery:
+        it answers "what exists", not "what changed", and the candidates it yields say
+        nothing about revisions. The default raises IdentifierListUnavailableError."""
+
     def close(self) -> None: ...          # called in a finally, interruptions included
 ```
 
@@ -336,9 +415,9 @@ Two properties of `NormalisedCase` matter to every connector:
   passes that document's text through by reference rather than copying it. Consequently the
   members of `FilterableDocument` are declared **read-only**: a stage only reads them, and a
   settable-attribute protocol would reject a computed one.
-- **`subject` is scored.** The *rechtsgebied* for the Netherlands, the subject-matter heading
-  for the EU. Both shipped keyword lists weight it — the EU list at 1.2, above plain full
-  text — so a connector that leaves it `None` throws away a strong signal. It has no column
+- **`subject` is scanned.** The *rechtsgebied* for the Netherlands, the subject-matter
+  heading for the EU. Both shipped keyword lists name it in `fields`, so a connector that
+  leaves it `None` throws away a strong signal. It has no column
   of its own in section 3 and is persisted under `case.source_metadata["subject"]`.
 
 **Content hash.** `case.content_hash` is resolved in this order: the hash the connector set
@@ -356,24 +435,24 @@ class Filter(ABC):
 
     @abstractmethod
     def evaluate(self, case: FilterableDocument) -> FilterResult:
-        """FilterResult carries passed: bool, score: float, matches: list[TermMatch],
-        needs_review: bool, threshold and review_ceiling, and a human-readable reason
-        for the pipeline report."""
+        """FilterResult carries passed: bool, matches: tuple[TermMatch, ...],
+        needs_review: bool, and a human-readable reason for the pipeline report.
+        `labels` and `matched_term_count` derive from matches."""
 ```
 
 `FilterableDocument` is a structural protocol over `jurisdiction_code`, `title`, `abstract`,
 `subject` and `full_text`, so no import couples a stage to the connector work stream. Stage 1
 is the keyword matcher; a later stage appends to the `FilterChain` and touches no connector.
 
-**Passed, and passed confidently, are two different answers.** `passed` decides whether the
-document enters the database and is answered generously, because the PLT optimises for recall
-(core document §2.7). `needs_review` qualifies it: the document scored inside its list's
-`scoring.review_band`, the interval immediately above `min_score`, and is published like any
-other while also entering the review queue. `FilterResult.passed_confidently` is the negation
-pair, and `threshold`/`review_ceiling` state the band the verdict was measured against so a
-stored verdict stays readable after the list is re-curated. A rejection never carries the
-flag. The chain propagates a flag raised by **any** stage onto the result it returns, so
-appending a stage cannot silently empty the queue.
+**A match is a verdict and a label.** `passed` is true when **any** curated term matched:
+selection is a word search, so a term that could not carry a case alone belongs in
+`excluded_<code>.json` rather than in the list (core document §2.13). `FilterResult.labels`
+is one match per distinct selecting term — a term found in two fields is one label, and a term
+whose `requires` gate stayed shut is none — and it is what `keyword_match` is written from.
+
+`needs_review` is independent of all that: no stage raises it on its own any more, and a
+rejection never carries it. The chain still propagates a flag raised by **any** stage onto the
+result it returns, so appending a stage cannot silently empty the queue.
 
 ### 4.4 The runner
 
@@ -416,13 +495,16 @@ because a recall problem is invisible in a report that lists only successes — 
 ```
 plt ingest --jurisdiction NL [--since ...] [--until ...] [--dry-run] [--report PATH]
 plt ingest --all
+plt mirror --jurisdiction EU [--since ...] [--until ...] [--store DIR] [--limit N]
+plt corpus-manifest --jurisdiction EU [--store DIR]
 plt digest [--since ...] [--until ...] [--dry-run]
 plt purge-subscribers
 plt jurisdictions [--json]
 plt seed-vocabularies --jurisdiction NL
 ```
 
-Timestamps are parsed as UTC. Exit codes: `0` completed, `1` failed, `130` interrupted.
+Timestamps are parsed as UTC. Exit codes: `0` completed, `1` failed, `130` interrupted, and
+`3` for a run that completed with failures under `--fail-on-partial`.
 
 ---
 
@@ -433,14 +515,14 @@ Base path `/api`. JSON only. All list endpoints paginate. Errors use one envelop
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/cases` | Search + filter + paginate. Query params: `q` (full text), `jurisdiction` (repeatable), `law_domain`, `law_subfield`, `topic`, `court`, `language`, `date_from`, `date_to`, `sort` (`date_desc` default, `date_asc`, `relevance`), `page`, `page_size` (default 20, max 100) |
+| `GET` | `/api/cases` | Search + filter + paginate. Query params: `q` (full text), `jurisdiction` (repeatable), `law_domain`, `law_subfield`, `topic`, `keyword` (a curated **term id**, e.g. `nl-glyfosaat`), `category` (e.g. `active_substance`), `court`, `language`, `date_from`, `date_to`, `sort` (`date_desc` default, `date_asc`, `relevance`), `page`, `page_size` (default 20, max 100) |
 | `GET` | `/api/cases/latest?limit=20` | Sidebar feed, newest first, `limit` max 50 |
 | `GET` | `/api/cases/<jurisdiction>/<source_id>` | Single case with documents, parties, topics, matched terms |
 | `GET` | `/api/cases/export` | Same filters as `/api/cases`, plus `format` (`csv` default, or `jsonl`). Not paginated: it streams every match |
 | `GET` | `/api/stats/jurisdictions` | Map payload — **one query, all jurisdictions, EU included** |
 | `GET` | `/api/filters` | Facet values for the All-cases filter UI |
 | `GET` | `/api/health` | Liveness + last successful ingest per jurisdiction |
-| `GET` | `/api/reviews` | **Authenticated.** The review queue. Query params: `status` (repeatable, `pending` default, `any` for every status), `jurisdiction` (repeatable), `list_version`, `decided_by`, `sort` (`flagged_asc` default, `flagged_desc`, `score_asc`, `score_desc`), `page`, `page_size` |
+| `GET` | `/api/reviews` | **Authenticated.** The review queue. Query params: `status` (repeatable, `pending` default, `any` for every status), `jurisdiction` (repeatable), `list_version`, `decided_by`, `sort` (`flagged_asc` default, `flagged_desc`), `page`, `page_size` |
 | `POST` | `/api/reviews/<id>/decision` | **Authenticated.** Record a confirmation or a rejection |
 | `POST` | `/api/subscriptions` | Public. Take an address and email it a confirmation link. Body `{"email": "..."}` |
 | `POST` | `/api/subscriptions/confirm` | Public. Complete the double opt-in. Body `{"token": "..."}` |
@@ -534,7 +616,7 @@ card can link to the rest of that court's cases without resolving the name first
 | `documents` | `id`, `language`, `doc_type`, `format`, `full_text`, `source_url`, `byte_size`, `retrieved_at` |
 | `parties` | `id`, `name`, `role`, `party_type`, `ordinal` |
 | `topics` | `slug`, `label`, `confidence`, `assigned_by` |
-| `keyword_matches` | `term_id`, `term`, `list_version`, `field`, `weight_applied`, `match_count`, `snippet` |
+| `keyword_matches` | `term_id`, `term`, `category`, `list_version`, `field`, `match_count`, `snippet` — the case's public labels |
 | `citations` | `target_identifier`, `target_scheme`, `citation_type`, `target_title`, `target_url` |
 
 `case_document.raw_payload` is **never** exposed: it is the verbatim source response, kept
@@ -546,13 +628,13 @@ unpublished case is reported as a 404, not as a flag a client could read.
 stands after the decision.
 
 **`ReviewItem`** — one queue entry, carrying everything a reviewer needs to decide **without
-a second request**: the case, the numbers the flag was derived from, and the matched terms
-that produced them. Nothing is recomputed; it is what the run recorded.
+a second request**: the case, and the terms that selected it. Nothing is recomputed; it is
+what the run recorded.
 
 ```json
 { "id": 12, "status": "pending",
-  "score": 3.5, "min_score": 3.0, "band_ceiling": 6.0, "list_version": "1.1.0",
-  "reason": "score 3.5 reaches min_score 3, inside the review band [3, 6) (NL list v1.1.0); matched: nl-drift",
+  "matched_term_count": 2, "list_version": "2.0.0",
+  "reason": "matched 2 curated term(s) (NL list v2.0.0): nl-glyfosaat, nl-spuitzone",
   "flagged_at": "2026-08-05T06:00:00+00:00", "flagged_revision": 1,
   "flagged_content_hash": "9f2c…",
   "decision": null, "decided_by": null, "decided_at": null, "decided_revision": null,
@@ -631,10 +713,20 @@ published case silently, and a whole payload failing it would otherwise be indis
 from an unreadable response.
 
 **`/api/filters`** — `jurisdictions: [{code, name}]`, `courts: [{id, name}]`,
-`topics: [{slug, label}]`, the string lists `law_domains`, `law_subfields`, `languages`,
-`sorts` and `export_formats`, `decision_date_range: {from, to}`, and the bounds the server
-enforces (`page_size_default`, `page_size_max`, `latest_limit_max`) so the filter UI reads
-them rather than repeating them.
+`topics: [{slug, label}]`, `keywords: [{id, term, category, jurisdiction, case_count}]`,
+the string lists `law_domains`, `law_subfields`, `languages`, `categories`, `sorts` and
+`export_formats`, `decision_date_range: {from, to}`, and the bounds the server enforces
+(`page_size_default`, `page_size_max`, `latest_limit_max`) so the filter UI reads them rather
+than repeating them.
+
+**`keywords` is the only facet not derived from the cases.** It is read from the curated
+lists, so a term that has selected nothing appears with `case_count: 0`. That is deliberate:
+a curator has to be able to see that a substance is in the list and has never been litigated,
+which an empty facet would hide. `categories`, by contrast, lists only what is on a case — a
+category with nothing behind it is a dead end rather than a finding.
+
+`keyword` filters on the term **id** rather than the term text, because the text is a label
+written to be read and may be re-worded, while a cited link has to keep working.
 
 **`/api/health`** — `{ "status": "ok", "service": "plt-api", "version": "0.1.0",
 "database": "ok" | "unavailable", "ingest": { "NL": "2026-07-01T09:30:00+00:00" } }`.
@@ -706,7 +798,7 @@ behalf, and each requires a JSON body, which an HTML form cannot send and a cros
   `/api/stats/jurisdictions`. An **EU logo positioned in the North Sea** is hoverable on the
   same footing and links through to `/cases?jurisdiction=EU`. Jurisdictions with no data
   render in a muted "no cases yet" state rather than disappearing. Keyboard-accessible: the
-  hover affordance must have a focus equivalent. Coverage is `docs/core-document.md` Annex 2
+  hover affordance must have a focus equivalent. Coverage is `docs/CORE_DOCUMENT.md` Annex 2
   and comes from the geometry, not from the response, so a jurisdiction the API does not
   mention is still drawn. The geometry is a **generated local asset**
   (`frontend/src/components/map/geometry.generated.ts`, written by
@@ -790,7 +882,7 @@ drops the digest from an unsubscribed row after `PLT_SUBSCRIBER_RETENTION_DAYS`,
 and `digest_count`, and deletes an address that never confirmed after
 `PLT_SUBSCRIBER_UNCONFIRMED_EXPIRY_DAYS` — that row records no consent, so nothing about it is
 kept. **Both are unset by default and unset means not enforced**, because the periods are the
-Law group's to decide (issue #75) and a default would be a policy nobody chose. The job says
+Law group's to decide and a default would be a policy nobody chose. The job says
 "not configured" rather than reporting a count of zero, since the two look identical in a log
 and mean opposite things.
 
@@ -807,3 +899,144 @@ mail a real address**, production refuses the `console` backend, and there is no
 email service: a handful of plain-text messages a week from a university mail server is what
 SMTP is for, and a vendor would add a data processor to a system holding personal data for no
 capability in return.
+
+---
+
+## 9. The corpus mirror
+
+`plt mirror` copies a jurisdiction's source payloads to disk, unfiltered and unclassified,
+and is **not** an ingestion: it writes no database row and reads no keyword list. It exists
+because core document §2.8 requires selection to be repeatable, and a live endpoint cannot
+give that — two keyword lists scored against CELLAR a week apart differ by the repository as
+well as by the list. Scored against a mirror they differ only by the list.
+
+**Layout.** One directory per jurisdiction under `PLT_CORPUS_STORE_DIR`, one folder per case
+inside it. The Dutch store already had this shape, so it is the shape:
+
+```
+<corpus_store_dir>/
+  EU/
+    62017CJ0616/
+      metadata.json        index + provenance; written LAST, so it marks the case complete
+      raw_content.xml      RawDocument.payload, verbatim
+      fulltext.fr.xhtml    one per further language version, verbatim
+    manifest.json          what the store holds (counted), the capture window, the run's config
+    _checkpoint.json       where the next capture resumes
+    _repair_checkpoint.json  how far the last repair read the identifier listing
+    _failures.jsonl        the cases that did not come down, and why
+    logs/
+      2026-W32_20260809T031205Z.log   one readable record per run
+```
+
+**Rules.**
+
+1. **Jurisdiction-agnostic.** The mirror drives a `SourceConnector` through the registry, so
+   a jurisdiction is mirrored by the connector it was onboarded with and nothing here
+   changes (§4).
+2. **Verbatim** (rule 2.6). `RawDocument.payload` becomes `raw_content.<format>`; every
+   further payload the normalised case carries becomes `fulltext.<language>.<format>`. A
+   payload that *is* the source record is stored once, not twice.
+3. **`metadata.json` is an index, not a second copy.** Identifiers, dates, court, language,
+   the file list, and provenance — when the case was fetched and from what URL. The citation
+   graph, the parties and the text of the decision are in the payloads beside it.
+4. **Its checkpoint is a file, not the `ingest_checkpoint` row.** A mirror pass that advanced
+   the ingestion position would make the pipeline skip cases it never ingested.
+5. **A failed case holds the checkpoint back**, exactly as in the runner (§7). Re-enumerating
+   costs discovery queries and no fetches, because everything already on disk is skipped —
+   and rule 2.10 is there because those queries are not free either. See the repair below.
+6. **The store is configuration.** `PLT_CORPUS_STORE_DIR`, documented in `.env.example`. The
+   built-in default is `./corpus` inside the checkout, git-ignored; a corpus outgrows a
+   checkout, so a real deployment names the volume it lives on.
+7. **`manifest.json` describes the corpus by counting it** (rule 2.11). Three blocks, and the
+   difference between them is the point of the file. `contents` is **observed**: a walk of the
+   store at the moment of writing, giving the case count, the resource types with a count
+   each, the languages text is held in, the span of decision dates and the span of fetch
+   instants. `capture` is what the runs *asked* the source for — the window a methodology page
+   states. `configuration` is what a run was *launched with*, labelled as such, attributed to
+   a named run in `recorded_by`, and **not rewritten by a run that failed or was interrupted**:
+   a run that did not finish has no standing to say how the corpus was taken. `totals` holds
+   the only two figures that belong to the runs rather than to the corpus — bytes written and
+   runs recorded. The case count lives in `contents` alone, because one fact with two homes is
+   how the staler of them gets quoted.
+
+   **`plt corpus-manifest -j EU` re-derives `contents` from the store and nothing else**, with
+   no connector and no request. It is how a store described by an older version of this code,
+   or by a misconfigured run, is corrected once — from observation rather than by hand.
+
+8. **Every run leaves one log a person can read**, in `logs/`, named for the ISO week and the
+   instant it started — so a weekly job never overwrites last week's and two runs in one week
+   never collide. It states the outcome, the window as the checkpoint before and after, the
+   counts (discovered, newly fetched, **already held and skipped**, failed), a summary of the
+   failures pointing at `_failures.jsonl`, the requests and every `Retry-After` honoured, and
+   the store total afterwards. It is written on the failed and interrupted paths too: this
+   command runs weekly with nobody watching, and a record that only appears on success cannot
+   catch the failure it exists for (core document §2.7). A log that cannot be written is
+   warned about and never fails the run. `PLT_CORPUS_LOG_RETENTION_RUNS` caps how many are
+   kept; unset — the default — keeps every one, and only files the project wrote are ever
+   deleted.
+
+**Repair (`plt mirror --repair`, `plt.pipeline.repair`).** A capture that was interrupted
+leaves a partial corpus, and re-running the walk to close the gap is the expensive mistake
+rule 2.10 forbids. The repair asks the other question — not "what has changed" but "what am
+I missing" — in three steps: list the source's identifiers through
+`SourceConnector.enumerate_identifiers`, diff against the store (a stat call per identifier,
+no request), and fetch only the difference through the same `fetch` and the same store writer
+a capture uses. It is a *mode*, not a second implementation: the connector, the politeness,
+the failure log, the manifest and the run log are all the mirror's.
+
+Four rules of its own:
+
+1. **It writes `_repair_checkpoint.json`, never `_checkpoint.json`.** The capture's position
+   is a high-water mark on modification dates and supplies the next capture's window; a
+   repair's is a place in a listing. Writing one over the other would make a capture resume
+   from a bound no run had walked to.
+2. **A failed case holds nothing back.** There is no window to advance past: the next repair
+   re-derives the difference from the disk, so a case that did not come down is simply still
+   missing and is offered again.
+3. **It does not restate the capture window.** The `capture` block of `manifest.json` is left
+   as the repair found it, `updated_at` aside; what the repair did is in the `runs` history
+   beside it, labelled `"mode": "repair"`.
+4. **Its log says it is a repair**, counts `listed`/`already held`/`missing` rather than a
+   window's `discovered`, and says so in the heading — a reader must never mistake a repair
+   for a walk that covered a window it never asked for.
+5. **A repaired case records no discovery.** `source_modified_at`, `source_revision` and
+   `discovery_cursor` come from the candidate, and a listing states none of them, so all three
+   are `null` on a case a repair fetched. That is the honest record, not a defect: nothing was
+   discovered. Nothing is lost either — the source's modification date is in the notice stored
+   beside it and in `source_metadata`, verbatim — and the next capture whose window reaches
+   the case fills the fields in.
+
+### 9.1 Ingesting from the store (`plt ingest --from-store`)
+
+Filtering a corpus the mirror already holds is a decision about text on our disk. Asking the
+courts to serve a million judgments again so the same bytes can be scored a second time is
+rule 2.10's mistake at its largest scale, and it is what a backfill would otherwise be.
+
+`plt.pipeline.store_source.StoredCorpusConnector` wraps a real connector and replaces only the
+two stages that touch the network:
+
+- **`discover`** walks the case folders and yields one candidate each, carrying the identifier,
+  the modification instant and the revision the store recorded.
+- **`fetch`** reads `raw_content.<format>` as the payload and rebuilds the language versions
+  from the `fulltext.*` files beside it, joined to `retrieved_languages` on the URL both record,
+  so a version keeps the source's own language code.
+- **`normalise` is the wrapped connector's, untouched.**
+
+That last point is the whole design, and it is a property of the two shipped connectors rather
+than an assumption about them: both derive everything from the payload they are handed, so a
+payload read off disk normalises into exactly the case the network run produced. A connector
+that normalised from anything else — a second request, its own memory — could not be read back
+from a mirror, and the round-trip test in `tests/unit/test_store_source.py` is what says so.
+
+Three consequences worth stating:
+
+1. **It reports the source's connector name**, so a backfill and the weekly run share one
+   `ingest_checkpoint` row. The checkpoint's timestamp is a high-water mark, so a full pass in
+   filesystem order still ends on the newest case the corpus holds, and the next scheduled run
+   asks the source only for what changed after it.
+2. **The order is the filesystem's**, not the source's. Nothing resumes mid-window from it;
+   an interrupted store run is simply run again, and deduplication skips what was already
+   stored without opening a payload.
+3. **Provenance stays true.** The case really did come from Rechtspraak or CELLAR, and is
+   recorded that way; that a particular run read it from the mirror is recorded per document,
+   under `read_from_store`.

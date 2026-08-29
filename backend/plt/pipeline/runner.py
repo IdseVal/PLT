@@ -384,8 +384,8 @@ class _Run:
                     "context": {
                         "jurisdiction": case.jurisdiction_code,
                         "source_id": case.source_id,
-                        "score": round(result.score, 3),
-                        "terms": len(result.matches),
+                        "terms": result.matched_term_count,
+                        "labels": [match.term for match in result.labels[:8]],
                     }
                 },
             )
@@ -413,7 +413,6 @@ class _Run:
             extra={
                 "context": {
                     "source_id": case.source_id,
-                    "score": round(result.score, 3),
                     "stage": result.stage,
                 }
             },
@@ -517,7 +516,7 @@ def _default_chain(jurisdiction_code: str, settings: Settings) -> FilterChain:
     """Build the filter chain for a jurisdiction.
 
     Stage 1 is the curated keyword matcher. Later stages append here and nowhere else, which
-    is what "the chain is pluggable" means in practice (``docs/core-document.md`` 2.5).
+    is what "the chain is pluggable" means in practice (``docs/CORE_DOCUMENT.md`` 2.5).
 
     Args:
         jurisdiction_code: Jurisdiction whose list to load.

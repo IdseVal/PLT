@@ -1,6 +1,6 @@
 """Add the review queue.
 
-The selection policy of ``docs/core-document.md`` section 2.7 in the schema: a case that
+The selection policy of ``docs/CORE_DOCUMENT.md`` section 2.7 in the schema: a case that
 passes the filter but scores inside its list's review band is ingested and published as
 normal *and* queued for a content manager to confirm or reject.
 
