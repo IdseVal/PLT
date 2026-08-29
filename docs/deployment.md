@@ -192,9 +192,13 @@ attention before real users arrive.**
 
 `repositories.py` builds a `%term%` pattern and runs `ILIKE` against `case.title`,
 `case.abstract`, `case.source_id` and — through an `EXISTS` — `case_document.full_text`. The
-leading wildcard means no B-tree index can help. Today that is a sequential scan over 158 MB
-of text per query. On SQLite with 4,339 cases on a fast local disk you do not notice; on a
-2-vCPU VM with several people searching you will.
+leading wildcard means no B-tree index can help, so every search reads every document.
+
+Measured against PostgreSQL 16 holding the current corpus, through the API, on a workstation
+faster than any VM this would run on: **2.09 s** for a term with 73 hits, **1.94 s** for a term
+with none. On SQLite with the same corpus you do not notice. On a 2-vCPU VM with several people
+searching you will. Revision 0009 takes those to **0.088 s** and **0.047 s**, returning
+identical rows.
 
 ### 4.1 Use `pg_trgm`, not `tsvector`
 
@@ -223,16 +227,9 @@ CREATE INDEX CONCURRENTLY ix_case_document_full_text_trgm
     ON case_document USING gin (full_text gin_trgm_ops);
 ```
 
-Add these as an Alembic revision guarded on the dialect, so the migration set stays portable
-and SQLite development is untouched:
-
-```python
-def upgrade() -> None:
-    if op.get_bind().dialect.name != "postgresql":
-        return
-    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
-    ...
-```
+**This ships as revision 0009**, guarded on the dialect, so `alembic upgrade head` creates it on
+PostgreSQL and does nothing on SQLite. The SQL above is what that revision runs; you do not
+apply it by hand.
 
 ### 4.2 What to expect
 
@@ -240,9 +237,9 @@ def upgrade() -> None:
   Use `CONCURRENTLY` on a live database; note that Alembic runs migrations in a transaction by
   default and `CREATE INDEX CONCURRENTLY` cannot run inside one — so build these outside the
   migration on an already-serving box, or accept the lock during a maintenance window.
-- **A trigram GIN index over full text is not small** — budget for it to approach the size of
-  the text itself. On a corpus this size that is tens of megabytes; watch it as jurisdictions
-  are added.
+- **The indexes are cheaper than you would guess.** Measured on this corpus: 17 MB for the
+  full-text index against 158 MB of text, roughly a ninth, and under 5 MB for the other three.
+  Watch it as jurisdictions are added, but it is not the cost the corpus is.
 - **Queries shorter than three characters cannot use a trigram index** and fall back to a scan.
   `PLT_PAGE_SIZE_MAX` bounds what such a query returns, but not what it costs. If short queries
   turn out to be common, reject them at the API rather than serving them slowly.
@@ -578,5 +575,6 @@ Not blocking a preview deployment; blocking a public one.
 - **Classification is empty.** `topic` and `case_topic` hold no rows, so the topic filters on
   the All cases page render with nothing to select. Not a deployment problem, but it will be
   the first thing a scholar asks about.
-- **Trigram indexes are not yet in a migration** (§4.1). Until they are, a fresh deployment gets
-  correct search and slow search.
+- **Nothing runs the test suite against PostgreSQL.** The fixture in `tests/conftest.py` is
+  hardcoded to SQLite, so a green `pytest` says nothing about the database the server uses.
+  Portability was verified by hand; parametrising that fixture would make it verified by CI.
