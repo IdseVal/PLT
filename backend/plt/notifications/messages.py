@@ -304,11 +304,12 @@ def _review_line(review: CaseReview, settings: Settings) -> str:
     """
     case = review.case
     title = _truncate(case.title, _MAX_TITLE) or case.source_id
-    band = "score unavailable"
-    if review.score is not None:
-        floor = "?" if review.min_score is None else f"{review.min_score:g}"
-        ceiling = "?" if review.band_ceiling is None else f"{review.band_ceiling:g}"
-        band = f"score {review.score:g}, band [{floor}, {ceiling})"
+    count = case.matched_term_count
+    band = (
+        "matched terms unknown"
+        if count is None
+        else f"{count} matched term{'' if count == 1 else 's'}"
+    )
     path = f"/cases/{quote(case.jurisdiction_code, safe='')}/{quote(case.source_id, safe='')}"
     return (
         f"{case.jurisdiction_code} {case.source_id}\n"

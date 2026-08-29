@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import enum
 import math
-from collections.abc import Iterator, Sequence
-from dataclasses import dataclass
+from collections.abc import Iterator, Mapping, Sequence
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -37,6 +37,7 @@ from plt.db.models import (
     IngestStatus,
     Jurisdiction,
     JurisdictionType,
+    KeywordMatch,
     LawDomain,
     ReviewDecision,
     ReviewStatus,
@@ -100,15 +101,13 @@ class CaseSort(enum.StrEnum):
 class ReviewSort(enum.StrEnum):
     """Ordering accepted by the review queue endpoint.
 
-    ``flagged_asc`` is the default because a queue is worked oldest first; the score
-    orderings exist because the band's lower edge is where the false positives concentrate,
-    so a reviewer with limited time starts there.
+    A queue is worked oldest first, so ``flagged_asc`` is the default. The score orderings
+    that used to sit beside it are gone: they ranked items by how close they were to the
+    selection threshold, and a word search has no threshold to be close to.
     """
 
     FLAGGED_ASC = "flagged_asc"
     FLAGGED_DESC = "flagged_desc"
-    SCORE_ASC = "score_asc"
-    SCORE_DESC = "score_desc"
 
 
 def like_pattern(term: str) -> str:
@@ -147,6 +146,12 @@ class CaseSearchCriteria:
     topic_slug: str | None = None
     court_id: int | None = None
     language: str | None = None
+    #: Id of a curated keyword term the case must be labelled with, e.g. ``nl-glyfosaat``.
+    #: The id rather than the term text: the text is a label written for people to read and
+    #: can be re-worded, while the id is the stable thing a saved link should survive.
+    keyword: str | None = None
+    #: Category the case must carry a label in, e.g. ``active_substance``.
+    category: str | None = None
     date_from: date | None = None
     date_to: date | None = None
     sort: CaseSort = CaseSort.DATE_DESC
@@ -254,6 +259,14 @@ class FacetValues:
     law_subfields: tuple[str, ...] = ()
     languages: tuple[str, ...] = ()
     topics: tuple[tuple[str, str], ...] = ()
+    #: How many published cases carry each keyword label, keyed by term id. The dropdown
+    #: itself is built from the curated lists rather than from here — a curator has to be
+    #: able to see that a term is in the list and has found nothing — so this supplies the
+    #: count beside each option and leaves the roster to the list.
+    keyword_counts: Mapping[str, int] = field(default_factory=dict)
+    #: The categories actually present on published cases, which is what the category
+    #: dropdown offers: a category with no case behind it is not a filter, it is a dead end.
+    categories: tuple[str, ...] = ()
     earliest_decision_date: date | None = None
     latest_decision_date: date | None = None
 
@@ -318,6 +331,12 @@ def _conditions(criteria: CaseSearchCriteria) -> list[ColumnElement[bool]]:
         # Two nested EXISTS rather than a join: ``Case.topics`` is the association object,
         # so the topic itself has to be reached through it.
         clauses.append(Case.topics.any(CaseTopic.topic.has(Topic.slug == criteria.topic_slug)))
+    if criteria.keyword:
+        # EXISTS rather than a join, for the same reason the topic filter uses one: a case
+        # carries many labels, and joining would multiply the case rows before the count.
+        clauses.append(Case.keyword_matches.any(KeywordMatch.term_id == criteria.keyword))
+    if criteria.category:
+        clauses.append(Case.keyword_matches.any(KeywordMatch.category == criteria.category))
     if criteria.date_from is not None:
         clauses.append(Case.decision_date >= criteria.date_from)
     if criteria.date_to is not None:
@@ -610,10 +629,6 @@ def _review_ordering(criteria: ReviewSearchCriteria) -> tuple[SQLColumnExpressio
     """
     if criteria.sort is ReviewSort.FLAGGED_DESC:
         return (CaseReview.flagged_at.desc(), CaseReview.id.desc())
-    if criteria.sort is ReviewSort.SCORE_ASC:
-        return (CaseReview.score.asc().nullsfirst(), CaseReview.id.asc())
-    if criteria.sort is ReviewSort.SCORE_DESC:
-        return (CaseReview.score.desc().nullslast(), CaseReview.id.desc())
     return (CaseReview.flagged_at.asc(), CaseReview.id.asc())
 
 
@@ -715,7 +730,7 @@ def record_review_decision(
     The case's ``needs_review`` flag is deliberately **not** cleared. It states what the
     filter concluded about the text, and re-running the same window over the same corpus has
     to produce the same flags whether or not anyone has decided in the meantime
-    (``docs/core-document.md`` section 2.8). The workflow lives in ``case_review.status``.
+    (``docs/CORE_DOCUMENT.md`` section 2.8). The workflow lives in ``case_review.status``.
 
     Args:
         session: Open database session.
@@ -853,6 +868,24 @@ def list_facets(session: Session) -> FacetValues:
         .where(Topic.cases.any(CaseTopic.case.has(Case.is_published.is_(True))))
         .order_by(Topic.label)
     ).all()
+    # Counted per term rather than per match row: a case labelled with a term once and a case
+    # labelled with it twice both count once towards "how many cases carry this label".
+    labelled = session.execute(
+        select(
+            KeywordMatch.term_id,
+            func.count(func.distinct(KeywordMatch.case_id)).label("case_count"),
+        )
+        .join(Case, Case.id == KeywordMatch.case_id)
+        .where(Case.is_published.is_(True), KeywordMatch.term_id.is_not(None))
+        .group_by(KeywordMatch.term_id)
+    ).all()
+    categories = session.execute(
+        select(KeywordMatch.category)
+        .join(Case, Case.id == KeywordMatch.case_id)
+        .where(Case.is_published.is_(True), KeywordMatch.category.is_not(None))
+        .distinct()
+        .order_by(KeywordMatch.category)
+    ).scalars()
     date_bounds = session.execute(
         select(func.min(Case.decision_date), func.max(Case.decision_date)).where(
             Case.is_published.is_(True)
@@ -866,6 +899,8 @@ def list_facets(session: Session) -> FacetValues:
         law_subfields=_distinct_strings(session, Case.law_subfield),
         languages=_distinct_strings(session, Case.language),
         topics=tuple((row.slug, row.label) for row in topics),
+        keyword_counts={row.term_id: row.case_count for row in labelled},
+        categories=tuple(value for value in categories if value),
         earliest_decision_date=date_bounds[0],
         latest_decision_date=date_bounds[1],
     )

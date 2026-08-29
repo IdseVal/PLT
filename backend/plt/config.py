@@ -435,11 +435,39 @@ class Settings(BaseSettings):
     )
     pipeline_page_size: Annotated[int, Field(ge=1, le=1000)] = Field(
         default=100,
-        description="Result-page size requested from source endpoints during discovery.",
+        description=(
+            "Result-page size requested from source endpoints during discovery. Read by the "
+            "EU connector, which pages CELLAR by the CELEX number. The Dutch connector has "
+            "its own rechtspraak_page_size, because there the number decides how large a "
+            "window may be rather than how a window is paged."
+        ),
     )
     pipeline_report_dir: Path = Field(
         default=_REPO_ROOT / "reports",
         description="Directory a --dry-run match report is written to. Git-ignored.",
+    )
+
+    # -- Corpus mirror --------------------------------------------------------------
+    corpus_store_dir: Path = Field(
+        default=_REPO_ROOT / "corpus",
+        description=(
+            "Root of the local case-law store `plt mirror` writes to: one directory per "
+            "jurisdiction, one folder per case inside it. A corpus outgrows a checkout, so "
+            "every real deployment overrides this with the volume it keeps the store on - "
+            "see .env.example. The default stays inside the repository, git-ignored, so a "
+            "misconfigured run writes somewhere obvious rather than somewhere surprising."
+        ),
+    )
+    corpus_log_retention_runs: int | None = Field(
+        default=None,
+        ge=1,
+        description=(
+            "How many of a jurisdiction's mirror run logs to keep in <store>/<CODE>/logs, "
+            "newest first. Unset - the default - keeps every one of them: the logs are the "
+            "audit trail of an unattended weekly job, they are a few kilobytes each, and how "
+            "long that record is worth keeping is the deployment's decision rather than a "
+            "default nobody chose. Only files this project wrote are ever deleted."
+        ),
     )
 
     # -- Source endpoints -----------------------------------------------------------
@@ -461,6 +489,43 @@ class Settings(BaseSettings):
             "Restrict Rechtspraak discovery to ECLIs that carry text (return=DOC). The "
             "excluded registrations have no summary and no body, so they cost roughly three "
             "requests for every one that can match; disable only to mirror the bare register."
+        ),
+    )
+    rechtspraak_page_size: Annotated[int, Field(ge=1, le=1000)] = Field(
+        default=1000,
+        description=(
+            "Entries one Rechtspraak search returns, and therefore the largest a discovery "
+            "window is allowed to be: a window that holds more is narrowed until it fits, so "
+            "the walk never pages. 1000 is the endpoint's own maximum, and the default "
+            "because every page boundary avoided is a place the feed's sort - which is on a "
+            "non-unique timestamp - could otherwise have reordered between requests."
+        ),
+    )
+    rechtspraak_window_days: Annotated[float, Field(gt=0, le=3650)] = Field(
+        default=1.0,
+        description=(
+            "Width a Rechtspraak discovery window starts at. The walk resizes itself from "
+            "there - doubling over sparse history, halving into a bulk re-publication - so "
+            "this is only where it begins looking. A Dutch day held 371 records when this "
+            "default was measured, comfortably inside one page."
+        ),
+    )
+    rechtspraak_max_window_days: Annotated[float, Field(gt=0, le=3650)] = Field(
+        default=365.0,
+        description=(
+            "Widest a Rechtspraak discovery window may grow to. Bounds how much of an empty "
+            "stretch one request can claim to have covered. A backfill with no lower bound "
+            "starts in 1900 and the feed's earliest record is from 2013, so this is what "
+            "decides whether crossing that century costs a hundred requests or forty "
+            "thousand."
+        ),
+    )
+    rechtspraak_min_window_seconds: Annotated[int, Field(ge=1, le=86_400 * 366)] = Field(
+        default=1,
+        description=(
+            "Narrowest a Rechtspraak discovery window is split to. The feed's timestamps "
+            "resolve to the second, so one second is the point past which splitting cannot "
+            "separate two records; such a window is paged and logged rather than dropped."
         ),
     )
     eurlex_sparql_url: str = Field(
@@ -487,6 +552,17 @@ class Settings(BaseSettings):
         description=(
             "Narrowest a discovery window is split to. A window this small that still hits "
             "the cap is processed anyway and logged, rather than splitting forever."
+        ),
+    )
+    eurlex_identifier_page_size: Annotated[int, Field(ge=1, le=10_000)] = Field(
+        default=1000,
+        description=(
+            "CELEX numbers per page of the identifier listing a repair diffs against the "
+            "store. Its own setting rather than pipeline_page_size because the two queries "
+            "cost nothing like the same per row: a listing page is a DISTINCT over one index "
+            "and answered in well under a second at a thousand rows, so a small page would "
+            "spend requests for no reason. Measured against the live endpoint on 9 August "
+            "2026: 10 rows in 0.55s, 1,000 rows in 0.64s."
         ),
     )
     eurlex_languages: _StringList = Field(
@@ -583,6 +659,7 @@ class Settings(BaseSettings):
         "subscription_address_pepper",
         "subscriber_retention_days",
         "subscriber_unconfirmed_expiry_days",
+        "corpus_log_retention_runs",
         mode="before",
     )
     @classmethod
@@ -592,7 +669,7 @@ class Settings(BaseSettings):
         ``PLT_SUBSCRIBER_RETENTION_DAYS=`` in a ``.env`` is how an operator writes "I have not
         decided this", which is the state issue #75 leaves the project in; without this it is
         either a parse error or, for the pepper, an empty secret that would key every digest
-        with nothing at all. All three settings mean "not configured" when they are blank.
+        with nothing at all. Every setting listed above means "not configured" when blank.
 
         Args:
             value: The value as configured.
@@ -790,6 +867,29 @@ class Settings(BaseSettings):
             message = f"jurisdiction_code must be two ASCII letters, got {jurisdiction_code!r}"
             raise ValueError(message)
         return self.keywords_dir / f"{code.lower()}.json"
+
+    def excluded_list_path(self, jurisdiction_code: str) -> Path:
+        """Return the path of a jurisdiction's record of rejected terms.
+
+        The file beside the keyword list holding the terms that were considered and left out,
+        each with the reason. It is curation evidence rather than pipeline input: nothing
+        loads it to match with, and the methodology page publishes it so a reader can see what
+        the criterion excludes as well as what it admits.
+
+        Args:
+            jurisdiction_code: Jurisdiction code such as ``NL`` or ``EU``. Case-insensitive.
+
+        Returns:
+            Path to ``<keywords_dir>/excluded_<code lowercased>.json``. The file is not
+            required to exist; a jurisdiction that has rejected nothing has no such file.
+
+        Raises:
+            ValueError: If the code is not two ASCII letters, on the same guard as
+                :meth:`keyword_list_path`.
+        """
+        return self.keyword_list_path(jurisdiction_code).with_name(
+            f"excluded_{jurisdiction_code.strip().lower()}.json"
+        )
 
     def user_agent(self, version: str) -> str:
         """Render the outbound ``User-Agent`` header.

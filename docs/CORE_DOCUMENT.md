@@ -137,9 +137,10 @@ Design consequences:
 
 1. Keyword lists are **data, not code** — one JSON file per jurisdiction in
    `data/keywords/`, validated against a shared schema, versioned in git.
-2. Terms are **weighted**. Unambiguous terms (active substances, statutory terms) qualify a
-   document on their own; contextual terms (crops, exposure, drift) only qualify in
-   combination, above a configurable score threshold.
+2. Selection is a **word search**: a document is in scope when **any** curated term matches
+   it. Every term therefore has to be specific enough to carry a case on its own, and a term
+   that is not belongs in `excluded_<code>.json` rather than in the list. See §2.13, which
+   replaced the weighted scoring this point used to describe.
 3. Lists are **curated by the content manager**, not by developers. Every ingestion run
    records which terms matched each case, so precision and recall of the lists can be
    reviewed and the lists tuned over time.
@@ -172,29 +173,21 @@ fails to contain, and a researcher cannot audit an absence.
 
 Two consequences bind the filter chain:
 
-1. **Thresholds are not raised to buy precision.** The first EU dry run (1,548 CJEU decisions
-   across 2024) selected 54 cases, distributed as `≥12: 18 | 6–12: 8 | 4–6: 7 | 3.0–3.9: 21`.
-   Raising `min_score` from 3 to 6 would remove everything below 6 — **28 of the 54**. Raising
-   it only to 4 would remove 21, of which roughly two were genuinely in scope; the seven in the
-   4–6 band were never separately assessed, so the cost of the 3→6 move is *at least* two
-   genuine cases and possibly more. That trade was declined.
-
-   Any future proposal to tighten selection must be assessed the same way: **what does it
-   lose**, counted from the distribution rather than estimated. This paragraph originally said
-   the 3→6 move cost 21 cases; that was the cost of moving to 4, recomputed by hand from the
-   band table and wrong in the direction that made the trade look cheaper than it was.
-2. **Precision is handled downstream, by review.** Cases that pass but score near the
-   threshold are ingested and published as normal, and additionally flagged for a content
-   manager to confirm or reject. Selection admits; review curates.
-
-This is supported by the shape of the evidence rather than assumed: in that run the false
-positives were not spread across the score range but concentrated immediately above
-`min_score`, while the high-scoring band was almost entirely genuine. A borderline flag
-therefore targets the affected population without touching the rest.
+1. **Selection is not tightened by arithmetic.** Any proposal to narrow what the tracker
+   holds must be assessed by **what it loses**, counted rather than estimated.
+2. **Precision is handled in curation.** A term that admits the wrong cases comes out of the
+   list, with the reason recorded, rather than being kept at a discount. See §2.13.
 
 **The content manager may be a person or an agent.** That is deliberately undecided, so the
 review queue must not assume either — the same queue, record and audit trail has to serve
 both.
+
+> *Amended 17 August 2026.* This section originally bought recall with a low score threshold
+> and gave the resulting false positives to a review queue, flagged automatically by their
+> distance above that threshold. §2.13 replaced the threshold, so nothing is flagged
+> automatically any more: the queue and its audit trail remain, and a content manager raises
+> the flag. The recall-first principle above is unchanged — what changed is where precision
+> is bought.
 
 ### 2.8 Methodology must be transparent, explainable and repeatable
 
@@ -207,8 +200,10 @@ requirements follow, and they bound what the filter chain may become:
 - **Transparent.** How a case was selected is public, not internal. The criteria, the term
   lists and the thresholds are published artefacts.
 - **Explainable.** For any individual case it must be possible to say *why it is in the
-  database* — which terms matched, in which field, with what weight, against which version
-  of which list. This is what `keyword_match` records, and why it is not optional.
+  database* — which terms matched, in which field, against which version of which list. This
+  is what `keyword_match` records, and why it is not optional. Since §2.13 those records are
+  also public: the terms and their categories are the labels a case is listed under, so the
+  explanation is on the case's own page rather than in an internal table.
 - **Repeatable.** Re-running the same selection over the same corpus with the same list
   version must produce the same result. Lists are versioned data in git; scores are
   deterministic; every run is recorded in `ingest_run`.
@@ -221,7 +216,7 @@ requirement above has to be revisited deliberately, not worked around.
 
 ### 2.9 Onboarding a jurisdiction: the jurisdiction methodology document
 
-> *Added 5 August 2026. Decision by the project owner, prompted by issues #39 and #57.*
+> *Added 5 August 2026. Decision by the project owner.*
 
 Every jurisdiction added to the database gets its own **methodology document** at
 `docs/jurisdictions/<code>.md`, written *before* its connector. It is a precondition for
@@ -252,7 +247,7 @@ the keyword list — not in how selection works.
 
 Where a jurisdiction genuinely needs more, it is added as an **explicit, documented
 exception** in that jurisdiction's methodology document, never as an undocumented adjustment
-to shared code. The Dutch list supplies the motivating cases (#57): the forensic-toxicology
+to shared code. The Dutch list supplies the motivating cases: the forensic-toxicology
 boilerplate *"geen aanwijzingen … geneesmiddelen, drugs en/of bestrijdingsmiddelen"* admits
 homicide judgments, and `kwekerij` matches `hennepkwekerij`. These are linguistic accidents
 of one language, not facts about pesticide litigation, and they do not belong in shared
@@ -265,7 +260,7 @@ explained on the Methodology page (§2.8) does not qualify.
 
 ### 2.11 Quarantine: bounding a permanently failing document
 
-> *Added 5 August 2026. Decision by the project owner, resolving issue #35.*
+> *Added 5 August 2026. Decision by the project owner.*
 
 A document that fails repeatedly must not stall its jurisdiction's window for ever. The rule:
 **after N consecutive runs in which the same `source_id` fails, the pipeline advances past it
@@ -303,7 +298,7 @@ and records the fact durably.**
 
 ### 2.12 Subscriber data: pseudonymise on unsubscribe
 
-> *Added 5 August 2026. Decision by the project owner, resolving issue #75.*
+> *Added 5 August 2026. Decision by the project owner.*
 
 The PLT offers an email alert list. Subscriber addresses are **personal data** and Wageningen
 University is an EU controller, so GDPR Article 5(1)(e) — storage limitation — applies:
@@ -336,9 +331,48 @@ decision intends:
 unsubscribed dates, tenure, digests received. Nothing in the reporting needs the address.
 
 Retention of the *pseudonymised* row, and expiry of addresses that were never confirmed, are
-still open (#75) and belong to the Law group. Storage limitation does not stop at
+still open and belong to the Law group. Storage limitation does not stop at
 pseudonymisation, so both are configuration rather than constants, with no default that
 quietly becomes policy.
+
+### 2.13 Selection is a word search, and a match is a public label
+
+> *Added 17 August 2026. Decision by the project owner, following the first full run.*
+
+**A case is in the tracker because a curated term appears in it. That is the whole rule.**
+There is no score, no threshold and no weighting.
+
+The weighted design that preceded this was not wrong in principle, but in practice it earned
+its keep by letting terms stay in the lists that could never have carried a case: `werkzame
+stof`, `omwonenden`, `bufferzone`, `NVWA`, `EFSA`, `Wet op de economische delicten`. Held
+below the threshold individually, they combined freely, and the first full run over both
+corpora selected thousands of judgments on nothing more than a crop name beside an exposure
+word. Precision now costs a curation decision instead of an arithmetic one: the term comes
+out of the list and into `data/keywords/excluded_<code>.json`, **with the reason it went**.
+
+One instrument survives from the weighted design and is load-bearing without it. `requires`
+gates a term on another having matched, which is what lets an active substance whose ISO
+common name is an ordinary word — `water`, `beer`, `talc`, `koper` — stay in the list without
+admitting every judgment that says it. A gated term whose gate stayed shut selects nothing.
+
+**Every match is a label, and labels are public.** A case carries the curated **term** and
+its **category** for each term that selected it. They are shown on the case page, above the
+text, and the case list is filtered by both. Three consequences:
+
+- The label is the term **as the curator wrote it**, never the inflection found in the
+  judgment, so every spelling of a substance files under one name.
+- An alias is a spelling of *its own term* and nothing else. A different substance filed as
+  an alias would label the case with the wrong chemical, which is why the twelve bundles that
+  did exactly that were split into terms of their own.
+- A term is now read by the public, so it is written to be read.
+
+This makes §2.8's explainability requirement something a reader can exercise rather than
+something the project asserts: the answer to "why is this case here" is on the case's page.
+
+**What it cost.** The Dutch list went from 877 terms to 863 and the EU list from 573 to 565;
+the removals are 17 and 16 terms respectively, offset by product classes split out of
+aliases. Almost the whole of both lists — 830 of 863, and 512 of 565 — is active substances,
+which is where the project owner placed the emphasis.
 
 ---
 
@@ -433,7 +467,7 @@ forward into the startup phase.
 | Jurisdiction | Domain | Court | URL |
 | --- | --- | --- | --- |
 | EU | EU | Court of Justice of the European Union (CJEU) | https://curia.europa.eu |
-| EU | EU | EUR-Lex (EU case law database) | https://eur-lex.europa.eu |
+| EU | EU | EUR-Lex, and the Publications Office's CELLAR repository behind it | https://eur-lex.europa.eu |
 | EU | EU | European e-Justice Portal | https://e-justice.europa.eu |
 | Austria | Administrative | Verwaltungsgerichtshof (VwGH) | https://www.vwgh.gv.at |
 | Austria | Civil/Criminal | Oberster Gerichtshof (OGH) | https://www.ogh.gv.at |
@@ -474,19 +508,9 @@ forward into the startup phase.
 | Luxembourg | Unified | Justice Portal Luxembourg | https://justice.public.lu |
 | Malta | Unified | Judiciary of Malta | https://judiciary.mt |
 | Netherlands | Administrative | Council of State (Raad van State) | https://www.raadvanstate.nl |
-| Netherlands | Administrative (economic) | Trade and Industry Appeals Tribunal (College van Beroep voor het bedrijfsleven, CBb) | https://www.rechtspraak.nl/Organisatie-en-contact/Organisatie/College-van-Beroep-voor-het-bedrijfsleven |
+| Netherlands | Administrative (economic) | Trade and Industry Appeals Tribunal (College van Beroep voor het bedrijfsleven, CBb) — appeal forum for authorisation decisions of the Ctgb | https://www.rechtspraak.nl/Organisatie-en-contact/Organisatie/College-van-Beroep-voor-het-bedrijfsleven |
 | Netherlands | Civil/Criminal | Supreme Court (Hoge Raad) | https://www.hogeraad.nl |
-| Netherlands | Unified | Rechtspraak.nl open data portal — all instances, including first instance | https://uitspraken.rechtspraak.nl |
-
-> **Netherlands rows corrected 5 August 2026.** The **CBb** was absent while it is the statutory
-> appeal forum for Ctgb authorisation decisions — that is, the court where the highest-value Dutch
-> pesticide cases are actually decided. It surfaced from the jurisdiction methodology work (§2.9),
-> which is precisely the failure mode §2.9 exists to catch: an annex listing apex courts only looks
-> complete while omitting the forum that matters most.
->
-> The portal row is added because `data.rechtspraak.nl` is a **unified source covering every
-> instance**, including rechtbanken and gerechtshoven. Most pesticide litigation is first-instance,
-> so the two apex rows alone materially understate what the Netherlands connector reads.
+| Netherlands | Unified | Rechtspraak.nl open data portal — all instances including first instance, and the courts of the Caribbean parts of the Kingdom | https://uitspraken.rechtspraak.nl |
 | Poland | Administrative | Supreme Administrative Court (NSA) | https://www.nsa.gov.pl |
 | Poland | Civil/Criminal | Supreme Court | https://www.sn.pl |
 | Portugal | Administrative | Supreme Administrative Court | https://www.stap.pt |
@@ -500,20 +524,15 @@ forward into the startup phase.
 | Sweden | Environmental | Land and Environment Courts / Court of Appeal (Mark- och miljödomstolarna, Mark- och miljööverdomstolen) | https://www.domstol.se/hitta-domstol/mark--och-miljodomstolar/ |
 | Sweden | Unified | Swedish Courts (Sveriges Domstolar) | https://www.domstol.se |
 
-> **Sweden added 4 August 2026.** Sweden was absent from the original Annex 2 while every
-> other EU member state was listed. The omission surfaced when the map (issue #13) drew
-> exactly the coverage this annex states and came out one member state short. Since §1.1
-> scopes the PLT to "the EU and its member states", this was a gap rather than a scope
-> decision.
->
-> Sweden also introduces a **court type no other row in this annex uses**: the Land and
-> Environment Courts (*mark- och miljödomstolarna*), five specialised divisions of district
-> courts with the Land and Environment Court of Appeal above them, which hear environmental
-> permitting and environmental damage cases. That is where Swedish pesticide litigation is
-> most likely to sit — not in the supreme courts. Other member states have comparable
-> specialised environmental or agricultural jurisdictions that this annex does not yet
-> capture, so this annex should be treated as a starting point per member state rather than
-> a complete map of where pesticide cases are heard.
+> **This annex is a starting point per member state, not a map of where pesticide cases are
+> heard.** It lists apex courts almost exclusively, and most pesticide litigation never
+> reaches one. Sweden shows what that omits: the Land and Environment Courts (*mark- och
+> miljödomstolarna*), five specialised divisions of district courts with the Land and
+> Environment Court of Appeal above them, hear environmental permitting and environmental
+> damage cases, and that is where Swedish pesticide litigation is most likely to sit. Other
+> member states have comparable specialised environmental or agricultural jurisdictions that
+> this annex does not yet capture. Establishing where the litigation actually is, per
+> jurisdiction, is the work §2.9 requires.
 
 ### Annex 2a: machine-readable access routes (verified 3 August 2026)
 
@@ -522,16 +541,15 @@ recorded here as each jurisdiction is onboarded.
 
 | Jurisdiction | Endpoint | Notes |
 | --- | --- | --- |
-| NL | `https://data.rechtspraak.nl/uitspraken/zoeken` | Atom feed. Parameters include `max` (≤1000), `from` (offset), `date` (repeatable, from/to), `modified`, `subject` (rechtsgebied URI), `creator` (instantie URI), `type`, `sort`, and `return=DOC`. **`DOC` is the only accepted value of `return`** — `META`, `ALL` and anything else give HTTP 400 (verified 4 August 2026; an earlier version of this row wrongly documented `return=DOC\|META`). Omitting `return` yields **all** ECLIs, including metadata-only records with no document body; `return=DOC` yields only those with a body. The difference is large — for 1 July 2026, **819 without the parameter against 322 with it**, so roughly 60% of published Dutch ECLIs carry metadata but no full text. A connector must decide deliberately which it wants: metadata-only records cannot be keyword-filtered on full text (§2.5), but omitting them from discovery means never seeing them. **No full-text search** — topical selection must happen client-side (§2.5). |
+| NL | `https://data.rechtspraak.nl/uitspraken/zoeken` | Atom feed. Parameters include `max` (≤1000), `from` (offset), `date` (repeatable, from/to), `modified`, `subject` (rechtsgebied URI), `creator` (instantie URI), `type`, `sort`, and `return=DOC`. **`DOC` is the only accepted value of `return`** — `META`, `ALL` and anything else give HTTP 400 (verified 4 August 2026). Omitting `return` yields **all** ECLIs, including metadata-only records with no document body; `return=DOC` yields only those with a body. The difference is large: the portal publishes **3,737,898 decisions, of which 949,461 carry a document body** (verified 5 August 2026). A connector must decide deliberately which it wants: metadata-only records cannot be keyword-filtered on full text (§2.5), but omitting them from discovery means never seeing them. **`modified` is read in Europe/Amsterdam local time while the feed's Atom `updated` is UTC**, and an explicit offset in the parameter is ignored, so a caller passing a UTC instant silently asks for a window one or two hours off the one it meant; a single `modified` value is a lower bound, so a bounded window sends two. **No full-text search** — topical selection must happen client-side (§2.5). |
 | NL | `https://data.rechtspraak.nl/uitspraken/content?id=<ECLI>` | Rechtspraak XML: Dublin Core metadata block, `inhoudsindicatie` (abstract) and `uitspraak` (full text). |
 | NL | `https://data.rechtspraak.nl/Waardelijst/{Rechtsgebieden,Instanties,Proceduresoorten}` | Controlled vocabularies; seed the reference tables from these rather than hard-coding. |
 | EU | `https://publications.europa.eu/webapi/rdf/sparql` | CELLAR SPARQL 1.1 endpoint over the CDM ontology. Used to enumerate case law works by CELEX sector 6 and by document date. From 1 January 2026 a single search returns at most 10,000 results — page by date window. |
 | EU | `http://publications.europa.eu/resource/celex/<CELEX>` | CELLAR REST. `Accept: application/xml;notice=object` returns the full metadata notice; `Accept: application/xhtml+xml` with an `Accept-Language` (ISO 639-3, e.g. `eng`) returns the language manifestation of the full text. Expect a 303 to the cellar URI. |
 | EU | EUR-Lex SOAP webservice | Alternative to SPARQL, supports full-text queries, but **requires registered credentials** and cannot return document files. Kept as a fallback, not the primary route. |
 
-> **EU rows corrected 4 August 2026**, while building the connector (issue #8). Three
-> details in the row above were not as recorded, and each of them costs documents rather
-> than merely style:
+> **Three details of the CELLAR REST route** (verified 4 August 2026). Each of them costs
+> documents rather than merely style:
 >
 > - **`Accept: text/html` is answered with a 404** for most judgments; the same document is
 >   served as `application/xhtml+xml`. Older judgments do come back as `text/html`, so the
@@ -543,9 +561,10 @@ recorded here as each jurisdiction is onboarded.
 >   filter matches nothing, silently: the query succeeds and returns an empty result set,
 >   which is indistinguishable from a quiet week.
 >
-> Two further facts worth recording for whoever reads this next. A single CELEX resolves to
-> several cellar works and to one expression per language, so the enumeration groups by
-> CELEX and the language versions become documents of one case. And **not every decision has
+> Two further facts. CELLAR holds **104,087 distinct case-law CELEX numbers** (verified
+> 5 August 2026), and a single CELEX resolves to several cellar works and to one expression
+> per language, so the enumeration groups by CELEX and the language versions become documents
+> of one case. And **not every decision has
 > a retrievable full text**: some carry only a metadata notice, in any language and any
 > format, so the pipeline stores the notice and moves on rather than treating it as a
 > failure.

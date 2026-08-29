@@ -142,6 +142,8 @@ class TestPayloadContract:
             "law_subfields",
             "languages",
             "topics",
+            "keywords",
+            "categories",
             "decision_date_range",
             "sorts",
             "export_formats",
@@ -239,3 +241,74 @@ class TestHealth:
         assert payload["status"] == "ok"
         assert payload["database"] == "unavailable"
         assert payload["ingest"] == {}
+
+
+def test_the_keyword_roster_never_publishes_a_pattern(
+    client: FlaskClient, api_corpus: Session
+) -> None:
+    """The dropdown is a list of names, and a regex term's term is not one."""
+    del api_corpus
+    payload = client.get("/api/filters").get_json()
+
+    assert payload["keywords"], "the roster comes from the curated lists, not from the cases"
+    for option in payload["keywords"]:
+        assert "(?" not in option["term"], f"pattern published as a name: {option['term']!r}"
+        assert "\\" not in option["term"], f"escape published as a name: {option['term']!r}"
+
+
+class TestExclusions:
+    """``/api/exclusions``: what each jurisdiction's criterion deliberately keeps out."""
+
+    def test_the_three_mechanisms_are_reported_separately(
+        self, client: FlaskClient, api_corpus: Session
+    ) -> None:
+        """They are different claims, and merging them would tell a reader less."""
+        del api_corpus
+        payload = client.get("/api/exclusions").get_json()
+
+        assert payload["jurisdictions"]
+        for entry in payload["jurisdictions"]:
+            assert set(entry) == {
+                "code",
+                "name",
+                "list_version",
+                "excluded_terms",
+                "gated_terms",
+                "exclusion_patterns",
+            }
+
+    def test_a_rejected_term_carries_the_reason_it_was_rejected(
+        self, client: FlaskClient, api_corpus: Session
+    ) -> None:
+        """An exclusion nobody can argue with is an exclusion nobody can check."""
+        del api_corpus
+        payload = client.get("/api/exclusions").get_json()
+        dutch = next(e for e in payload["jurisdictions"] if e["code"] == "NL")
+
+        assert dutch["excluded_terms"], "the Dutch list has rejected terms on record"
+        for term in dutch["excluded_terms"]:
+            assert term["term"]
+            assert term["reason"], f"{term['term']} was removed without a recorded reason"
+
+    def test_a_gated_term_names_the_gate_that_opens_it(
+        self, client: FlaskClient, api_corpus: Session
+    ) -> None:
+        """A gate that is flagged but not named leaves a reader asking against what."""
+        del api_corpus
+        payload = client.get("/api/exclusions").get_json()
+        dutch = next(e for e in payload["jurisdictions"] if e["code"] == "NL")
+
+        assert dutch["gated_terms"]
+        for term in dutch["gated_terms"]:
+            assert term["requires"], f"{term['term']} is gated on nothing"
+
+    def test_nothing_published_here_is_a_pattern_dressed_as_a_name(
+        self, client: FlaskClient, api_corpus: Session
+    ) -> None:
+        """The terms are labels; only ``exclusion_patterns`` may read as machine syntax."""
+        del api_corpus
+        payload = client.get("/api/exclusions").get_json()
+
+        for entry in payload["jurisdictions"]:
+            for term in [*entry["excluded_terms"], *entry["gated_terms"]]:
+                assert "(?" not in term["term"], f"pattern published as a name: {term['term']!r}"

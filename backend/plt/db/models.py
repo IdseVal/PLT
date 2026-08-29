@@ -349,10 +349,12 @@ class Case(Base):
     #: Editorial switch: unpublished cases are hidden from the public API.
     is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
 
-    #: Total weight the filter chain awarded at the last evaluation. Recorded rather than
-    #: recomputed, so the flag below can be read back against the score that produced it.
-    filter_score: Mapped[float | None] = mapped_column(Float)
-    #: Whether that score fell in the keyword list's review band. A flagged case is
+    #: How many distinct curated terms selected this case at the last evaluation. Selection
+    #: is a word search, so one is enough and the count is a measure of how squarely the case
+    #: sits in scope rather than a threshold it had to clear.
+    matched_term_count: Mapped[int | None] = mapped_column(Integer)
+    #: Whether a content manager should look at this case. Nothing raises it automatically
+    #: now that selection has no threshold to be near; it is set by hand. A flagged case is
     #: published exactly like any other: the flag adds a review, it does not withhold the
     #: case (core document section 2.7).
     needs_review: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
@@ -532,13 +534,17 @@ class KeywordMatch(Base):
     )
     #: Identifier of the term inside the jurisdiction's keyword list.
     term_id: Mapped[str] = mapped_column(String(_IDENTIFIER_LEN), nullable=False)
-    #: The literal term as written in the list, kept so a report reads without a join.
+    #: The curated term as written in the list - not the inflection found in the text. This
+    #: is the public label the case is listed under, so every spelling of a term files under
+    #: the one the curator wrote.
     term: Mapped[str | None] = mapped_column(String(_LABEL_LEN))
+    #: The term's category, e.g. ``active_substance``. The second public label, and what the
+    #: case list's category filter reads.
+    category: Mapped[str | None] = mapped_column(String(_SHORT_LEN), index=True)
     #: Version of the keyword list that produced the match.
     list_version: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
     #: Field the term matched in, e.g. ``title``, ``abstract``, ``full_text``.
     field: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
-    weight_applied: Mapped[float | None] = mapped_column(Float)
     match_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     #: Surrounding text, so a reviewer can judge the match without opening the case.
     snippet: Mapped[str | None] = mapped_column(Text)
@@ -593,12 +599,11 @@ class CaseReview(Base):
         default=ReviewStatus.PENDING,
     )
 
-    #: The score, the threshold and the band ceiling that produced the flag, and the version
-    #: of the list they came from. Stored together so the flag can be re-derived from the
-    #: row alone — the repeatability requirement of core document section 2.8.
-    score: Mapped[float | None] = mapped_column(Float)
-    min_score: Mapped[float | None] = mapped_column(Float)
-    band_ceiling: Mapped[float | None] = mapped_column(Float)
+    #: Version of the keyword list the flag was raised against, so the flag can be
+    #: re-derived from the row alone — the repeatability requirement of core document
+    #: section 2.8. The score, threshold and band ceiling that used to sit beside it are
+    #: gone with the weighting: selection has no threshold, so a flag has no distance from
+    #: one.
     list_version: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
     #: The filter chain's own sentence about the case, as shown to the reviewer.
     reason: Mapped[str | None] = mapped_column(Text)

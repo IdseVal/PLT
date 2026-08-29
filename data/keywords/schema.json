@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://plt.wur.nl/schemas/keywords-1.0.0.json",
+  "$id": "https://plt.wur.nl/schemas/keywords-2.0.0.json",
   "title": "PLT jurisdiction keyword filter list",
-  "description": "Curated linguistic filter used as stage 1 of the PLT ingestion filter chain. One file per jurisdiction. See docs/core-document.md section 2.5.",
+  "description": "Curated linguistic filter used as stage 1 of the PLT ingestion filter chain. One file per jurisdiction. A document is selected when any term matches: there is no scoring, so every term carries the list alone and must be specific enough to justify that. See docs/CORE_DOCUMENT.md section 2.5.",
   "type": "object",
-  "required": ["schema_version", "jurisdiction", "jurisdiction_name", "list_version", "updated", "languages", "scoring", "terms"],
+  "required": ["schema_version", "jurisdiction", "jurisdiction_name", "list_version", "updated", "languages", "fields", "terms"],
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "1.0.0",
-      "description": "Version of this schema the file conforms to."
+      "const": "2.0.0",
+      "description": "Version of this schema the file conforms to. 2.0.0 removed term weights and the score threshold: selection is a word search, and a term either selects a document or is not in the list."
     },
     "jurisdiction": {
       "type": "string",
@@ -23,7 +23,7 @@
     "list_version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Semantic version of this list. Bump the minor version when terms are added, the major version when scoring semantics change."
+      "description": "Semantic version of this list. Bump the minor version when terms are added or removed, the major version when matching semantics change."
     },
     "updated": {
       "type": "string",
@@ -42,42 +42,14 @@
     },
     "notes": {
       "type": "string",
-      "description": "Free-text curation notes: known gaps, precision/recall observations, decisions taken."
+      "description": "Free-text curation notes: known gaps, precision observations, decisions taken."
     },
-    "scoring": {
-      "type": "object",
-      "required": ["min_score", "fields"],
-      "additionalProperties": false,
-      "properties": {
-        "min_score": {
-          "type": "number",
-          "exclusiveMinimum": 0,
-          "description": "Total weight a document must reach to pass the filter. A single weight-3 term is intended to be sufficient on its own."
-        },
-        "review_band": {
-          "type": "number",
-          "minimum": 0,
-          "default": 3,
-          "description": "Width, in score points above min_score, of the band within which a passing document is additionally flagged for content-manager review. A document scoring min_score <= score < min_score + review_band is ingested and published exactly like any other and placed in the review queue (core document 2.7). Set it per jurisdiction from that jurisdiction's own dry run; 0 disables flagging. Defaults to 3."
-        },
-        "count_term_once": {
-          "type": "boolean",
-          "default": true,
-          "description": "If true, repeated occurrences of the same term contribute their weight only once."
-        },
-        "fields": {
-          "type": "object",
-          "description": "Per-field multipliers applied to a term's weight depending on where it matched.",
-          "required": ["title", "abstract", "full_text"],
-          "additionalProperties": { "type": "number", "minimum": 0 },
-          "properties": {
-            "title": { "type": "number", "minimum": 0 },
-            "abstract": { "type": "number", "minimum": 0 },
-            "full_text": { "type": "number", "minimum": 0 },
-            "subject": { "type": "number", "minimum": 0 }
-          }
-        }
-      }
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["title", "abstract", "subject", "full_text"] },
+      "description": "The document fields a term is looked for in. A field absent from this list is not scanned at all, so the curator decides what counts as the text of a judgment."
     },
     "terms": {
       "type": "array",
@@ -86,7 +58,7 @@
     },
     "exclusions": {
       "type": "array",
-      "description": "Patterns that veto a document outright regardless of score. Use sparingly, for known homonym traps.",
+      "description": "Patterns that veto a document outright however many terms matched. Use sparingly, for known homonym traps.",
       "items": {
         "type": "object",
         "required": ["pattern", "reason"],
@@ -102,18 +74,35 @@
   "$defs": {
     "term": {
       "type": "object",
-      "required": ["id", "term", "lang", "category", "weight"],
+      "required": ["id", "term", "lang", "category"],
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": { "match": { "const": "regex" } },
+            "required": ["match"]
+          },
+          "then": {
+            "required": ["label"],
+            "$comment": "A regex term's 'term' is a pattern, and a pattern is not a name. Since every match is shown to the public as a label, a regex term has to say what to call it."
+          }
+        }
+      ],
       "properties": {
         "id": {
           "type": "string",
           "pattern": "^[a-z]{2}-[a-z0-9-]+$",
-          "description": "Stable identifier, prefixed with the language code. Never reuse an id for a different term; match provenance is stored against it."
+          "description": "Stable identifier, prefixed with the language code. Never reuse an id for a different term; match provenance is stored against it, and it labels every case the term selected."
         },
         "term": {
           "type": "string",
           "minLength": 2,
-          "description": "The term as it appears in court documents, in the source language."
+          "description": "The term as it appears in court documents, in the source language. Also the public label a case carries when it matches, unless 'label' overrides it."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 2,
+          "description": "What to call this term where a reader sees it: on the case page, in the keyword filter, in a match report. Defaults to 'term'. Required when 'match' is 'regex', because a pattern such as '(?<!\\\\w)Ctgb(?!\\\\w)' is not a name and must never reach the public as one."
         },
         "lang": {
           "type": "string",
@@ -133,12 +122,7 @@
             "environment",
             "general"
           ],
-          "description": "Used for reporting on which kinds of terms drive recall, and for tuning."
-        },
-        "weight": {
-          "type": "number",
-          "minimum": 0,
-          "description": "3 = unambiguous, qualifies a document alone. 2 = strong but needs light corroboration. 1 = contextual, only meaningful in combination."
+          "description": "The kind of term this is. Stored on every match, so it is the second label a case carries and the one the public filters by."
         },
         "match": {
           "enum": ["word", "phrase", "substring", "regex"],
@@ -148,17 +132,22 @@
         "case_sensitive": {
           "type": "boolean",
           "default": false,
-          "description": "Set true only for short acronyms whose lowercase form is a common word."
+          "description": "Set true only for short acronyms whose lowercase form is a common word. Inherited by every alias, so a case_sensitive term carries acronyms only: an ordinary word that inherits it matches solely the casing curated here."
+        },
+        "case_sensitive_exception": {
+          "type": "boolean",
+          "default": false,
+          "description": "Opts this term out of the acronym-only rule enforced on case_sensitive terms. Set it only where splitting the ordinary word into its own term would change which documents are selected rather than only structure. The loader rejects it on a term that is not case_sensitive, and on one that does not need it. See data/keywords/README.md, 'Known exceptions'."
         },
         "aliases": {
           "type": "array",
           "items": { "type": "string", "minLength": 2 },
-          "description": "Spelling variants, inflections and abbreviations that score identically to the term."
+          "description": "Spelling variants, inflections and abbreviations of THIS term. An alias is reported under this term's id and label, so a different substance is never an alias: it is its own term."
         },
         "requires": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Term ids that must also match before this term contributes any weight. Use to disarm homonyms."
+          "description": "Term ids that must also match before this term counts. A term whose gate did not open selects nothing and labels nothing. This is what lets an active substance whose name is an ordinary word - water, beer, talc - stay in the list without admitting every judgment that says it."
         },
         "note": { "type": "string" }
       }

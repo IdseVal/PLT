@@ -37,6 +37,9 @@ htmlcov/
 reports/
 # Messages written by the `file` mail backend. They carry subscriber addresses.
 outbox/
+# Where `plt mirror` lands when PLT_CORPUS_STORE_DIR has not been pointed at a real volume.
+# A mirrored corpus is source data measured in gigabytes; it never belongs in git.
+corpus/
 
 # --- Node / frontend --------------------------------------------------------------------
 node_modules/
@@ -59,3 +62,7 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# The dispatcher poller records what it has already dispatched here.
+.orca/dispatcher/state.json
+.orca/dispatcher/state.corrupt-*.json

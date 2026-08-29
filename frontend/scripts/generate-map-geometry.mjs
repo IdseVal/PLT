@@ -28,7 +28,7 @@
  *
  * ## What comes out
  *
- * - one path per jurisdiction in `docs/core-document.md` Annex 2, keyed by its
+ * - one path per jurisdiction in `docs/CORE_DOCUMENT.md` Annex 2, keyed by its
  *   `map_feature_id` (`docs/architecture.md` section 3: the ISO 3166-1 alpha-2 code). **The
  *   annex is read, not restated**: the table in that document decides the coverage, and a
  *   member state added to it that this script cannot place stops the run by name rather than
@@ -107,7 +107,7 @@ const EU_MARKER = { longitude: 2.6, latitude: 56.4, radius: 26 }
 const MIN_EU_CLEARANCE = 3
 
 /** The document that decides which jurisdictions the map covers. */
-const ANNEX_PATH = resolve(FRONTEND_ROOT, '..', 'docs', 'core-document.md')
+const ANNEX_PATH = resolve(FRONTEND_ROOT, '..', 'docs', 'CORE_DOCUMENT.md')
 
 /** Heading the jurisdiction table sits under. */
 const ANNEX_HEADING = '## Annex 2: project data sources'
@@ -728,7 +728,7 @@ function renderModule(geometry) {
  * documents the source data, the projection and why the map ships as plain path strings
  * rather than as a mapping library. \`--check\` fails when this file is out of date.
  *
- * Coverage: the ${geometry.shapes.length} member states of \`docs/core-document.md\` Annex 2,
+ * Coverage: the ${geometry.shapes.length} member states of \`docs/CORE_DOCUMENT.md\` Annex 2,
  * read from that table rather than restated here, plus the European Union, which the map draws
  * as a mark in the North Sea instead of a shape.
  * Source: Natural Earth 1:50m admin-0 countries (public domain) via world-atlas@2.0.2.

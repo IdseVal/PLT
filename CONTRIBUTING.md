@@ -152,7 +152,7 @@ geometry or contacts a tile server, so the map works offline. Do not edit the ge
 change the script and re-run it. `--check` fails when the committed file is out of date, and
 the script needs the network only on a first run, after which the source data is cached.
 
-Which jurisdictions the map draws is decided by `docs/core-document.md` Annex 2, which both the
+Which jurisdictions the map draws is decided by `docs/CORE_DOCUMENT.md` Annex 2, which both the
 script and `tests/mapGeometry.test.ts` read. The annex carries names only — no ISO codes and no
 geometry — so a member state added to it needs two things written in the test as well as in the
 script's `GEOMETRY_BY_JURISDICTION`, on purpose:
@@ -197,6 +197,26 @@ Tests are part of the deliverable, not an afterthought (`docs/architecture.md` �
 - Unit tests never touch the network. Record a source payload once into
   `backend/tests/fixtures/` and mock the HTTP client against it.
 - Tests that do hit a live endpoint are marked `@pytest.mark.integration` and are opt-in.
+- **A recording is evidence about payloads, not about behaviour** (§2.9). The moment your
+  fake has to decide what *order* to return rows in, whether a repeated request answers the
+  same way, or what a retry does, it is inventing behaviour the recording never contained —
+  and a fake that invents something better behaved than the real endpoint will pass a
+  connector that is broken. That is not hypothetical: `FakeCellar` sorted stably, CELLAR does
+  not, and a discovery walk that silently lost 14.9% of the EU corpus passed the whole suite.
+  Pin the behaviour with an integration test instead. For anything that walks a window in
+  more than one request, the test already has a shape — walk it and assert the union equals
+  the count the source itself reports for the same window, asserting **both** that nothing is
+  missing and that nothing came back twice. See
+  `test_a_paged_window_yields_every_case_the_endpoint_counts` and
+  `test_a_narrowed_walk_yields_every_ecli_the_feed_counts`.
+
+  A fake that models behaviour is not forbidden — it is forbidden to model it *kindly*.
+  `Endpoint` in `test_connector_rechtspraak.py` answers searches out of a corpus and can be
+  told to break a tie one way on even requests and the other on odd ones, which is the worst
+  the live feed is permitted to do. Two tests then hold each other honest: the narrowed walk
+  loses nothing over that corpus, and paging the same corpus demonstrably does lose entries.
+  Without the second, the first would be a check on nothing the day the fake stopped being
+  adversarial.
 - Frontend tests render through `@testing-library/react` and assert on accessible roles and
   names, so the tests break when the page stops being accessible.
 
@@ -251,7 +271,7 @@ passing anywhere. Real font files will end this.
 
 ## 5. Running the ingestion pipeline
 
-The weekly scan (`docs/core-document.md` §2.6, `docs/architecture.md` §7) is `plt ingest`.
+The weekly scan (`docs/CORE_DOCUMENT.md` §2.6, `docs/architecture.md` §7) is `plt ingest`.
 The scheduled workflow, a server cron and your terminal all call that one command — the
 scheduler is a trigger, never a second implementation, so anything you can reproduce here is
 what the weekly job does.
@@ -338,6 +358,105 @@ Set `PLT_LOG_FORMAT=json` for a log a collector can parse, keep `PLT_DATABASE_UR
 unit's environment file (mode `0600`, never in the repository), and leave the politeness
 settings alone — `PLT_HTTP_REQUESTS_PER_SECOND` and the backoff are what keep the project
 welcome at a public court endpoint.
+
+### The corpus mirror, and the log each run leaves
+
+`plt mirror` (`docs/architecture.md` §9) copies a jurisdiction's source payloads to disk
+verbatim. It is not an ingestion: it writes no database row and reads no keyword list.
+
+```bash
+cd backend
+python -m plt.cli mirror -j EU --limit 5 --store ./scratch-store   # a rehearsal
+python -m plt.cli mirror -j EU                                     # the real thing
+python -m plt.cli mirror -j EU --repair                            # close a gap in one
+```
+
+The store is `PLT_CORPUS_STORE_DIR`; `--store PATH` overrides it for one run, which is how you
+rehearse without touching the real corpus. Run without `--since` — the store's own checkpoint
+supplies the window, so a run resumes rather than starting over, and a case already on disk
+costs no request.
+
+**When the store is missing cases, reach for `--repair` rather than `--since`.** A capture
+that was interrupted leaves a partial corpus, and the obvious repair — walk the whole thing
+again, everything on disk gets skipped — re-runs every discovery query in the process. For
+CELLAR that is a counting query per date window since 1952 and a grouped, join-carrying page
+query for every window that holds anything: 19,524 requests and 3h 23m on 8 August 2026, and
+then `Retry-After: 1800`. `--repair` lists the source's identifiers by the cheapest route the
+connector has, compares them with the folders on disk, and fetches only what is absent
+(`docs/architecture.md` rule 2.10 and §9).
+
+```bash
+python -m plt.cli mirror -j EU --repair                            # compare the whole corpus
+python -m plt.cli mirror -j NL --repair \
+    --since 2026-02-19 --until 2026-03-10                          # compare one band
+python -m plt.cli mirror -j EU --repair --limit 20                 # a first, small contact
+```
+
+`--since/--until` narrow the *listing*, not the repair: within whatever is listed, exactly the
+missing cases are fetched, which is why a repair is more precise than a date window even when
+you know roughly where the gap is. Give the EU no bounds — a plain `SELECT DISTINCT ?celex`
+over the whole of sector 6 is about a hundred requests. Give the Netherlands the band you care
+about: there the feed *is* the listing, so listing the whole corpus costs the whole walk.
+
+A repair reads and writes `_repair_checkpoint.json` and never touches `_checkpoint.json`, so
+the capture still resumes where it did. What makes a repair resumable is the store itself: run
+it again and the cases it already fetched are on disk and skipped. Its log is headed `corpus
+repair` and counts *listed*, *already held* and *missing* rather than a window's *discovered*.
+
+**Every run writes one log**, whether it finished, failed or was interrupted:
+
+```
+<PLT_CORPUS_STORE_DIR>/EU/logs/2026-W32_20260809T031205Z.log
+```
+
+The name is the ISO week the run belongs to and the exact UTC instant it started, so a weekly
+job never overwrites last week's record, two runs in one week each keep their own, and sorting
+by name sorts by date. Open one and it says, in plain text and without needing the code:
+
+- when it ran, how long it took, and whether it finished, failed or was interrupted;
+- the window it covered, as the checkpoint before and after — which is what says how much of
+  the source it actually looked at, and whether the position moved at all;
+- how many cases were discovered, newly fetched, **already on disk and skipped**, and failed.
+  That middle distinction is the one to read first: *skipped because already present* against
+  *newly fetched* is what separates a genuinely quiet week from a run that did nothing;
+- what failed and why, summarised, pointing at `_failures.jsonl` for the full history;
+- how many requests it made, how many were retries, and every `Retry-After` it honoured;
+- how many cases the store holds now.
+
+Every log is kept by default. `PLT_CORPUS_LOG_RETENTION_RUNS=52` keeps the newest 52 per
+jurisdiction and deletes what is older; leaving it unset keeps everything, and nothing this
+project did not write is ever deleted. `manifest.json`, `_checkpoint.json` and
+`_failures.jsonl` beside `logs/` are unchanged — what the corpus holds, the resume position,
+and every failure the store has ever seen.
+
+### What `manifest.json` says, and which part of it you may cite
+
+The manifest is what makes a corpus self-describing, so it is careful about the difference
+between what was counted and what was configured:
+
+- **`contents` is counted from the store**, every time the file is written: the case total,
+  the resource types with a count each, the languages text is held in, the span of decision
+  dates, the span of fetch instants. **This is the block to cite.** It is an observation, it
+  costs no request, and it cannot be wrong about the disk it was read from.
+- **`capture`** is the window the runs asked the source for, and **`configuration`** is what
+  one named run was launched with — `recorded_by` says which run and how it ended. A run that
+  failed or was interrupted does not overwrite it.
+
+Never read scope out of `configuration`. `PLT_EURLEX_RESOURCE_TYPES` is what a process was
+*told* to fetch; two runs launched without it, which both failed in minutes, once left a
+100,000-case EU store describing itself as four resource types. The repair that trusted it
+would have compared the corpus against a third of itself and reported it complete.
+
+**To re-derive a store's description of itself**, without fetching anything:
+
+```bash
+python -m plt.cli corpus-manifest -j EU              # rewrite contents from the store
+python -m plt.cli corpus-manifest -j EU --store D:/CaseLawStore
+```
+
+It builds no connector and sends no request; `capture`, `configuration`, `totals` and the run
+history are carried through untouched. Run it against a store whose manifest predates this
+layout, and after any run that you suspect described the corpus from its own settings.
 
 ## 5a. The mailing list and the digest
 
@@ -446,3 +565,9 @@ Keyword lists in [`data/keywords/`](data/keywords/) are **curated data owned by 
 manager**, not code. Validate against `schema.json`, bump `list_version`, and record the
 reasoning in `notes`. A jurisdiction cannot be onboarded to the pipeline before its list
 exists — see [`data/keywords/README.md`](data/keywords/README.md).
+
+`case_sensitive` and `match` are declared on a term and applied to **every alias it carries**,
+which the schema cannot express and cannot check. The loader therefore rejects a
+`case_sensitive` literal that is not acronym-shaped and a `substring` literal shorter than six
+characters, naming the term and the literal; three defects have shipped through that gap, so
+the failure is deliberate and is not to be worked around by widening the term.

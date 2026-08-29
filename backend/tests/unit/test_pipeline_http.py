@@ -19,6 +19,7 @@ from plt import __version__
 from plt.pipeline.base import DocumentUnavailableError, SourceUnavailableError
 from plt.pipeline.http import PoliteClient, RateLimiter, build_headers
 from tests.conftest import build_settings
+from tests.fakes import FakeConnector
 
 URL = "https://source.invalid/document"
 
@@ -306,6 +307,51 @@ def test_a_backoff_is_abandoned_when_the_run_is_asked_to_stop() -> None:
     # Ctrl+C during a minute-long backoff is not waited out: the sleep is served in
     # slices and abandoned at the first check.
     assert sum(clock.slept) <= 0.25
+
+
+def test_the_client_counts_what_it_asked_of_the_source() -> None:
+    """A run has to be able to state its traffic, not merely its configured politeness."""
+    clock = Clock()
+
+    with client(responder(), clock) as polite:
+        polite.get(URL)
+        polite.get(URL)
+
+    assert polite.traffic.requests == 2
+    assert polite.traffic.retries == 0
+    assert polite.traffic.retry_after_waits == 0
+
+
+def test_a_retried_request_is_counted_as_one_retry_and_two_requests() -> None:
+    clock = Clock()
+
+    with client(responder(503), clock, http_requests_per_second=100.0) as polite:
+        polite.get(URL)
+
+    assert polite.traffic.requests == 2
+    assert polite.traffic.retries == 1
+    assert polite.traffic.backoff_seconds > 0
+
+
+def test_an_honoured_retry_after_is_recorded_as_such() -> None:
+    """If a court asked us to slow down, the run's own record has to say so."""
+    clock = Clock()
+
+    with client(
+        responder(429, headers={"Retry-After": "17"}),
+        clock,
+        http_requests_per_second=100.0,
+    ) as polite:
+        polite.get(URL)
+
+    assert polite.traffic.retry_after_waits == 1
+    assert polite.traffic.retry_after_seconds == pytest.approx(17.0)
+    assert polite.traffic.backoff_seconds == pytest.approx(17.0)
+
+
+def test_a_connector_that_does_not_report_its_traffic_says_so_rather_than_zero() -> None:
+    """``None`` is "not reported"; a zeroed count would read as "sent no requests"."""
+    assert FakeConnector().traffic is None
 
 
 def test_a_caller_supplied_client_is_left_open() -> None:

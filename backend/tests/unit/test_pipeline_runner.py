@@ -590,8 +590,10 @@ def test_a_dry_run_reports_which_cases_passed_and_on_which_terms(
     assert [entry["passed"] for entry in entries] == [True, True, False]
     passed = entries[0]
     assert passed["action"] == "insert"
-    assert passed["score"] >= 3
+    assert passed["matched_term_count"] >= 1
     assert "nl-gewasbeschermingsmiddel" in {term["term_id"] for term in passed["terms"]}
+    assert "gewasbeschermingsmiddel" in {term["term"] for term in passed["terms"]}
+    assert "product_class" in {term["category"] for term in passed["terms"]}
     assert entries[2]["action"] == "reject"
 
 

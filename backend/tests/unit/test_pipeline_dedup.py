@@ -1,6 +1,6 @@
 """Deduplication: never a second row, never a needless download.
 
-``docs/core-document.md`` section 2.6 makes the weekly run safely re-runnable. These tests
+``docs/CORE_DOCUMENT.md`` section 2.6 makes the weekly run safely re-runnable. These tests
 pin the two halves of that: the fingerprint is stable across a re-fetch and moves when the
 content moves, and the pre-check skips a known unchanged document *before* it is fetched.
 """

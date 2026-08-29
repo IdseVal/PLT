@@ -5,7 +5,7 @@
     class Filter(ABC):
         def evaluate(self, case: NormalisedCase) -> FilterResult: ...
 
-The chain is pluggable by design (``docs/core-document.md`` section 2.5, point 4): a later
+The chain is pluggable by design (``docs/CORE_DOCUMENT.md`` section 2.5, point 4): a later
 stage - a classifier, a citation filter, a manual review queue - is added by appending
 another :class:`Filter` to a :class:`FilterChain`, never by touching a connector.
 
@@ -96,19 +96,23 @@ class TermMatch:
 
     Occurrences of the same term - including its aliases - within the same field are
     aggregated into a single instance, so a term repeated five hundred times in a full text
-    costs one row rather than five hundred. ``weight_applied`` always states the weight this
-    instance contributed to the document score, which is ``0.0`` for a term whose
-    ``requires`` gate did not open. The sum of ``weight_applied`` over a result's matches
-    equals :attr:`FilterResult.score`.
+    costs one row rather than five hundred.
+
+    A match is also a **label**. Selection is a word search, so a term that matched is a term
+    the public is told about: :attr:`term` and :attr:`category` are what a case is listed
+    under and what the case list is filtered by. That is why a gated match is marked rather
+    than dropped - it is evidence for the curator - and why only ungated matches label a case.
 
     Attributes:
         term_id: Stable id of the curated term, e.g. ``nl-glyfosaat``. Aliases report the
             id of their parent term.
+        term: The curated term as written in the list - not the inflection found in the
+            text. This is the public label, so every case matching an alias of ``glyfosaat``
+            is listed under ``glyfosaat`` and not under six spellings of it.
+        category: The term's category, e.g. ``active_substance``. The second public label.
         list_version: Semantic version of the list that produced the match, so a stored
             match stays interpretable after the list is re-curated.
         field: Document field the term matched in, e.g. ``full_text``.
-        weight_applied: Weight this match contributed to the score, after the field
-            multiplier, ``count_term_once`` and any ``requires`` gate.
         snippet: Text surrounding the first occurrence, taken from the original document
             text with its diacritics and casing intact.
         matched_text: The first occurrence verbatim, so an alias or inflection is visible.
@@ -117,13 +121,15 @@ class TermMatch:
             NFC-normalised text - which is the text itself for every source seen so far, and
             differs only for a source that emits decomposed characters.
         end: Character offset one past the first occurrence.
-        gated: Whether a ``requires`` gate suppressed this term's weight.
+        gated: Whether a ``requires`` gate held this term back. A gated match selects
+            nothing and labels nothing.
     """
 
     term_id: str
+    term: str
+    category: str
     list_version: str
     field: str
-    weight_applied: float
     snippet: str
     matched_text: str
     occurrences: int
@@ -136,48 +142,52 @@ class TermMatch:
 class FilterResult:
     """The verdict of one filter stage on one document.
 
-    A stage answers two questions, not one. *Passed* decides whether the document enters the
-    database at all, and the PLT deliberately answers it generously: selection optimises for
-    recall, because a false negative is a case the tracker implicitly claims does not exist
-    (``docs/core-document.md`` section 2.7). *Needs review* qualifies that answer, marking a
-    document the stage admitted but only just - the population the same section shows the
-    false positives concentrate in. Precision is then handled downstream, by a content
-    manager confirming or rejecting: selection admits, review curates.
+    *Passed* decides whether the document enters the database at all, and selection is a word
+    search: one curated term matching is enough, because a term that could not carry a case on
+    its own does not belong in the list (``docs/CORE_DOCUMENT.md`` section 2.5). Precision is
+    bought in curation, by removing the term, rather than in arithmetic.
+
+    *Needs review* survives as the content manager's own flag. Nothing raises it
+    automatically any more: a threshold is what made a document "borderline", and there is no
+    longer a threshold to be near.
 
     Attributes:
         passed: Whether the document survives this stage.
-        score: Total weight accumulated, comparable against the list's ``min_score``.
         reason: Human-readable explanation for the pipeline report and the run log.
         stage: Name of the stage that produced the result.
-        matches: Every term match found, contributing or not - see :class:`TermMatch`.
-        needs_review: Whether the document passed *within the review band* and is therefore
-            flagged for confirmation. Never ``True`` on a rejection: a document that did not
-            pass is not in the database and there is nothing to curate.
-        threshold: The score the stage compared against to decide :attr:`passed`, if it has
-            one. Carried with the score rather than left in the stage, so a stored verdict
-            still says what it was measured against once the list has moved on.
-        review_ceiling: The score at or above which the stage stops flagging. Together with
-            :attr:`threshold` it states the review band in full: ``[threshold, ceiling)``.
+        matches: Every term match found, gated or not - see :class:`TermMatch`.
+        needs_review: Whether a content manager should look at this document. Never ``True``
+            on a rejection: a document that did not pass is not in the database and there is
+            nothing to curate.
     """
 
     passed: bool
-    score: float
     reason: str
     stage: str
     matches: tuple[TermMatch, ...] = ()
     needs_review: bool = False
-    threshold: float | None = None
-    review_ceiling: float | None = None
 
     @property
-    def passed_confidently(self) -> bool:
-        """Return whether the document passed clear of the review band.
+    def labels(self) -> tuple[TermMatch, ...]:
+        """Return one match per distinct term that actually selected this document.
+
+        A term found in both the title and the full text is one label, not two, and a term
+        whose ``requires`` gate stayed shut is not a label at all. The order is the order the
+        terms were found in, so a report reads the way the document does.
 
         Returns:
-            ``True`` for a document this stage admitted without flagging it, which is the
-            distinction the review queue is built on.
+            The labelling matches, at most one per term id.
         """
-        return self.passed and not self.needs_review
+        seen: dict[str, TermMatch] = {}
+        for match in self.matches:
+            if not match.gated and match.term_id not in seen:
+                seen[match.term_id] = match
+        return tuple(seen.values())
+
+    @property
+    def matched_term_count(self) -> int:
+        """Return how many distinct curated terms selected this document."""
+        return len(self.labels)
 
 
 class Filter(ABC):
@@ -247,7 +257,6 @@ class FilterChain:
         """
         result = FilterResult(
             passed=True,
-            score=0.0,
             reason="no filter stages configured",
             stage="chain",
         )

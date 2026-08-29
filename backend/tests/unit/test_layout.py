@@ -139,6 +139,8 @@ def test_committed_keyword_lists_cover_the_launch_jurisdictions() -> None:
 
     assert sorted(path.name for path in Path(keywords).glob("*.json")) == [
         "eu.json",
+        "excluded_eu.json",
+        "excluded_nl.json",
         "nl.json",
         "schema.json",
     ]

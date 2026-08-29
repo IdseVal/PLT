@@ -2,7 +2,7 @@
 
 Stage 1 is the keyword matcher in :mod:`plt.pipeline.filters.keywords`. Later stages
 (classifier models, citation-based filters, manual review queues) plug in behind the same
-ABC without touching the connectors (``docs/core-document.md`` section 2.5)::
+ABC without touching the connectors (``docs/CORE_DOCUMENT.md`` section 2.5)::
 
     chain = FilterChain.of(KeywordFilter.for_jurisdiction("NL"))
     result = chain.evaluate(case)

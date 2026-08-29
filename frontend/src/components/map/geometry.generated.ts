@@ -5,7 +5,7 @@
  * documents the source data, the projection and why the map ships as plain path strings
  * rather than as a mapping library. `--check` fails when this file is out of date.
  *
- * Coverage: the 27 member states of `docs/core-document.md` Annex 2,
+ * Coverage: the 27 member states of `docs/CORE_DOCUMENT.md` Annex 2,
  * read from that table rather than restated here, plus the European Union, which the map draws
  * as a mark in the North Sea instead of a shape.
  * Source: Natural Earth 1:50m admin-0 countries (public domain) via world-atlas@2.0.2.

@@ -1,6 +1,6 @@
 """Review queue endpoints: ``/api/reviews`` and below.
 
-The API side of the selection policy in ``docs/core-document.md`` section 2.7. Selection
+The API side of the selection policy in ``docs/CORE_DOCUMENT.md`` section 2.7. Selection
 admits generously, because a false negative is a case the tracker implicitly claims does not
 exist; precision is bought back here, by a content manager confirming or rejecting the cases
 that passed inside their list's review band. Two routes are enough for that: list the queue,

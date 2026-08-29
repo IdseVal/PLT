@@ -70,7 +70,7 @@ export default {
         ],
         /**
          * Headings. A system serif, for the academic reading register the brief asks for
-         * (`docs/core-document.md` section 3.2). Also replaced with the supplied fonts.
+         * (`docs/CORE_DOCUMENT.md` section 3.2). Also replaced with the supplied fonts.
          */
         display: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
       },

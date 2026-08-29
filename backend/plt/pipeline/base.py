@@ -12,7 +12,7 @@ The stage order the runner drives is::
 
 which is why the three methods are separate: ``discover`` must be cheap enough to run over a
 whole window, so that :meth:`SourceConnector.fetch` is never called for a document the
-database already holds unchanged (``docs/core-document.md`` section 2.6).
+database already holds unchanged (``docs/CORE_DOCUMENT.md`` section 2.6).
 
 Two properties of :class:`NormalisedCase` are worth reading before writing a connector:
 
@@ -44,6 +44,7 @@ __all__ = [
     "ConnectorError",
     "ConnectorNotFoundError",
     "DocumentUnavailableError",
+    "IdentifierListUnavailableError",
     "NormalisedCase",
     "NormalisedCitation",
     "NormalisedCourt",
@@ -52,6 +53,7 @@ __all__ = [
     "PipelineError",
     "RawDocument",
     "SourceConnector",
+    "SourceTraffic",
     "SourceUnavailableError",
 ]
 
@@ -82,6 +84,16 @@ class SourceUnavailableError(ConnectorError):
 
     Fatal to the run. The runner records the failure and leaves the checkpoint untouched, so
     the same window is attempted again next time (``docs/architecture.md`` section 7).
+    """
+
+
+class IdentifierListUnavailableError(ConnectorError):
+    """The source cannot list its identifiers more cheaply than by walking discovery.
+
+    Raised by the default :meth:`SourceConnector.enumerate_identifiers`. A repair of a partial
+    corpus rests on that listing being cheap (``docs/architecture.md`` rule 2.10); a connector
+    that cannot supply one is refused up front rather than quietly given the expensive walk it
+    was written to avoid.
     """
 
 
@@ -456,6 +468,34 @@ class NormalisedCase:
         return tuple(document.language for document in self.documents if document.has_text)
 
 
+@dataclass(slots=True)
+class SourceTraffic:
+    """How much a run asked of its source, and how hard the source pushed back.
+
+    Politeness is a requirement rather than a courtesy (``docs/architecture.md`` rule 2.5),
+    and a requirement nobody can see the effect of is one nobody can hold the project to.
+    These are the numbers that make it visible after the fact: how many requests left the
+    process, how often one had to be repeated, and whether the source ever asked us to wait —
+    which is the part an operator of a public endpoint would want to see honoured.
+
+    Counted by :class:`plt.pipeline.http.PoliteClient`, which is the only place requests are
+    sent from, and read back through :attr:`SourceConnector.traffic`.
+
+    Attributes:
+        requests: Requests actually sent, retries included.
+        retries: Requests that had to be sent again after a failure worth retrying.
+        retry_after_waits: Times a ``Retry-After`` header was obeyed as sent.
+        retry_after_seconds: Total seconds waited because a source asked for them.
+        backoff_seconds: Total seconds spent backing off, ``Retry-After`` waits included.
+    """
+
+    requests: int = 0
+    retries: int = 0
+    retry_after_waits: int = 0
+    retry_after_seconds: float = 0.0
+    backoff_seconds: float = 0.0
+
+
 class SourceConnector(ABC):
     """One jurisdiction's data source.
 
@@ -493,6 +533,21 @@ class SourceConnector(ABC):
         """Return the settings this connector reads its configuration from."""
         return self._settings
 
+    @property
+    def traffic(self) -> SourceTraffic | None:
+        """Return what this connector has asked of its source so far.
+
+        A connector that fetches through :class:`plt.pipeline.http.PoliteClient` returns that
+        client's running count, which is what lets a run report the rate it worked at and
+        every ``Retry-After`` it honoured.
+
+        Returns:
+            The counts, or ``None`` when the connector does not report them — the default, so
+            a source reached by some other means, or a fake in a test, is honestly recorded
+            as "not reported" rather than as a run that sent no requests at all.
+        """
+        return None
+
     @abstractmethod
     def discover(self, since: datetime | None, until: datetime | None) -> Iterator[Candidate]:
         """Yield candidate identifiers with light metadata, oldest first, streaming.
@@ -518,6 +573,47 @@ class SourceConnector(ABC):
         Raises:
             SourceUnavailableError: If the source cannot be enumerated at all.
         """
+
+    def enumerate_identifiers(
+        self, since: datetime | None = None, until: datetime | None = None
+    ) -> Iterator[Candidate]:
+        """Yield the identifiers the source holds, by the cheapest route it offers.
+
+        This is **not** discovery. Discovery answers "what has changed, and what do I need to
+        know about it to decide whether to fetch it" — for CELLAR that means a ``GROUP BY``
+        over a sector with optional expression joins, counted per window and paged. This
+        answers only "what exists", which every source can say far more cheaply, and it is
+        what lets a partial corpus be repaired by listing, diffing against the store and
+        fetching the difference, instead of replaying thousands of discovery queries over the
+        cases already on disk (``docs/architecture.md`` rule 2.10).
+
+        The candidates it yields carry the identifier and whatever else the listing states for
+        free. They are **not** required to carry a modification timestamp or a revision hash,
+        and a caller must not treat them as a discovery result: nothing here says whether a
+        case has changed, only that the source has one.
+
+        Args:
+            since: Narrow the listing to identifiers modified at or after this instant, where
+                the source can express that without becoming expensive. ``None`` lists
+                everything the source holds, which is the cheap case and the usual one.
+            until: Upper bound, on the same terms.
+
+        Yields:
+            One :class:`Candidate` per identifier, in whatever order the source lists them
+            most cheaply — which is not necessarily oldest first, because a listing is not
+            resumed against a checkpoint the way a window is.
+
+        Raises:
+            IdentifierListUnavailableError: If this source has no listing cheaper than
+                discovery. The default, so a connector says so by saying nothing.
+            SourceUnavailableError: If the source cannot be listed at all.
+        """
+        del since, until
+        message = (
+            f"{self.name} cannot list its identifiers without walking discovery, so a "
+            f"targeted repair would cost more than the walk it replaces"
+        )
+        raise IdentifierListUnavailableError(message)
 
     @abstractmethod
     def fetch(self, candidate: Candidate) -> RawDocument:
