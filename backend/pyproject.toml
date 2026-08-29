@@ -45,6 +45,13 @@ dev = [
     # Windows ships no timezone database; alembic needs one to stamp a new revision.
     "tzdata>=2024.1; sys_platform == 'win32'",
 ]
+# The PostgreSQL driver. Development runs on SQLite, which needs no driver at all, so this
+# is an extra rather than a dependency: a checkout stays as light as it was, and a
+# deployment installs `.[postgres]`. Without it a `postgresql+psycopg://` URL fails at
+# startup with a driver error that reads like a configuration mistake.
+postgres = [
+    "psycopg[binary]>=3.1,<4.0",
+]
 
 [project.urls]
 Repository = "https://github.com/IdseVal/PLT"
