@@ -17,6 +17,8 @@ from plt.api.errors import register_error_handlers
 from plt.cli import plt_cli
 from plt.config import Settings, get_settings
 from plt.extensions import init_extensions
+from plt.pipeline.filters.legislation import LegislationListError, load_legislation_list_for
+from plt.pipeline.registry import available_jurisdictions
 from plt.utils.logging import configure_logging, get_logger
 
 __all__ = ["create_app"]
@@ -56,6 +58,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     init_extensions(app, settings)
     register_error_handlers(app)
     register_blueprints(app, settings)
+    _warm_legislation_lists(settings)
 
     # `flask --app plt.app plt ...` and `python -m plt.cli ...` reach the same commands, so
     # a server cron and the scheduled workflow run identical code (architecture section 7).
@@ -66,3 +69,25 @@ def create_app(settings: Settings | None = None) -> Flask:
         extra={"environment": str(settings.app_env), "api_prefix": settings.api_prefix},
     )
     return app
+
+
+def _warm_legislation_lists(settings: Settings) -> None:
+    """Compile every registered jurisdiction's legislation list before the first request.
+
+    A list of two thousand instruments compiles in well under a second, and ``/api/filters``
+    reads every one of them; paying that once at start-up rather than on whichever request
+    happens to arrive first keeps the first reader from waiting on it. A list that cannot
+    be loaded is logged and left alone: the endpoint skips it, and an ingest run refuses it
+    loudly, which is where a broken list should surface.
+
+    Args:
+        settings: Settings resolving the legislation directory.
+    """
+    for code in available_jurisdictions():
+        try:
+            load_legislation_list_for(code, settings)
+        except LegislationListError as error:
+            log.warning(
+                "legislation list not loaded at start-up",
+                extra={"context": {"jurisdiction": code, "error": str(error)}},
+            )
