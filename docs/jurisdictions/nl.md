@@ -100,7 +100,7 @@ threshold, and nothing is marked for review automatically: an instrument either 
 the list or it does not (`docs/CORE_DOCUMENT.md` §2.14). The list is not narrowed to improve
 precision, because a missed judgment is the expensive error (§2.7).
 
-**The list.** `data/legislation/nl.json` holds 2,276 instruments at version 1.0.0. The Dutch
+**The list.** `data/legislation/nl.json` holds 2,268 instruments at version 1.0.0. The Dutch
 national instruments are hand-curated from what Dutch courts actually cite, measured over the
 whole Rechtspraak mirror of 945,823 documents: the Wet gewasbeschermingsmiddelen en biociden
 with its Besluit and Regeling, the Bestrijdingsmiddelenwet 1962 and the decrees and
@@ -110,7 +110,7 @@ gewasbeschermingsmiddelen and the rest. Beside them stand the Union base instrum
 pesticide law — Regulation (EC) No 1107/2009 and its predecessors, Implementing Regulation
 (EU) No 540/2011, Regulation (EC) No 396/2005, the biocides directive and regulation,
 Directive 2009/128/EC, Regulation (EC) No 1185/2009 — and, generated from CELLAR rather than
-typed, the 2,245 acts made under them. Instruments that were considered and left off, the
+typed, the 2,237 acts made under them. Instruments that were considered and left off, the
 Wet op de economische delicten and the Activiteitenbesluit among them, are listed with the
 reason in `data/legislation/README.md`.
 
@@ -144,10 +144,13 @@ listed instruments (§5).
 The legislation method has one rule beyond the shared method, and it applies in every
 jurisdiction: a year/number instrument number — every directive and decision, and
 regulations from 2015 — is never matched bare, because `2009/128` is how Dutch case-law
-reporters cite judgments (*NJ 2009/128*, *AB 2015/408*). Such an instrument is matched in its
-bracketed, suffixed and worded forms instead: `(EU) 2017/2324`, `2009/128/EG`, *Richtlijn
-2009/128*. What it costs: a judgment citing such an act by its bare number and nothing else
-would be missed. None has been seen; the Official Journal does not write a number that way.
+reporters cite judgments (*NJ 2009/128*, *AB 2015/408*), and never as a bare suffixed or
+bracketed number either, because directives, decisions and, from 2015, regulations share
+one numbering space and only the type word tells them apart. Such an instrument is matched
+behind its type word instead, in Dutch and in English: *Uitvoeringsverordening (EU)
+2017/2324*, *Richtlijn 2009/128*, *Directive 2009/128/EC*. What it costs: a judgment citing
+such an act by its number alone would be missed on that citation. None has been seen; a
+Dutch court writes the type word.
 
 One exception about fetching survives from the keyword method: **registrations with no
 document body are not fetched.** They contain no text at all — 42 of 42 sampled across 2015,

@@ -510,18 +510,42 @@ def test_the_eu_list_reads_the_number_in_any_language(eu_stage: LegislationFilte
         }, text
 
 
-def test_the_eu_list_reads_the_bracketed_number_of_a_recent_act(
-    eu_stage: LegislationFilter,
-) -> None:
+def test_the_eu_list_reads_a_recent_act_behind_its_type_word(eu_stage: LegislationFilter) -> None:
+    """A year/number number is carried only behind its type word.
+
+    From 2015 regulations, directives and decisions share one numbering space, and only the
+    word tells them apart.
+    """
     for text in (
-        "(EU) 2017/2324",
-        "(UE) 2017/2324",
-        "(\u0395\u0395) 2017/2324",
+        "Implementing Regulation (EU) 2017/2324",
+        "Regulation (EU) 2017/2324",
+        "règlement d'exécution (UE) 2017/2324",
+        "Durchführungsverordnung (EU) 2017/2324",
         "Verordnung 2017/2324",
     ):
         assert matched(eu_stage.evaluate(Doc(jurisdiction_code="EU", full_text=text))) == {
             "en-32017r2324"
         }, text
+    assert (
+        matched(eu_stage.evaluate(Doc(jurisdiction_code="EU", full_text="(EU) 2017/2324"))) == set()
+    )
+
+
+def test_an_act_of_another_type_with_the_same_number_does_not_select(
+    eu_stage: LegislationFilter,
+) -> None:
+    """A same-numbered act of another type is a different act.
+
+    Directive 2003/35/EC is public participation; Decision 2003/35/EC is a dossier decision
+    under 91/414/EEC. Only the second is pesticide law.
+    """
+    assert (
+        matched(eu_stage.evaluate(Doc(jurisdiction_code="EU", full_text="Directive 2003/35/EC")))
+        == set()
+    )
+    assert matched(
+        eu_stage.evaluate(Doc(jurisdiction_code="EU", full_text="Decision 2003/35/EC"))
+    ) == {"en-32003d0035"}
 
 
 def test_a_predecessor_directive_still_selects(eu_stage: LegislationFilter) -> None:

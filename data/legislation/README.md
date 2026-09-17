@@ -11,7 +11,7 @@ for the decision that made it what it is.
 | --- | --- |
 | `schema.json` | JSON Schema (2020-12) every list validates against. Schema `1.0.0`. |
 | `nl.json` | Netherlands — Dutch, with the English forms of every instrument as aliases. |
-| `eu.json` | European Union — English, French, German, Dutch, and the number forms of every language of the Court. |
+| `eu.json` | European Union — English, French, German, Dutch. |
 
 **One file per jurisdiction, named `<jurisdiction-code-lowercase>.json`.** A jurisdiction
 cannot be onboarded to the pipeline until its list exists: the national instruments and
@@ -42,7 +42,7 @@ name and the spellings it is cited under.
 | `id` | Stable identifier, `<lang>-<slug>`. Match provenance is stored against it and it labels every case the instrument selected, so never reuse one for a different instrument. |
 | `term` | The instrument's short citation as a court writes it, in the list's language: `Regulation (EC) No 1107/2009`, `Wet gewasbeschermingsmiddelen en biociden`. **This is the public label.** |
 | `label` | What to show a reader instead of `term`. Required when `match` is `regex`, because a pattern is not a name. |
-| `aliases` | Every other form the instrument is cited under: its number in each bracketed and suffixed form, its title in each language the list carries, its customary short name. An alias reports the term's id and label, so **a different instrument is never an alias**. |
+| `aliases` | Every other form the instrument is cited under: its number in the forms courts cite it under, its title in each language the list carries, its customary short name. An alias reports the term's id and label, so **a different instrument is never an alias**. |
 | `category` | The kind of instrument: `regulation`, `directive`, `decision`, the `implementing_*` and `delegated_*` variants, `national_act`, `national_decree`, `national_ministerial_regulation`. The second public label. |
 | `match` | `phrase` for citations and titles, `substring` for a Dutch name that appears inside compounds, `word` for a single token, `regex` for what the others cannot express. |
 | `case_sensitive` | Only for acronyms. Inherited by every alias, so a case-sensitive term carries acronyms only; the loader refuses anything else. |
@@ -53,8 +53,8 @@ name and the spellings it is cited under.
 ## Two parts: curated and generated
 
 **The base instruments are hand-curated.** They are the instruments pesticide law hangs
-off, and each carries its bare number where that number is unambiguous, its bracketed and
-suffixed forms, and the short names courts use for it:
+off, and each carries its bare number where that number is unambiguous, its number behind
+its type word in each language, and the short names courts use for it:
 
 | Instrument | What it governs |
 | --- | --- |
@@ -95,7 +95,12 @@ call, and `list_version` is the curator's to bump.
 What the generator keeps is legislation — CELEX sector 3, of the regulation, directive and
 decision types EUR-Lex distinguishes, whether or not still in force. It drops proposals,
 reports, resolutions and communications, which a judgment does not cite as the law it
-applies, and corrigenda, whose number is the number of the act they correct.
+applies, and corrigenda, whose number is the number of the act they correct. It also drops
+an act related to a base instrument only by amending it when that act amends more than five
+instruments in all: Regulation (EC) No 1882/2003 and Regulation (EC) No 806/2003 adapt the
+committee procedures of a hundred acts each, Directive 2004/66/EC adapts directives to the
+2004 accession, and a judgment citing one is about whatever it happens to be about. Eight
+such omnibus acts are left out at version 1.0.0.
 
 ## Citation forms
 
@@ -114,15 +119,24 @@ reporters cite judgments: *NJ 2009/128* is a Supreme Court judgment, *AB 2015/40
 administrative one, and a list that matched on the bare number would select them. What is
 carried instead:
 
-- the bracketed forms in every language's token — `(EU) 2017/2324`, `(UE) 2017/2324`,
-  `(ΕΕ) 2017/2324`, `(ЕС) 2017/2324` — for acts the Official Journal brackets;
-- the suffixed forms — `2009/128/EC`, `2009/128/EG`, `2009/128/CE` — for acts it suffixes;
 - the worded forms in each language the list carries — `Directive 2009/128`,
   `Richtlijn 2009/128`, `Uitvoeringsverordening 2017/2324`, `Durchführungsverordnung
+  2017/2324` — and their plurals, `Directives 2009/128`;
+- the worded and bracketed forms, in each language's own token — `Implementing Regulation
+  (EU) 2017/2324`, `Uitvoeringsverordening (EU) 2017/2324`, `règlement d'exécution (UE)
   2017/2324`.
 
-A bracket is not a word character, so `(EU) 2017/2324` needs no boundary on its left and
-still refuses `(EU) 2017/23245` on its right. The trie compiles all of it — forty thousand
+**Never the suffixed or bracketed number without its type word.** Directives, decisions and,
+from 2015, regulations share one numbering space: `2003/35/EC` is Commission Decision
+2003/35/EC recognising pesticide dossiers and Directive 2003/35/EC on public participation,
+`2009/65/EC` a non-inclusion decision and the UCITS directive, `2003/5/EC` a deltamethrin
+directive and a cartel decision. The first run of a list that carried the suffixed forms
+selected 119 cases on the public-participation directive alone. Only the type word tells the
+acts apart, and the Official Journal and the courts always write it.
+
+`Directive 2003/5` reaches `Directive 2003/5/EC` because the slash after the number is not a
+word character, and `Regulation (EU) 2017/2324` reaches `Implementing Regulation (EU)
+2017/2324` because a space before it is a boundary. The trie compiles all of it — forty thousand
 literals for the EU list — into two patterns, so the cost of a scan is the length of the
 text and not the size of the list: the EU list loads in under a second and reads a megabyte
 of judgment in about twenty-five milliseconds.

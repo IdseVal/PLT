@@ -43,8 +43,9 @@ never looked at.
 **Multilingual matching.** A judgment exists in up to 24 languages.
 ``NormalisedCase.full_text`` joins every retrieved language version, so a listed instrument
 named in any of them qualifies the case — which is precisely why ``data/legislation/eu.json``
-carries the instruments' names in English, French, German and Dutch, and their numbers in the
-bracketed form of every language of the Court. Which languages are retrieved is configuration
+carries the instruments' names and type words in English, French, German and Dutch, and the
+numbers of pre-2015 regulations bare, which read the same in every language of the Court.
+Which languages are retrieved is configuration
 (``eurlex_languages``, English by default), with the procedural language as the fallback when
 none of the preferred ones exists, and the choice is recorded on the document row.
 

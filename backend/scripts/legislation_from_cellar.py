@@ -91,30 +91,14 @@ LANGUAGE_URI: Final[Mapping[str, str]] = {
     "de": "DEU",
 }
 
-#: How each language writes the bracketed institution token of an instrument number, by the
-#: family the token belongs to. A judgment in Polish cites "(UE) 2017/2324" and one in Greek
-#: writes the token in Greek capitals; the digits are the same everywhere, so every form is
-#: carried whatever languages the list otherwise covers. The Greek and Cyrillic tokens are
-#: written as escapes so that no Latin look-alike can be mistaken for them.
-BRACKET_TOKENS: Final[Mapping[str, tuple[str, ...]]] = {
-    "EU": ("EU", "UE", "ES", "EL", "EÚ", "\u0395\u0395", "\u0415\u0421", "AE"),
-    "EC": (
-        "EC",
-        "EG",
-        "CE",
-        "ES",
-        "EK",
-        "EÜ",
-        "EY",
-        "EF",
-        "WE",
-        "EB",
-        "KE",
-        "EO",
-        "\u0395\u039a",
-        "\u0415\u041e",
-    ),
-    "EEC": ("EEC", "EEG", "EWG", "CEE", "EØF", "ETY", "\u0395\u039f\u039a"),
+#: How each of the list's languages writes the bracketed institution token of an instrument
+#: number, by the family the token belongs to: "Regulation (EC) No 1107/2009" in English is
+#: "Verordening (EG) nr. 1107/2009" in Dutch and "règlement (CE) no 1107/2009" in French.
+LANGUAGE_TOKENS: Final[Mapping[str, Mapping[str, str]]] = {
+    "en": {"EU": "EU", "EC": "EC", "EEC": "EEC"},
+    "nl": {"EU": "EU", "EC": "EG", "EEC": "EEG"},
+    "fr": {"EU": "UE", "EC": "CE", "EEC": "CEE"},
+    "de": {"EU": "EU", "EC": "EG", "EEC": "EWG"},
 }
 
 #: The words each language puts before an instrument number, by category. Used for the
@@ -177,9 +161,35 @@ TYPE_WORDS: Final[Mapping[str, Mapping[str, tuple[str, ...]]]] = {
     },
 }
 
+#: The plural of each generic type word, for "Directives 2003/5/EC and 2003/6/EC".
+PLURAL_WORDS: Final[Mapping[str, str]] = {
+    "Regulation": "Regulations",
+    "Directive": "Directives",
+    "Decision": "Decisions",
+    "Verordening": "Verordeningen",
+    "Richtlijn": "Richtlijnen",
+    "Besluit": "Besluiten",
+    "Beschikking": "Beschikkingen",
+    "Règlement": "Règlements",
+    "Décision": "Décisions",
+    "Verordnung": "Verordnungen",
+    "Richtlinie": "Richtlinien",
+    "Beschluss": "Beschlüsse",
+    "Entscheidung": "Entscheidungen",
+}
+
 #: Below this number a bare number/year citation ("8/2011") is a date as often as an act, so
 #: it is carried only behind a "No"-style prefix.
 _BARE_NUMBER_FLOOR: Final[int] = 100
+
+#: An act related to a base instrument only by amending it, and amending more acts than this,
+#: is an omnibus - a comitology or accession adaptation touching a hundred instruments at
+#: once - and not pesticide law. Regulation (EC) No 1882/2003 amends 91/414/EEC and 98/8/EC
+#: among many others, and a judgment citing it is about whatever it happens to be about.
+_OMNIBUS_FLOOR: Final[int] = 5
+
+#: Bumped whenever the query changes shape, so a cached answer to the old one is not reused.
+_QUERY_VERSION: Final[str] = "v2"
 
 _NUMBER_PREFIXES: Final[tuple[str, ...]] = ("No", "No.", "nr.", "Nr.", "n°", "nº", "n.")
 
@@ -234,8 +244,14 @@ class Act:
     date: str
     in_force: str
     titles: dict[str, str]
+    amends_count: int = 0
     bases: set[str] = field(default_factory=set)
     relations: set[str] = field(default_factory=set)
+
+    @property
+    def omnibus(self) -> bool:
+        """Return whether the act is an omnibus amendment rather than pesticide law."""
+        return "based_on" not in self.relations and self.amends_count > _OMNIBUS_FLOOR
 
     @property
     def category(self) -> str | None:
@@ -264,7 +280,8 @@ def _query(base: str, languages: Sequence[str]) -> str:
     return (
         "PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>\n"
         "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
-        f"SELECT ?celex ?rel ?date ?type ?force {projected} WHERE {{\n"
+        f"SELECT ?celex ?rel ?date ?type ?force (COUNT(DISTINCT ?amended) AS ?amends_count) "
+        f"{projected} WHERE {{\n"
         f'  ?base cdm:resource_legal_id_celex "{base}"^^xsd:string .\n'
         '  { ?act cdm:resource_legal_based_on_resource_legal ?base . BIND("based_on" AS ?rel) }\n'
         '  UNION { ?act cdm:resource_legal_amends_resource_legal ?base . BIND("amends" AS ?rel) }\n'
@@ -274,6 +291,7 @@ def _query(base: str, languages: Sequence[str]) -> str:
         "  OPTIONAL { ?act cdm:work_date_document ?date }\n"
         "  OPTIONAL { ?act cdm:work_has_resource-type ?type }\n"
         "  OPTIONAL { ?act cdm:resource_legal_in-force ?force }\n"
+        "  OPTIONAL { ?act cdm:resource_legal_amends_resource_legal ?amended }\n"
         f"{optional_titles}\n"
         "} GROUP BY ?celex ?rel ?date ?type ?force ORDER BY ?celex\n"
     )
@@ -292,7 +310,7 @@ def fetch_csv(base: str, languages: Sequence[str], cache: Path, *, refresh: bool
         The CSV text.
     """
     cache.mkdir(parents=True, exist_ok=True)
-    path = cache / f"{base}_{'-'.join(languages)}.csv"
+    path = cache / f"{base}_{'-'.join(languages)}_{_QUERY_VERSION}.csv"
     if path.exists() and not refresh:
         return path.read_text(encoding="utf-8")
     url = f"{SPARQL_URL}?{urllib.parse.urlencode({'query': _query(base, languages)})}"
@@ -329,6 +347,7 @@ def collect(languages: Sequence[str], cache: Path, *, refresh: bool) -> dict[str
                     resource_type=row.get("type", "").rsplit("/", 1)[-1],
                     date=row.get("date", ""),
                     in_force=row.get("force", ""),
+                    amends_count=int(row.get("amends_count") or 0),
                     titles={
                         code: _NOISE.sub("", row.get(f"title_{code}", "") or "").strip()
                         for code in languages
@@ -392,22 +411,27 @@ def citation_forms(citation: Citation, category: str, languages: Sequence[str]) 
     """
     forms: list[str] = []
     digits = citation.printed
-    tokens = BRACKET_TOKENS[citation.family]
-    if citation.year_first:
-        # "(EU) 2017/2324" in every language's token, and "2013/xxx/EU" where the Official
-        # Journal suffixed the family, which every language also does in its own token.
-        forms.extend(f"({token}) {digits}" for token in tokens)
-        if not citation.bracketed:
-            forms.extend(f"{digits}/{token}" for token in tokens)
-    else:
+    if not citation.year_first:
+        # Regulations before 2015 are the only acts numbered number/year, so the bare number
+        # names one act. Below the floor it is as often a date.
         bare = int(citation.number) >= _BARE_NUMBER_FLOOR
         if bare:
             forms.append(digits)
         else:
             forms.extend(f"{prefix} {digits}" for prefix in _NUMBER_PREFIXES)
     for code in languages:
+        token = LANGUAGE_TOKENS[code][citation.family]
         for word in TYPE_WORDS[category].get(code, ()):
+            # "Directive 2003/5" also reaches "Directive 2003/5/EC": the slash after the
+            # number is not a word character. A year/number number is never carried without
+            # its type word, because directives, decisions and, from 2015, regulations share
+            # one numbering space: Decision 2003/35/EC and Directive 2003/35/EC are
+            # different acts, and only the word tells them apart.
             forms.append(f"{word} {digits}")
+            if word in PLURAL_WORDS:
+                forms.append(f"{PLURAL_WORDS[word]} {digits}")
+            if citation.year_first:
+                forms.append(f"{word} ({token}) {digits}")
     seen: set[str] = set()
     distinct: list[str] = []
     for form in forms:
@@ -430,11 +454,7 @@ def short_citation(citation: Citation, category: str, language: str) -> str:
         For example ``Implementing Regulation (EU) 2017/2324`` or ``Richtlijn 91/414/EEG``.
     """
     word = TYPE_WORDS[category][language][0]
-    token = {
-        "nl": {"EU": "EU", "EC": "EG", "EEC": "EEG"},
-        "fr": {"EU": "UE", "EC": "CE", "EEC": "CEE"},
-        "de": {"EU": "EU", "EC": "EG", "EEC": "EWG"},
-    }.get(language, {}).get(citation.family, citation.family)
+    token = LANGUAGE_TOKENS[language][citation.family]
     if citation.year_first:
         if citation.bracketed:
             return f"{word} ({token}) {citation.printed}"
@@ -468,6 +488,15 @@ def generate_entries(
         category = act.category
         if category is None or act.celex in skip:
             counted[act.resource_type or "?"] = counted.get(act.resource_type or "?", 0) + 1
+            continue
+        if act.omnibus:
+            log.info(
+                "left out %s: amends %d acts and is based on none of the base instruments (%s)",
+                act.celex,
+                act.amends_count,
+                (act.titles.get("en") or "")[:80],
+            )
+            counted["omnibus"] = counted.get("omnibus", 0) + 1
             continue
         citation = parse_citation(act)
         if citation is None:

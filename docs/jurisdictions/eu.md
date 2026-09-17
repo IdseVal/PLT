@@ -101,13 +101,13 @@ threshold, and nothing is marked for review automatically: an instrument either 
 the list or it does not (`docs/CORE_DOCUMENT.md` §2.14). The list is not narrowed to improve
 precision, because a missed judgment is the expensive error (§2.7).
 
-**The list.** `data/legislation/eu.json` holds 2,254 instruments at version 1.0.0. Nine are
+**The list.** `data/legislation/eu.json` holds 2,246 instruments at version 1.0.0. Nine are
 hand-curated, the base instruments of Union pesticide law: plant protection products
 (Directive 79/117/EEC, Directive 91/414/EEC, Regulation (EC) No 1107/2009 and the
 approved-substance register in Implementing Regulation (EU) No 540/2011), maximum residue
 levels (Regulation (EC) No 396/2005), biocides (Directive 98/8/EC and Regulation (EU) No
 528/2012), sustainable use (Directive 2009/128/EC) and pesticide statistics (Regulation (EC)
-No 1185/2009). The other 2,245 are the acts CELLAR records as based on, amending or
+No 1185/2009). The other 2,237 are the acts CELLAR records as based on, amending or
 correcting those — above all the implementing regulations that approve, renew and withdraw
 active substances — generated from CELLAR rather than typed. REACH, CLP, Aarhus, the general
 food law and the Water Framework Directive were considered and left off; the reasons are in
@@ -121,10 +121,12 @@ implementing act is a label of its own: a case about the non-renewal of one subs
 the regulation that withdrew it, which is what a reader filtering the corpus wants to find.
 
 *Language.* A judgment exists in up to 24 languages and every retrieved version is searched.
-The number of an instrument is written the same in all of them, and its bracketed form
-carries each language's own token — `(EU)`, `(UE)`, `(ΕΕ)`, `(ЕС)` — so a number matches in
-any language of the Court. Titles and short names are carried in four: English, French,
-German and Dutch.
+The number of a regulation adopted before 2015 is written the same in all of them and is
+matched bare, so it is found in any language of the Court. A later act is matched behind its
+type word — `Implementing Regulation (EU) 2017/2324`, `règlement d'exécution (UE)
+2017/2324`, `Durchführungsverordnung (EU) 2017/2324` — in the four languages the list
+carries: English, French, German and Dutch. Titles and short names are carried in the same
+four.
 
 **What a test run measured.** «MEASURED: which store or period the legislation list was run
 over, how many EU decisions were read and how many were selected». «MEASURED: how many of a
@@ -140,11 +142,14 @@ not been measured against a reference list of EU pesticide cases.
 The legislation method has one rule beyond the shared method, and it applies in every
 jurisdiction: a year/number instrument number — every directive and decision, and
 regulations from 2015 — is never matched bare, because `2009/128` is how Dutch case-law
-reporters cite judgments (*NJ 2009/128*), and Dutch is one of this list's languages. Such an
-instrument is matched in its bracketed, suffixed and worded forms instead — `(EU)
-2017/2324`, `2009/128/EC`, *Directive 2009/128* — which is how the Court writes it. What it
-costs: a decision citing such an act by its bare number and nothing else would be missed.
-None has been seen.
+reporters cite judgments (*NJ 2009/128*), and Dutch is one of this list's languages, and
+never as a bare suffixed or bracketed number either, because directives, decisions and, from
+2015, regulations share one numbering space: `2003/35/EC` is a Commission decision on
+pesticide dossiers and a directive on public participation, and the first run of this list
+selected 119 cases on the second. Such an instrument is matched behind its type word instead
+— *Decision 2003/35/EC*, *Implementing Regulation (EU) 2017/2324*, *Directive 2009/128* —
+which is how the Court writes it. What it costs: a decision citing such an act by its number
+alone, or in a language the list has no type words for, would be missed on that citation.
 
 Nothing else is excluded: the list vetoes no document and gates no term. The *metam* rule and
 the two weaknesses this section recorded under the keyword method — a word spelled the same
@@ -159,10 +164,11 @@ branch `0.1.0`.
 1. **Titles and short names are carried in four of the Court's languages.** In 2024 a
    quarter of decisions had no English text and were stored in the procedural language —
    German, French, Spanish, Italian, Polish, Bulgarian, Greek, Portuguese, Romanian, Dutch,
-   Hungarian. A decision in a language the list has no names for matches on an instrument
-   number, which the Court writes the same way in every language, but not on *the Plant
-   Protection Products Regulation* written out. This partly heals itself, because a case is
-   re-read when a translation is added.
+   Hungarian. A decision in a language the list has no names for matches on the number of
+   a pre-2015 regulation, which the Court writes the same way in every language, but not on
+   a later act, whose type word the list carries in four languages only, and not on *the
+   Plant Protection Products Regulation* written out. This partly heals itself, because a
+   case is re-read when a translation is added.
 2. **EU cases carry no law domain or subfield** (§2), deliberately, so they are absent from
    any filter built on those fields.
 3. **A pesticide case that never names the legislation is missed.** A staff case, a trade
