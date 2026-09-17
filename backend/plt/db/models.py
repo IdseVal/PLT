@@ -779,6 +779,11 @@ class IngestRun(Base):
     )
     #: A dry run writes a match report and no case rows (architecture section 4).
     dry_run: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    #: The legislation list the run applied: the version its file claimed, and the SHA-256 of
+    #: the file itself, so a corpus can say exactly which list produced it (core document
+    #: section 2.8). Null on rows written before revision 0010.
+    list_version: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
+    list_digest: Mapped[str | None] = mapped_column(String(64))
 
     fetched_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     matched_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

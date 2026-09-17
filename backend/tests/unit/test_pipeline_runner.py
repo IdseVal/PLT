@@ -39,7 +39,7 @@ from plt.pipeline import registry
 from plt.pipeline.base import SourceUnavailableError
 from plt.pipeline.checkpoint import read_checkpoint
 from plt.pipeline.filters.base import FilterChain
-from plt.pipeline.filters.keywords import KeywordListNotFoundError
+from plt.pipeline.filters.legislation import LegislationListNotFoundError
 from plt.pipeline.runner import IngestReport, run_jurisdiction
 from tests.conftest import build_settings
 from tests.fakes import (
@@ -142,11 +142,11 @@ def test_a_document_the_filter_rejects_is_not_stored(harness: Harness) -> None:
 
 
 def test_the_subject_alone_can_qualify_a_case(harness: Harness) -> None:
-    """The rechtsgebied is a curated signal; a connector that fills it in gets recall for it."""
+    """The subject field is scanned; a connector that fills it in gets recall for it."""
     document = FakeDocument(
         source_id="ECLI:NL:RBTEST:2026:9",
         text=UNRELATED_TEXT,
-        subject="Gewasbeschermingsmiddelen",
+        subject="Wet gewasbeschermingsmiddelen en biociden",
     )
 
     report = harness.run(FakeConnector(docs=[document]))
@@ -154,7 +154,7 @@ def test_the_subject_alone_can_qualify_a_case(harness: Harness) -> None:
     assert report.counters.inserted == 1
     with harness.session() as session:
         stored = session.scalars(select(Case)).one()
-        assert stored.source_metadata["subject"] == "Gewasbeschermingsmiddelen"
+        assert stored.source_metadata["subject"] == "Wet gewasbeschermingsmiddelen en biociden"
         assert {match.field for match in stored.keyword_matches} == {"subject"}
 
 
@@ -553,7 +553,7 @@ def test_a_jurisdiction_without_a_keyword_list_is_a_caller_error(harness: Harnes
         jurisdiction_code = "ZZ"
         name = "elsewhere"
 
-    with pytest.raises(KeywordListNotFoundError):
+    with pytest.raises(LegislationListNotFoundError):
         harness.run(Elsewhere(docs=documents(1)))
 
 
@@ -591,9 +591,11 @@ def test_a_dry_run_reports_which_cases_passed_and_on_which_terms(
     passed = entries[0]
     assert passed["action"] == "insert"
     assert passed["matched_term_count"] >= 1
-    assert "nl-gewasbeschermingsmiddel" in {term["term_id"] for term in passed["terms"]}
-    assert "gewasbeschermingsmiddel" in {term["term"] for term in passed["terms"]}
-    assert "product_class" in {term["category"] for term in passed["terms"]}
+    assert "nl-wgb" in {term["term_id"] for term in passed["terms"]}
+    assert "Wet gewasbeschermingsmiddelen en biociden" in {term["term"] for term in passed["terms"]}
+    assert "national_act" in {term["category"] for term in passed["terms"]}
+    assert header["list_version"] == "1.0.0"
+    assert len(header["list_digest"]) == 64
     assert entries[2]["action"] == "reject"
 
 
