@@ -557,7 +557,11 @@ def rewrite_list(path: Path, cache: Path, *, refresh: bool) -> None:
         }
     )
     document["sources"] = sources
-    path.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    # LF whatever the platform: every run records the digest of this file, and a file that
+    # changed bytes between a Windows workstation and a Linux server would change digest too.
+    path.write_text(
+        json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     log.info(
         "%s: %d hand-curated and %d generated entries, %d aliases in all",
         path.name,
