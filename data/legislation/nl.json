@@ -395,9 +395,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "3600/92",
+        "(EEG) nr. 3600/92",
+        "(EEG) nr 3600/92",
         "Verordening 3600/92",
         "Verordeningen 3600/92",
+        "(EEC) No 3600/92",
+        "(EEC) No. 3600/92",
         "Regulation 3600/92",
         "Regulations 3600/92"
       ],
@@ -484,9 +487,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "933/94",
+        "(EG) nr. 933/94",
+        "(EG) nr 933/94",
         "Verordening 933/94",
         "Verordeningen 933/94",
+        "(EC) No 933/94",
+        "(EC) No. 933/94",
         "Regulation 933/94",
         "Regulations 933/94"
       ],
@@ -537,9 +543,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "491/95",
+        "(EG) nr. 491/95",
+        "(EG) nr 491/95",
         "Verordening 491/95",
         "Verordeningen 491/95",
+        "(EC) No 491/95",
+        "(EC) No. 491/95",
         "Regulation 491/95",
         "Regulations 491/95"
       ],
@@ -554,9 +563,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "2230/95",
+        "(EG) nr. 2230/95",
+        "(EG) nr 2230/95",
         "Verordening 2230/95",
         "Verordeningen 2230/95",
+        "(EC) No 2230/95",
+        "(EC) No. 2230/95",
         "Regulation 2230/95",
         "Regulations 2230/95"
       ],
@@ -976,9 +988,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1199/97",
+        "(EG) nr. 1199/97",
+        "(EG) nr 1199/97",
         "Verordening 1199/97",
         "Verordeningen 1199/97",
+        "(EC) No 1199/97",
+        "(EC) No. 1199/97",
         "Regulation 1199/97",
         "Regulations 1199/97"
       ],
@@ -1314,9 +1329,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1972/1999",
+        "(EG) nr. 1972/1999",
+        "(EG) nr 1972/1999",
         "Verordening 1972/1999",
         "Verordeningen 1972/1999",
+        "(EC) No 1972/1999",
+        "(EC) No. 1972/1999",
         "Regulation 1972/1999",
         "Regulations 1972/1999"
       ],
@@ -1928,9 +1946,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "451/2000",
+        "(EG) nr. 451/2000",
+        "(EG) nr 451/2000",
         "Verordening 451/2000",
         "Verordeningen 451/2000",
+        "(EC) No 451/2000",
+        "(EC) No. 451/2000",
         "Regulation 451/2000",
         "Regulations 451/2000"
       ],
@@ -1945,9 +1966,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1896/2000",
+        "(EG) nr. 1896/2000",
+        "(EG) nr 1896/2000",
         "Verordening 1896/2000",
         "Verordeningen 1896/2000",
+        "(EC) No 1896/2000",
+        "(EC) No. 1896/2000",
         "Regulation 1896/2000",
         "Regulations 1896/2000"
       ],
@@ -1962,9 +1986,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "2266/2000",
+        "(EG) nr. 2266/2000",
+        "(EG) nr 2266/2000",
         "Verordening 2266/2000",
         "Verordeningen 2266/2000",
+        "(EC) No 2266/2000",
+        "(EC) No. 2266/2000",
         "Regulation 2266/2000",
         "Regulations 2266/2000"
       ],
@@ -2471,9 +2498,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "703/2001",
+        "(EG) nr. 703/2001",
+        "(EG) nr 703/2001",
         "Verordening 703/2001",
         "Verordeningen 703/2001",
+        "(EC) No 703/2001",
+        "(EC) No. 703/2001",
         "Regulation 703/2001",
         "Regulations 703/2001"
       ],
@@ -2899,9 +2929,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1112/2002",
+        "(EG) nr. 1112/2002",
+        "(EG) nr 1112/2002",
         "Verordening 1112/2002",
         "Verordeningen 1112/2002",
+        "(EC) No 1112/2002",
+        "(EC) No. 1112/2002",
         "Regulation 1112/2002",
         "Regulations 1112/2002"
       ],
@@ -2916,9 +2949,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1490/2002",
+        "(EG) nr. 1490/2002",
+        "(EG) nr 1490/2002",
         "Verordening 1490/2002",
         "Verordeningen 1490/2002",
+        "(EC) No 1490/2002",
+        "(EC) No. 1490/2002",
         "Regulation 1490/2002",
         "Regulations 1490/2002"
       ],
@@ -2933,9 +2969,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1687/2002",
+        "(EG) nr. 1687/2002",
+        "(EG) nr 1687/2002",
         "Verordening 1687/2002",
         "Verordeningen 1687/2002",
+        "(EC) No 1687/2002",
+        "(EC) No. 1687/2002",
         "Regulation 1687/2002",
         "Regulations 1687/2002"
       ],
@@ -2950,9 +2989,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "2076/2002",
+        "(EG) nr. 2076/2002",
+        "(EG) nr 2076/2002",
         "Verordening 2076/2002",
         "Verordeningen 2076/2002",
+        "(EC) No 2076/2002",
+        "(EC) No. 2076/2002",
         "Regulation 2076/2002",
         "Regulations 2076/2002"
       ],
@@ -3489,9 +3531,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1044/2003",
+        "(EG) nr. 1044/2003",
+        "(EG) nr 1044/2003",
         "Verordening 1044/2003",
         "Verordeningen 1044/2003",
+        "(EC) No 1044/2003",
+        "(EC) No. 1044/2003",
         "Regulation 1044/2003",
         "Regulations 1044/2003"
       ],
@@ -3506,9 +3551,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1336/2003",
+        "(EG) nr. 1336/2003",
+        "(EG) nr 1336/2003",
         "Verordening 1336/2003",
         "Verordeningen 1336/2003",
+        "(EC) No 1336/2003",
+        "(EC) No. 1336/2003",
         "Regulation 1336/2003",
         "Regulations 1336/2003"
       ],
@@ -3523,9 +3571,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "2032/2003",
+        "(EG) nr. 2032/2003",
+        "(EG) nr 2032/2003",
         "Verordening 2032/2003",
         "Verordeningen 2032/2003",
+        "(EC) No 2032/2003",
+        "(EC) No. 2032/2003",
         "Regulation 2032/2003",
         "Regulations 2032/2003"
       ],
@@ -4008,9 +4059,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "771/2004",
+        "(EG) nr. 771/2004",
+        "(EG) nr 771/2004",
         "Verordening 771/2004",
         "Verordeningen 771/2004",
+        "(EC) No 771/2004",
+        "(EC) No. 771/2004",
         "Regulation 771/2004",
         "Regulations 771/2004"
       ],
@@ -4025,9 +4079,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1744/2004",
+        "(EG) nr. 1744/2004",
+        "(EG) nr 1744/2004",
         "Verordening 1744/2004",
         "Verordeningen 1744/2004",
+        "(EC) No 1744/2004",
+        "(EC) No. 1744/2004",
         "Regulation 1744/2004",
         "Regulations 1744/2004"
       ],
@@ -4042,9 +4099,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1765/2004",
+        "(EG) nr. 1765/2004",
+        "(EG) nr 1765/2004",
         "Verordening 1765/2004",
         "Verordeningen 1765/2004",
+        "(EC) No 1765/2004",
+        "(EC) No. 1765/2004",
         "Regulation 1765/2004",
         "Regulations 1765/2004"
       ],
@@ -4059,9 +4119,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "2229/2004",
+        "(EG) nr. 2229/2004",
+        "(EG) nr 2229/2004",
         "Verordening 2229/2004",
         "Verordeningen 2229/2004",
+        "(EC) No 2229/2004",
+        "(EC) No. 2229/2004",
         "Regulation 2229/2004",
         "Regulations 2229/2004"
       ],
@@ -4496,9 +4559,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1048/2005",
+        "(EG) nr. 1048/2005",
+        "(EG) nr 1048/2005",
         "Verordening 1048/2005",
         "Verordeningen 1048/2005",
+        "(EC) No 1048/2005",
+        "(EC) No. 1048/2005",
         "Regulation 1048/2005",
         "Regulations 1048/2005"
       ],
@@ -4513,9 +4579,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1335/2005",
+        "(EG) nr. 1335/2005",
+        "(EG) nr 1335/2005",
         "Verordening 1335/2005",
         "Verordeningen 1335/2005",
+        "(EC) No 1335/2005",
+        "(EC) No. 1335/2005",
         "Regulation 1335/2005",
         "Regulations 1335/2005"
       ],
@@ -5307,9 +5376,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "178/2006",
+        "(EG) nr. 178/2006",
+        "(EG) nr 178/2006",
         "Verordening 178/2006",
         "Verordeningen 178/2006",
+        "(EC) No 178/2006",
+        "(EC) No. 178/2006",
         "Regulation 178/2006",
         "Regulations 178/2006"
       ],
@@ -5324,9 +5396,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1849/2006",
+        "(EG) nr. 1849/2006",
+        "(EG) nr 1849/2006",
         "Verordening 1849/2006",
         "Verordeningen 1849/2006",
+        "(EC) No 1849/2006",
+        "(EC) No. 1849/2006",
         "Regulation 1849/2006",
         "Regulations 1849/2006"
       ],
@@ -6247,24 +6322,6 @@
       "title": "Richtlijn 2007/31/EG van de Commissie van 31 mei 2007 tot wijziging van Richtlijn 91/414/EEG van de Raad wat betreft de uitbreiding van het gebruik van de werkzame stof fosthiazaat"
     },
     {
-      "id": "nl-32007l0047",
-      "term": "Richtlijn 2007/47/EG",
-      "lang": "nl",
-      "category": "directive",
-      "match": "phrase",
-      "aliases": [
-        "Richtlijn 2007/47",
-        "Richtlijnen 2007/47",
-        "Richtlijn (EG) 2007/47",
-        "Directive 2007/47",
-        "Directives 2007/47",
-        "Directive (EC) 2007/47"
-      ],
-      "celex": "32007L0047",
-      "derived_from": "31998L0008",
-      "title": "Richtlijn 2007/47/EG van het Europees Parlement en de Raad van 5 september 2007 tot wijziging van Richtlijn 90/385/EEG van de Raad betreffende de onderlinge aanpassing van de wetgevingen van de lidstaten inzake actieve implanteerbare medische hulpmiddelen, Richtlijn 93/42/EEG van de Raad betreffende medische hulpmiddelen en Richtlijn 98/8/EG betreffende het op de markt brengen van biociden"
-    },
-    {
       "id": "nl-32007l0050",
       "term": "Richtlijn 2007/50/EG",
       "lang": "nl",
@@ -6415,9 +6472,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "647/2007",
+        "(EG) nr. 647/2007",
+        "(EG) nr 647/2007",
         "Verordening 647/2007",
         "Verordeningen 647/2007",
+        "(EC) No 647/2007",
+        "(EC) No. 647/2007",
         "Regulation 647/2007",
         "Regulations 647/2007"
       ],
@@ -6432,9 +6492,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "737/2007",
+        "(EG) nr. 737/2007",
+        "(EG) nr 737/2007",
         "Verordening 737/2007",
         "Verordeningen 737/2007",
+        "(EC) No 737/2007",
+        "(EC) No. 737/2007",
         "Regulation 737/2007",
         "Regulations 737/2007"
       ],
@@ -6449,9 +6512,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1095/2007",
+        "(EG) nr. 1095/2007",
+        "(EG) nr 1095/2007",
         "Verordening 1095/2007",
         "Verordeningen 1095/2007",
+        "(EC) No 1095/2007",
+        "(EC) No. 1095/2007",
         "Regulation 1095/2007",
         "Regulations 1095/2007"
       ],
@@ -6466,9 +6532,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1313/2007",
+        "(EG) nr. 1313/2007",
+        "(EG) nr 1313/2007",
         "Verordening 1313/2007",
         "Verordeningen 1313/2007",
+        "(EC) No 1313/2007",
+        "(EC) No. 1313/2007",
         "Regulation 1313/2007",
         "Regulations 1313/2007"
       ],
@@ -6483,9 +6552,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1451/2007",
+        "(EG) nr. 1451/2007",
+        "(EG) nr 1451/2007",
         "Verordening 1451/2007",
         "Verordeningen 1451/2007",
+        "(EC) No 1451/2007",
+        "(EC) No. 1451/2007",
         "Regulation 1451/2007",
         "Regulations 1451/2007"
       ],
@@ -7787,14 +7859,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "No 33/2008",
-        "No. 33/2008",
-        "nr. 33/2008",
-        "n° 33/2008",
-        "nº 33/2008",
-        "n. 33/2008",
+        "(EG) nr. 33/2008",
+        "(EG) nr 33/2008",
         "Verordening 33/2008",
         "Verordeningen 33/2008",
+        "(EC) No 33/2008",
+        "(EC) No. 33/2008",
         "Regulation 33/2008",
         "Regulations 33/2008"
       ],
@@ -7809,9 +7879,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "149/2008",
+        "(EG) nr. 149/2008",
+        "(EG) nr 149/2008",
         "Verordening 149/2008",
         "Verordeningen 149/2008",
+        "(EC) No 149/2008",
+        "(EC) No. 149/2008",
         "Regulation 149/2008",
         "Regulations 149/2008"
       ],
@@ -7826,9 +7899,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "260/2008",
+        "(EG) nr. 260/2008",
+        "(EG) nr 260/2008",
         "Verordening 260/2008",
         "Verordeningen 260/2008",
+        "(EC) No 260/2008",
+        "(EC) No. 260/2008",
         "Regulation 260/2008",
         "Regulations 260/2008"
       ],
@@ -7843,9 +7919,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "299/2008",
+        "(EG) nr. 299/2008",
+        "(EG) nr 299/2008",
         "Verordening 299/2008",
         "Verordeningen 299/2008",
+        "(EC) No 299/2008",
+        "(EC) No. 299/2008",
         "Regulation 299/2008",
         "Regulations 299/2008"
       ],
@@ -7860,9 +7939,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "416/2008",
+        "(EG) nr. 416/2008",
+        "(EG) nr 416/2008",
         "Verordening 416/2008",
         "Verordeningen 416/2008",
+        "(EC) No 416/2008",
+        "(EC) No. 416/2008",
         "Regulation 416/2008",
         "Regulations 416/2008"
       ],
@@ -7877,9 +7959,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "839/2008",
+        "(EG) nr. 839/2008",
+        "(EG) nr 839/2008",
         "Verordening 839/2008",
         "Verordeningen 839/2008",
+        "(EC) No 839/2008",
+        "(EC) No. 839/2008",
         "Regulation 839/2008",
         "Regulations 839/2008"
       ],
@@ -7894,9 +7979,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "848/2008",
+        "(EG) nr. 848/2008",
+        "(EG) nr 848/2008",
         "Verordening 848/2008",
         "Verordeningen 848/2008",
+        "(EC) No 848/2008",
+        "(EC) No. 848/2008",
         "Regulation 848/2008",
         "Regulations 848/2008"
       ],
@@ -7911,9 +7999,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1213/2008",
+        "(EG) nr. 1213/2008",
+        "(EG) nr 1213/2008",
         "Verordening 1213/2008",
         "Verordeningen 1213/2008",
+        "(EC) No 1213/2008",
+        "(EC) No. 1213/2008",
         "Regulation 1213/2008",
         "Regulations 1213/2008"
       ],
@@ -9005,9 +9096,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "256/2009",
+        "(EG) nr. 256/2009",
+        "(EG) nr 256/2009",
         "Verordening 256/2009",
         "Verordeningen 256/2009",
+        "(EC) No 256/2009",
+        "(EC) No. 256/2009",
         "Regulation 256/2009",
         "Regulations 256/2009"
       ],
@@ -9022,9 +9116,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "822/2009",
+        "(EG) nr. 822/2009",
+        "(EG) nr 822/2009",
         "Verordening 822/2009",
         "Verordeningen 822/2009",
+        "(EC) No 822/2009",
+        "(EC) No. 822/2009",
         "Regulation 822/2009",
         "Regulations 822/2009"
       ],
@@ -9039,9 +9136,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "901/2009",
+        "(EG) nr. 901/2009",
+        "(EG) nr 901/2009",
         "Verordening 901/2009",
         "Verordeningen 901/2009",
+        "(EC) No 901/2009",
+        "(EC) No. 901/2009",
         "Regulation 901/2009",
         "Regulations 901/2009"
       ],
@@ -9056,9 +9156,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1050/2009",
+        "(EG) nr. 1050/2009",
+        "(EG) nr 1050/2009",
         "Verordening 1050/2009",
         "Verordeningen 1050/2009",
+        "(EC) No 1050/2009",
+        "(EC) No. 1050/2009",
         "Regulation 1050/2009",
         "Regulations 1050/2009"
       ],
@@ -9073,9 +9176,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1097/2009",
+        "(EG) nr. 1097/2009",
+        "(EG) nr 1097/2009",
         "Verordening 1097/2009",
         "Verordeningen 1097/2009",
+        "(EC) No 1097/2009",
+        "(EC) No. 1097/2009",
         "Regulation 1097/2009",
         "Regulations 1097/2009"
       ],
@@ -10287,14 +10393,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "No 78/2010",
-        "No. 78/2010",
-        "nr. 78/2010",
-        "n° 78/2010",
-        "nº 78/2010",
-        "n. 78/2010",
+        "(EU) nr. 78/2010",
+        "(EU) nr 78/2010",
         "Verordening 78/2010",
         "Verordeningen 78/2010",
+        "(EU) No 78/2010",
+        "(EU) No. 78/2010",
         "Regulation 78/2010",
         "Regulations 78/2010"
       ],
@@ -10309,9 +10413,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "114/2010",
+        "(EU) nr. 114/2010",
+        "(EU) nr 114/2010",
         "Verordening 114/2010",
         "Verordeningen 114/2010",
+        "(EU) No 114/2010",
+        "(EU) No. 114/2010",
         "Regulation 114/2010",
         "Regulations 114/2010"
       ],
@@ -10326,9 +10433,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "298/2010",
+        "(EU) nr. 298/2010",
+        "(EU) nr 298/2010",
         "Verordening 298/2010",
         "Verordeningen 298/2010",
+        "(EU) No 298/2010",
+        "(EU) No. 298/2010",
         "Regulation 298/2010",
         "Regulations 298/2010"
       ],
@@ -10343,9 +10453,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "304/2010",
+        "(EU) nr. 304/2010",
+        "(EU) nr 304/2010",
         "Verordening 304/2010",
         "Verordeningen 304/2010",
+        "(EU) No 304/2010",
+        "(EU) No. 304/2010",
         "Regulation 304/2010",
         "Regulations 304/2010"
       ],
@@ -10360,9 +10473,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "459/2010",
+        "(EU) nr. 459/2010",
+        "(EU) nr 459/2010",
         "Verordening 459/2010",
         "Verordeningen 459/2010",
+        "(EU) No 459/2010",
+        "(EU) No. 459/2010",
         "Regulation 459/2010",
         "Regulations 459/2010"
       ],
@@ -10377,9 +10493,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "600/2010",
+        "(EU) nr. 600/2010",
+        "(EU) nr 600/2010",
         "Verordening 600/2010",
         "Verordeningen 600/2010",
+        "(EU) No 600/2010",
+        "(EU) No. 600/2010",
         "Regulation 600/2010",
         "Regulations 600/2010"
       ],
@@ -10394,9 +10513,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "741/2010",
+        "(EU) nr. 741/2010",
+        "(EU) nr 741/2010",
         "Verordening 741/2010",
         "Verordeningen 741/2010",
+        "(EU) No 741/2010",
+        "(EU) No. 741/2010",
         "Regulation 741/2010",
         "Regulations 741/2010"
       ],
@@ -10411,9 +10533,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "750/2010",
+        "(EU) nr. 750/2010",
+        "(EU) nr 750/2010",
         "Verordening 750/2010",
         "Verordeningen 750/2010",
+        "(EU) No 750/2010",
+        "(EU) No. 750/2010",
         "Regulation 750/2010",
         "Regulations 750/2010"
       ],
@@ -10428,9 +10553,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "765/2010",
+        "(EU) nr. 765/2010",
+        "(EU) nr 765/2010",
         "Verordening 765/2010",
         "Verordeningen 765/2010",
+        "(EU) No 765/2010",
+        "(EU) No. 765/2010",
         "Regulation 765/2010",
         "Regulations 765/2010"
       ],
@@ -10445,9 +10573,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "893/2010",
+        "(EU) nr. 893/2010",
+        "(EU) nr 893/2010",
         "Verordening 893/2010",
         "Verordeningen 893/2010",
+        "(EU) No 893/2010",
+        "(EU) No. 893/2010",
         "Regulation 893/2010",
         "Regulations 893/2010"
       ],
@@ -10462,9 +10593,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "915/2010",
+        "(EU) nr. 915/2010",
+        "(EU) nr 915/2010",
         "Verordening 915/2010",
         "Verordeningen 915/2010",
+        "(EU) No 915/2010",
+        "(EU) No. 915/2010",
         "Regulation 915/2010",
         "Regulations 915/2010"
       ],
@@ -10479,9 +10613,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1141/2010",
+        "(EU) nr. 1141/2010",
+        "(EU) nr 1141/2010",
         "Verordening 1141/2010",
         "Verordeningen 1141/2010",
+        "(EU) No 1141/2010",
+        "(EU) No. 1141/2010",
         "Regulation 1141/2010",
         "Regulations 1141/2010"
       ],
@@ -11868,9 +12005,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "188/2011",
+        "(EU) nr. 188/2011",
+        "(EU) nr 188/2011",
         "Verordening 188/2011",
         "Verordeningen 188/2011",
+        "(EU) No 188/2011",
+        "(EU) No. 188/2011",
         "Regulation 188/2011",
         "Regulations 188/2011"
       ],
@@ -11885,9 +12025,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "310/2011",
+        "(EU) nr. 310/2011",
+        "(EU) nr 310/2011",
         "Verordening 310/2011",
         "Verordeningen 310/2011",
+        "(EU) No 310/2011",
+        "(EU) No. 310/2011",
         "Regulation 310/2011",
         "Regulations 310/2011"
       ],
@@ -11902,9 +12045,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "408/2011",
+        "(EU) nr. 408/2011",
+        "(EU) nr 408/2011",
         "Verordening 408/2011",
         "Verordeningen 408/2011",
+        "(EU) No 408/2011",
+        "(EU) No. 408/2011",
         "Regulation 408/2011",
         "Regulations 408/2011"
       ],
@@ -11919,9 +12065,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "460/2011",
+        "(EU) nr. 460/2011",
+        "(EU) nr 460/2011",
         "Verordening 460/2011",
         "Verordeningen 460/2011",
+        "(EU) No 460/2011",
+        "(EU) No. 460/2011",
         "Regulation 460/2011",
         "Regulations 460/2011"
       ],
@@ -11936,9 +12085,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "508/2011",
+        "(EU) nr. 508/2011",
+        "(EU) nr 508/2011",
         "Verordening 508/2011",
         "Verordeningen 508/2011",
+        "(EU) No 508/2011",
+        "(EU) No. 508/2011",
         "Regulation 508/2011",
         "Regulations 508/2011"
       ],
@@ -11953,9 +12105,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "520/2011",
+        "(EU) nr. 520/2011",
+        "(EU) nr 520/2011",
         "Verordening 520/2011",
         "Verordeningen 520/2011",
+        "(EU) No 520/2011",
+        "(EU) No. 520/2011",
         "Regulation 520/2011",
         "Regulations 520/2011"
       ],
@@ -11970,9 +12125,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "524/2011",
+        "(EU) nr. 524/2011",
+        "(EU) nr 524/2011",
         "Verordening 524/2011",
         "Verordeningen 524/2011",
+        "(EU) No 524/2011",
+        "(EU) No. 524/2011",
         "Regulation 524/2011",
         "Regulations 524/2011"
       ],
@@ -11987,10 +12145,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "541/2011",
+        "(EU) nr. 541/2011",
+        "(EU) nr 541/2011",
         "Uitvoeringsverordening 541/2011",
         "Verordening 541/2011",
         "Verordeningen 541/2011",
+        "(EU) No 541/2011",
+        "(EU) No. 541/2011",
         "Implementing Regulation 541/2011",
         "Regulation 541/2011",
         "Regulations 541/2011"
@@ -12006,10 +12167,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "542/2011",
+        "(EU) nr. 542/2011",
+        "(EU) nr 542/2011",
         "Uitvoeringsverordening 542/2011",
         "Verordening 542/2011",
         "Verordeningen 542/2011",
+        "(EU) No 542/2011",
+        "(EU) No. 542/2011",
         "Implementing Regulation 542/2011",
         "Regulation 542/2011",
         "Regulations 542/2011"
@@ -12025,9 +12189,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "544/2011",
+        "(EU) nr. 544/2011",
+        "(EU) nr 544/2011",
         "Verordening 544/2011",
         "Verordeningen 544/2011",
+        "(EU) No 544/2011",
+        "(EU) No. 544/2011",
         "Regulation 544/2011",
         "Regulations 544/2011"
       ],
@@ -12042,9 +12209,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "545/2011",
+        "(EU) nr. 545/2011",
+        "(EU) nr 545/2011",
         "Verordening 545/2011",
         "Verordeningen 545/2011",
+        "(EU) No 545/2011",
+        "(EU) No. 545/2011",
         "Regulation 545/2011",
         "Regulations 545/2011"
       ],
@@ -12059,9 +12229,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "546/2011",
+        "(EU) nr. 546/2011",
+        "(EU) nr 546/2011",
         "Verordening 546/2011",
         "Verordeningen 546/2011",
+        "(EU) No 546/2011",
+        "(EU) No. 546/2011",
         "Regulation 546/2011",
         "Regulations 546/2011"
       ],
@@ -12076,9 +12249,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "547/2011",
+        "(EU) nr. 547/2011",
+        "(EU) nr 547/2011",
         "Verordening 547/2011",
         "Verordeningen 547/2011",
+        "(EU) No 547/2011",
+        "(EU) No. 547/2011",
         "Regulation 547/2011",
         "Regulations 547/2011"
       ],
@@ -12093,9 +12269,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "559/2011",
+        "(EU) nr. 559/2011",
+        "(EU) nr 559/2011",
         "Verordening 559/2011",
         "Verordeningen 559/2011",
+        "(EU) No 559/2011",
+        "(EU) No. 559/2011",
         "Regulation 559/2011",
         "Regulations 559/2011"
       ],
@@ -12110,9 +12289,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "656/2011",
+        "(EU) nr. 656/2011",
+        "(EU) nr 656/2011",
         "Verordening 656/2011",
         "Verordeningen 656/2011",
+        "(EU) No 656/2011",
+        "(EU) No. 656/2011",
         "Regulation 656/2011",
         "Regulations 656/2011"
       ],
@@ -12127,10 +12309,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "702/2011",
+        "(EU) nr. 702/2011",
+        "(EU) nr 702/2011",
         "Uitvoeringsverordening 702/2011",
         "Verordening 702/2011",
         "Verordeningen 702/2011",
+        "(EU) No 702/2011",
+        "(EU) No. 702/2011",
         "Implementing Regulation 702/2011",
         "Regulation 702/2011",
         "Regulations 702/2011"
@@ -12146,10 +12331,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "703/2011",
+        "(EU) nr. 703/2011",
+        "(EU) nr 703/2011",
         "Uitvoeringsverordening 703/2011",
         "Verordening 703/2011",
         "Verordeningen 703/2011",
+        "(EU) No 703/2011",
+        "(EU) No. 703/2011",
         "Implementing Regulation 703/2011",
         "Regulation 703/2011",
         "Regulations 703/2011"
@@ -12165,10 +12353,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "704/2011",
+        "(EU) nr. 704/2011",
+        "(EU) nr 704/2011",
         "Uitvoeringsverordening 704/2011",
         "Verordening 704/2011",
         "Verordeningen 704/2011",
+        "(EU) No 704/2011",
+        "(EU) No. 704/2011",
         "Implementing Regulation 704/2011",
         "Regulation 704/2011",
         "Regulations 704/2011"
@@ -12184,10 +12375,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "705/2011",
+        "(EU) nr. 705/2011",
+        "(EU) nr 705/2011",
         "Uitvoeringsverordening 705/2011",
         "Verordening 705/2011",
         "Verordeningen 705/2011",
+        "(EU) No 705/2011",
+        "(EU) No. 705/2011",
         "Implementing Regulation 705/2011",
         "Regulation 705/2011",
         "Regulations 705/2011"
@@ -12203,10 +12397,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "706/2011",
+        "(EU) nr. 706/2011",
+        "(EU) nr 706/2011",
         "Uitvoeringsverordening 706/2011",
         "Verordening 706/2011",
         "Verordeningen 706/2011",
+        "(EU) No 706/2011",
+        "(EU) No. 706/2011",
         "Implementing Regulation 706/2011",
         "Regulation 706/2011",
         "Regulations 706/2011"
@@ -12222,10 +12419,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "736/2011",
+        "(EU) nr. 736/2011",
+        "(EU) nr 736/2011",
         "Uitvoeringsverordening 736/2011",
         "Verordening 736/2011",
         "Verordeningen 736/2011",
+        "(EU) No 736/2011",
+        "(EU) No. 736/2011",
         "Implementing Regulation 736/2011",
         "Regulation 736/2011",
         "Regulations 736/2011"
@@ -12241,10 +12441,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "740/2011",
+        "(EU) nr. 740/2011",
+        "(EU) nr 740/2011",
         "Uitvoeringsverordening 740/2011",
         "Verordening 740/2011",
         "Verordeningen 740/2011",
+        "(EU) No 740/2011",
+        "(EU) No. 740/2011",
         "Implementing Regulation 740/2011",
         "Regulation 740/2011",
         "Regulations 740/2011"
@@ -12260,10 +12463,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "786/2011",
+        "(EU) nr. 786/2011",
+        "(EU) nr 786/2011",
         "Uitvoeringsverordening 786/2011",
         "Verordening 786/2011",
         "Verordeningen 786/2011",
+        "(EU) No 786/2011",
+        "(EU) No. 786/2011",
         "Implementing Regulation 786/2011",
         "Regulation 786/2011",
         "Regulations 786/2011"
@@ -12279,10 +12485,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "787/2011",
+        "(EU) nr. 787/2011",
+        "(EU) nr 787/2011",
         "Uitvoeringsverordening 787/2011",
         "Verordening 787/2011",
         "Verordeningen 787/2011",
+        "(EU) No 787/2011",
+        "(EU) No. 787/2011",
         "Implementing Regulation 787/2011",
         "Regulation 787/2011",
         "Regulations 787/2011"
@@ -12298,10 +12507,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "788/2011",
+        "(EU) nr. 788/2011",
+        "(EU) nr 788/2011",
         "Uitvoeringsverordening 788/2011",
         "Verordening 788/2011",
         "Verordeningen 788/2011",
+        "(EU) No 788/2011",
+        "(EU) No. 788/2011",
         "Implementing Regulation 788/2011",
         "Regulation 788/2011",
         "Regulations 788/2011"
@@ -12317,10 +12529,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "797/2011",
+        "(EU) nr. 797/2011",
+        "(EU) nr 797/2011",
         "Uitvoeringsverordening 797/2011",
         "Verordening 797/2011",
         "Verordeningen 797/2011",
+        "(EU) No 797/2011",
+        "(EU) No. 797/2011",
         "Implementing Regulation 797/2011",
         "Regulation 797/2011",
         "Regulations 797/2011"
@@ -12336,10 +12551,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "798/2011",
+        "(EU) nr. 798/2011",
+        "(EU) nr 798/2011",
         "Uitvoeringsverordening 798/2011",
         "Verordening 798/2011",
         "Verordeningen 798/2011",
+        "(EU) No 798/2011",
+        "(EU) No. 798/2011",
         "Implementing Regulation 798/2011",
         "Regulation 798/2011",
         "Regulations 798/2011"
@@ -12355,10 +12573,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "800/2011",
+        "(EU) nr. 800/2011",
+        "(EU) nr 800/2011",
         "Uitvoeringsverordening 800/2011",
         "Verordening 800/2011",
         "Verordeningen 800/2011",
+        "(EU) No 800/2011",
+        "(EU) No. 800/2011",
         "Implementing Regulation 800/2011",
         "Regulation 800/2011",
         "Regulations 800/2011"
@@ -12374,10 +12595,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "806/2011",
+        "(EU) nr. 806/2011",
+        "(EU) nr 806/2011",
         "Uitvoeringsverordening 806/2011",
         "Verordening 806/2011",
         "Verordeningen 806/2011",
+        "(EU) No 806/2011",
+        "(EU) No. 806/2011",
         "Implementing Regulation 806/2011",
         "Regulation 806/2011",
         "Regulations 806/2011"
@@ -12393,10 +12617,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "807/2011",
+        "(EU) nr. 807/2011",
+        "(EU) nr 807/2011",
         "Uitvoeringsverordening 807/2011",
         "Verordening 807/2011",
         "Verordeningen 807/2011",
+        "(EU) No 807/2011",
+        "(EU) No. 807/2011",
         "Implementing Regulation 807/2011",
         "Regulation 807/2011",
         "Regulations 807/2011"
@@ -12412,10 +12639,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "810/2011",
+        "(EU) nr. 810/2011",
+        "(EU) nr 810/2011",
         "Uitvoeringsverordening 810/2011",
         "Verordening 810/2011",
         "Verordeningen 810/2011",
+        "(EU) No 810/2011",
+        "(EU) No. 810/2011",
         "Implementing Regulation 810/2011",
         "Regulation 810/2011",
         "Regulations 810/2011"
@@ -12431,9 +12661,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "812/2011",
+        "(EU) nr. 812/2011",
+        "(EU) nr 812/2011",
         "Verordening 812/2011",
         "Verordeningen 812/2011",
+        "(EU) No 812/2011",
+        "(EU) No. 812/2011",
         "Regulation 812/2011",
         "Regulations 812/2011"
       ],
@@ -12448,10 +12681,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "813/2011",
+        "(EU) nr. 813/2011",
+        "(EU) nr 813/2011",
         "Uitvoeringsverordening 813/2011",
         "Verordening 813/2011",
         "Verordeningen 813/2011",
+        "(EU) No 813/2011",
+        "(EU) No. 813/2011",
         "Implementing Regulation 813/2011",
         "Regulation 813/2011",
         "Regulations 813/2011"
@@ -12467,10 +12703,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "820/2011",
+        "(EU) nr. 820/2011",
+        "(EU) nr 820/2011",
         "Uitvoeringsverordening 820/2011",
         "Verordening 820/2011",
         "Verordeningen 820/2011",
+        "(EU) No 820/2011",
+        "(EU) No. 820/2011",
         "Implementing Regulation 820/2011",
         "Regulation 820/2011",
         "Regulations 820/2011"
@@ -12486,10 +12725,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "942/2011",
+        "(EU) nr. 942/2011",
+        "(EU) nr 942/2011",
         "Uitvoeringsverordening 942/2011",
         "Verordening 942/2011",
         "Verordeningen 942/2011",
+        "(EU) No 942/2011",
+        "(EU) No. 942/2011",
         "Implementing Regulation 942/2011",
         "Regulation 942/2011",
         "Regulations 942/2011"
@@ -12505,10 +12747,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "943/2011",
+        "(EU) nr. 943/2011",
+        "(EU) nr 943/2011",
         "Uitvoeringsverordening 943/2011",
         "Verordening 943/2011",
         "Verordeningen 943/2011",
+        "(EU) No 943/2011",
+        "(EU) No. 943/2011",
         "Implementing Regulation 943/2011",
         "Regulation 943/2011",
         "Regulations 943/2011"
@@ -12524,10 +12769,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "974/2011",
+        "(EU) nr. 974/2011",
+        "(EU) nr 974/2011",
         "Uitvoeringsverordening 974/2011",
         "Verordening 974/2011",
         "Verordeningen 974/2011",
+        "(EU) No 974/2011",
+        "(EU) No. 974/2011",
         "Implementing Regulation 974/2011",
         "Regulation 974/2011",
         "Regulations 974/2011"
@@ -12543,9 +12791,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "978/2011",
+        "(EU) nr. 978/2011",
+        "(EU) nr 978/2011",
         "Verordening 978/2011",
         "Verordeningen 978/2011",
+        "(EU) No 978/2011",
+        "(EU) No. 978/2011",
         "Regulation 978/2011",
         "Regulations 978/2011"
       ],
@@ -12560,10 +12811,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "993/2011",
+        "(EU) nr. 993/2011",
+        "(EU) nr 993/2011",
         "Uitvoeringsverordening 993/2011",
         "Verordening 993/2011",
         "Verordeningen 993/2011",
+        "(EU) No 993/2011",
+        "(EU) No. 993/2011",
         "Implementing Regulation 993/2011",
         "Regulation 993/2011",
         "Regulations 993/2011"
@@ -12579,10 +12833,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1022/2011",
+        "(EU) nr. 1022/2011",
+        "(EU) nr 1022/2011",
         "Uitvoeringsverordening 1022/2011",
         "Verordening 1022/2011",
         "Verordeningen 1022/2011",
+        "(EU) No 1022/2011",
+        "(EU) No. 1022/2011",
         "Implementing Regulation 1022/2011",
         "Regulation 1022/2011",
         "Regulations 1022/2011"
@@ -12598,10 +12855,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1045/2011",
+        "(EU) nr. 1045/2011",
+        "(EU) nr 1045/2011",
         "Uitvoeringsverordening 1045/2011",
         "Verordening 1045/2011",
         "Verordeningen 1045/2011",
+        "(EU) No 1045/2011",
+        "(EU) No. 1045/2011",
         "Implementing Regulation 1045/2011",
         "Regulation 1045/2011",
         "Regulations 1045/2011"
@@ -12617,10 +12877,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1078/2011",
+        "(EU) nr. 1078/2011",
+        "(EU) nr 1078/2011",
         "Uitvoeringsverordening 1078/2011",
         "Verordening 1078/2011",
         "Verordeningen 1078/2011",
+        "(EU) No 1078/2011",
+        "(EU) No. 1078/2011",
         "Implementing Regulation 1078/2011",
         "Regulation 1078/2011",
         "Regulations 1078/2011"
@@ -12636,10 +12899,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1100/2011",
+        "(EU) nr. 1100/2011",
+        "(EU) nr 1100/2011",
         "Uitvoeringsverordening 1100/2011",
         "Verordening 1100/2011",
         "Verordeningen 1100/2011",
+        "(EU) No 1100/2011",
+        "(EU) No. 1100/2011",
         "Implementing Regulation 1100/2011",
         "Regulation 1100/2011",
         "Regulations 1100/2011"
@@ -12655,10 +12921,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1127/2011",
+        "(EU) nr. 1127/2011",
+        "(EU) nr 1127/2011",
         "Uitvoeringsverordening 1127/2011",
         "Verordening 1127/2011",
         "Verordeningen 1127/2011",
+        "(EU) No 1127/2011",
+        "(EU) No. 1127/2011",
         "Implementing Regulation 1127/2011",
         "Regulation 1127/2011",
         "Regulations 1127/2011"
@@ -12674,10 +12943,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1134/2011",
+        "(EU) nr. 1134/2011",
+        "(EU) nr 1134/2011",
         "Uitvoeringsverordening 1134/2011",
         "Verordening 1134/2011",
         "Verordeningen 1134/2011",
+        "(EU) No 1134/2011",
+        "(EU) No. 1134/2011",
         "Implementing Regulation 1134/2011",
         "Regulation 1134/2011",
         "Regulations 1134/2011"
@@ -12693,10 +12965,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1143/2011",
+        "(EU) nr. 1143/2011",
+        "(EU) nr 1143/2011",
         "Uitvoeringsverordening 1143/2011",
         "Verordening 1143/2011",
         "Verordeningen 1143/2011",
+        "(EU) No 1143/2011",
+        "(EU) No. 1143/2011",
         "Implementing Regulation 1143/2011",
         "Regulation 1143/2011",
         "Regulations 1143/2011"
@@ -12712,10 +12987,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1274/2011",
+        "(EU) nr. 1274/2011",
+        "(EU) nr 1274/2011",
         "Uitvoeringsverordening 1274/2011",
         "Verordening 1274/2011",
         "Verordeningen 1274/2011",
+        "(EU) No 1274/2011",
+        "(EU) No. 1274/2011",
         "Implementing Regulation 1274/2011",
         "Regulation 1274/2011",
         "Regulations 1274/2011"
@@ -12731,10 +13009,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1278/2011",
+        "(EU) nr. 1278/2011",
+        "(EU) nr 1278/2011",
         "Uitvoeringsverordening 1278/2011",
         "Verordening 1278/2011",
         "Verordeningen 1278/2011",
+        "(EU) No 1278/2011",
+        "(EU) No. 1278/2011",
         "Implementing Regulation 1278/2011",
         "Regulation 1278/2011",
         "Regulations 1278/2011"
@@ -12750,10 +13031,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1372/2011",
+        "(EU) nr. 1372/2011",
+        "(EU) nr 1372/2011",
         "Uitvoeringsverordening 1372/2011",
         "Verordening 1372/2011",
         "Verordeningen 1372/2011",
+        "(EU) No 1372/2011",
+        "(EU) No. 1372/2011",
         "Implementing Regulation 1372/2011",
         "Regulation 1372/2011",
         "Regulations 1372/2011"
@@ -12769,10 +13053,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1381/2011",
+        "(EU) nr. 1381/2011",
+        "(EU) nr 1381/2011",
         "Uitvoeringsverordening 1381/2011",
         "Verordening 1381/2011",
         "Verordeningen 1381/2011",
+        "(EU) No 1381/2011",
+        "(EU) No. 1381/2011",
         "Implementing Regulation 1381/2011",
         "Regulation 1381/2011",
         "Regulations 1381/2011"
@@ -13329,15 +13616,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 87/2012",
-        "No. 87/2012",
-        "nr. 87/2012",
-        "n° 87/2012",
-        "nº 87/2012",
-        "n. 87/2012",
+        "(EU) nr. 87/2012",
+        "(EU) nr 87/2012",
         "Uitvoeringsverordening 87/2012",
         "Verordening 87/2012",
         "Verordeningen 87/2012",
+        "(EU) No 87/2012",
+        "(EU) No. 87/2012",
         "Implementing Regulation 87/2012",
         "Regulation 87/2012",
         "Regulations 87/2012"
@@ -13353,10 +13638,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "127/2012",
+        "(EU) nr. 127/2012",
+        "(EU) nr 127/2012",
         "Uitvoeringsverordening 127/2012",
         "Verordening 127/2012",
         "Verordeningen 127/2012",
+        "(EU) No 127/2012",
+        "(EU) No. 127/2012",
         "Implementing Regulation 127/2012",
         "Regulation 127/2012",
         "Regulations 127/2012"
@@ -13372,9 +13660,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "270/2012",
+        "(EU) nr. 270/2012",
+        "(EU) nr 270/2012",
         "Verordening 270/2012",
         "Verordeningen 270/2012",
+        "(EU) No 270/2012",
+        "(EU) No. 270/2012",
         "Regulation 270/2012",
         "Regulations 270/2012"
       ],
@@ -13389,10 +13680,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "287/2012",
+        "(EU) nr. 287/2012",
+        "(EU) nr 287/2012",
         "Uitvoeringsverordening 287/2012",
         "Verordening 287/2012",
         "Verordeningen 287/2012",
+        "(EU) No 287/2012",
+        "(EU) No. 287/2012",
         "Implementing Regulation 287/2012",
         "Regulation 287/2012",
         "Regulations 287/2012"
@@ -13408,9 +13702,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "322/2012",
+        "(EU) nr. 322/2012",
+        "(EU) nr 322/2012",
         "Verordening 322/2012",
         "Verordeningen 322/2012",
+        "(EU) No 322/2012",
+        "(EU) No. 322/2012",
         "Regulation 322/2012",
         "Regulations 322/2012"
       ],
@@ -13425,10 +13722,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "359/2012",
+        "(EU) nr. 359/2012",
+        "(EU) nr 359/2012",
         "Uitvoeringsverordening 359/2012",
         "Verordening 359/2012",
         "Verordeningen 359/2012",
+        "(EU) No 359/2012",
+        "(EU) No. 359/2012",
         "Implementing Regulation 359/2012",
         "Regulation 359/2012",
         "Regulations 359/2012"
@@ -13444,10 +13744,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "369/2012",
+        "(EU) nr. 369/2012",
+        "(EU) nr 369/2012",
         "Uitvoeringsverordening 369/2012",
         "Verordening 369/2012",
         "Verordeningen 369/2012",
+        "(EU) No 369/2012",
+        "(EU) No. 369/2012",
         "Implementing Regulation 369/2012",
         "Regulation 369/2012",
         "Regulations 369/2012"
@@ -13463,9 +13766,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "441/2012",
+        "(EU) nr. 441/2012",
+        "(EU) nr 441/2012",
         "Verordening 441/2012",
         "Verordeningen 441/2012",
+        "(EU) No 441/2012",
+        "(EU) No. 441/2012",
         "Regulation 441/2012",
         "Regulations 441/2012"
       ],
@@ -13480,9 +13786,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "473/2012",
+        "(EU) nr. 473/2012",
+        "(EU) nr 473/2012",
         "Verordening 473/2012",
         "Verordeningen 473/2012",
+        "(EU) No 473/2012",
+        "(EU) No. 473/2012",
         "Regulation 473/2012",
         "Regulations 473/2012"
       ],
@@ -13497,9 +13806,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "556/2012",
+        "(EU) nr. 556/2012",
+        "(EU) nr 556/2012",
         "Verordening 556/2012",
         "Verordeningen 556/2012",
+        "(EU) No 556/2012",
+        "(EU) No. 556/2012",
         "Regulation 556/2012",
         "Regulations 556/2012"
       ],
@@ -13514,10 +13826,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "571/2012",
+        "(EU) nr. 571/2012",
+        "(EU) nr 571/2012",
         "Uitvoeringsverordening 571/2012",
         "Verordening 571/2012",
         "Verordeningen 571/2012",
+        "(EU) No 571/2012",
+        "(EU) No. 571/2012",
         "Implementing Regulation 571/2012",
         "Regulation 571/2012",
         "Regulations 571/2012"
@@ -13533,10 +13848,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "578/2012",
+        "(EU) nr. 578/2012",
+        "(EU) nr 578/2012",
         "Uitvoeringsverordening 578/2012",
         "Verordening 578/2012",
         "Verordeningen 578/2012",
+        "(EU) No 578/2012",
+        "(EU) No. 578/2012",
         "Implementing Regulation 578/2012",
         "Regulation 578/2012",
         "Regulations 578/2012"
@@ -13552,10 +13870,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "582/2012",
+        "(EU) nr. 582/2012",
+        "(EU) nr 582/2012",
         "Uitvoeringsverordening 582/2012",
         "Verordening 582/2012",
         "Verordeningen 582/2012",
+        "(EU) No 582/2012",
+        "(EU) No. 582/2012",
         "Implementing Regulation 582/2012",
         "Regulation 582/2012",
         "Regulations 582/2012"
@@ -13571,10 +13892,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "589/2012",
+        "(EU) nr. 589/2012",
+        "(EU) nr 589/2012",
         "Uitvoeringsverordening 589/2012",
         "Verordening 589/2012",
         "Verordeningen 589/2012",
+        "(EU) No 589/2012",
+        "(EU) No. 589/2012",
         "Implementing Regulation 589/2012",
         "Regulation 589/2012",
         "Regulations 589/2012"
@@ -13590,9 +13914,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "592/2012",
+        "(EU) nr. 592/2012",
+        "(EU) nr 592/2012",
         "Verordening 592/2012",
         "Verordeningen 592/2012",
+        "(EU) No 592/2012",
+        "(EU) No. 592/2012",
         "Regulation 592/2012",
         "Regulations 592/2012"
       ],
@@ -13607,10 +13934,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "595/2012",
+        "(EU) nr. 595/2012",
+        "(EU) nr 595/2012",
         "Uitvoeringsverordening 595/2012",
         "Verordening 595/2012",
         "Verordeningen 595/2012",
+        "(EU) No 595/2012",
+        "(EU) No. 595/2012",
         "Implementing Regulation 595/2012",
         "Regulation 595/2012",
         "Regulations 595/2012"
@@ -13626,10 +13956,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "597/2012",
+        "(EU) nr. 597/2012",
+        "(EU) nr 597/2012",
         "Uitvoeringsverordening 597/2012",
         "Verordening 597/2012",
         "Verordeningen 597/2012",
+        "(EU) No 597/2012",
+        "(EU) No. 597/2012",
         "Implementing Regulation 597/2012",
         "Regulation 597/2012",
         "Regulations 597/2012"
@@ -13645,10 +13978,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "608/2012",
+        "(EU) nr. 608/2012",
+        "(EU) nr 608/2012",
         "Uitvoeringsverordening 608/2012",
         "Verordening 608/2012",
         "Verordeningen 608/2012",
+        "(EU) No 608/2012",
+        "(EU) No. 608/2012",
         "Implementing Regulation 608/2012",
         "Regulation 608/2012",
         "Regulations 608/2012"
@@ -13664,10 +14000,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "637/2012",
+        "(EU) nr. 637/2012",
+        "(EU) nr 637/2012",
         "Uitvoeringsverordening 637/2012",
         "Verordening 637/2012",
         "Verordeningen 637/2012",
+        "(EU) No 637/2012",
+        "(EU) No. 637/2012",
         "Implementing Regulation 637/2012",
         "Regulation 637/2012",
         "Regulations 637/2012"
@@ -13683,10 +14022,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "686/2012",
+        "(EU) nr. 686/2012",
+        "(EU) nr 686/2012",
         "Uitvoeringsverordening 686/2012",
         "Verordening 686/2012",
         "Verordeningen 686/2012",
+        "(EU) No 686/2012",
+        "(EU) No. 686/2012",
         "Implementing Regulation 686/2012",
         "Regulation 686/2012",
         "Regulations 686/2012"
@@ -13702,10 +14044,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "735/2012",
+        "(EU) nr. 735/2012",
+        "(EU) nr 735/2012",
         "Uitvoeringsverordening 735/2012",
         "Verordening 735/2012",
         "Verordeningen 735/2012",
+        "(EU) No 735/2012",
+        "(EU) No. 735/2012",
         "Implementing Regulation 735/2012",
         "Regulation 735/2012",
         "Regulations 735/2012"
@@ -13721,10 +14066,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "746/2012",
+        "(EU) nr. 746/2012",
+        "(EU) nr 746/2012",
         "Uitvoeringsverordening 746/2012",
         "Verordening 746/2012",
         "Verordeningen 746/2012",
+        "(EU) No 746/2012",
+        "(EU) No. 746/2012",
         "Implementing Regulation 746/2012",
         "Regulation 746/2012",
         "Regulations 746/2012"
@@ -13740,10 +14088,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "788/2012",
+        "(EU) nr. 788/2012",
+        "(EU) nr 788/2012",
         "Uitvoeringsverordening 788/2012",
         "Verordening 788/2012",
         "Verordeningen 788/2012",
+        "(EU) No 788/2012",
+        "(EU) No. 788/2012",
         "Implementing Regulation 788/2012",
         "Regulation 788/2012",
         "Regulations 788/2012"
@@ -13759,9 +14110,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "823/2012",
+        "(EU) nr. 823/2012",
+        "(EU) nr 823/2012",
         "Verordening 823/2012",
         "Verordeningen 823/2012",
+        "(EU) No 823/2012",
+        "(EU) No. 823/2012",
         "Regulation 823/2012",
         "Regulations 823/2012"
       ],
@@ -13776,10 +14130,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "844/2012",
+        "(EU) nr. 844/2012",
+        "(EU) nr 844/2012",
         "Uitvoeringsverordening 844/2012",
         "Verordening 844/2012",
         "Verordeningen 844/2012",
+        "(EU) No 844/2012",
+        "(EU) No. 844/2012",
         "Implementing Regulation 844/2012",
         "Regulation 844/2012",
         "Regulations 844/2012"
@@ -13795,9 +14152,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "897/2012",
+        "(EU) nr. 897/2012",
+        "(EU) nr 897/2012",
         "Verordening 897/2012",
         "Verordeningen 897/2012",
+        "(EU) No 897/2012",
+        "(EU) No. 897/2012",
         "Regulation 897/2012",
         "Regulations 897/2012"
       ],
@@ -13812,9 +14172,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "899/2012",
+        "(EU) nr. 899/2012",
+        "(EU) nr 899/2012",
         "Verordening 899/2012",
         "Verordeningen 899/2012",
+        "(EU) No 899/2012",
+        "(EU) No. 899/2012",
         "Regulation 899/2012",
         "Regulations 899/2012"
       ],
@@ -13829,10 +14192,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1037/2012",
+        "(EU) nr. 1037/2012",
+        "(EU) nr 1037/2012",
         "Uitvoeringsverordening 1037/2012",
         "Verordening 1037/2012",
         "Verordeningen 1037/2012",
+        "(EU) No 1037/2012",
+        "(EU) No. 1037/2012",
         "Implementing Regulation 1037/2012",
         "Regulation 1037/2012",
         "Regulations 1037/2012"
@@ -13848,10 +14214,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1043/2012",
+        "(EU) nr. 1043/2012",
+        "(EU) nr 1043/2012",
         "Uitvoeringsverordening 1043/2012",
         "Verordening 1043/2012",
         "Verordeningen 1043/2012",
+        "(EU) No 1043/2012",
+        "(EU) No. 1043/2012",
         "Implementing Regulation 1043/2012",
         "Regulation 1043/2012",
         "Regulations 1043/2012"
@@ -13867,10 +14236,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1197/2012",
+        "(EU) nr. 1197/2012",
+        "(EU) nr 1197/2012",
         "Uitvoeringsverordening 1197/2012",
         "Verordening 1197/2012",
         "Verordeningen 1197/2012",
+        "(EU) No 1197/2012",
+        "(EU) No. 1197/2012",
         "Implementing Regulation 1197/2012",
         "Regulation 1197/2012",
         "Regulations 1197/2012"
@@ -13886,10 +14258,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1237/2012",
+        "(EU) nr. 1237/2012",
+        "(EU) nr 1237/2012",
         "Uitvoeringsverordening 1237/2012",
         "Verordening 1237/2012",
         "Verordeningen 1237/2012",
+        "(EU) No 1237/2012",
+        "(EU) No. 1237/2012",
         "Implementing Regulation 1237/2012",
         "Regulation 1237/2012",
         "Regulations 1237/2012"
@@ -13905,10 +14280,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1238/2012",
+        "(EU) nr. 1238/2012",
+        "(EU) nr 1238/2012",
         "Uitvoeringsverordening 1238/2012",
         "Verordening 1238/2012",
         "Verordeningen 1238/2012",
+        "(EU) No 1238/2012",
+        "(EU) No. 1238/2012",
         "Implementing Regulation 1238/2012",
         "Regulation 1238/2012",
         "Regulations 1238/2012"
@@ -14308,15 +14686,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 17/2013",
-        "No. 17/2013",
-        "nr. 17/2013",
-        "n° 17/2013",
-        "nº 17/2013",
-        "n. 17/2013",
+        "(EU) nr. 17/2013",
+        "(EU) nr 17/2013",
         "Uitvoeringsverordening 17/2013",
         "Verordening 17/2013",
         "Verordeningen 17/2013",
+        "(EU) No 17/2013",
+        "(EU) No. 17/2013",
         "Implementing Regulation 17/2013",
         "Regulation 17/2013",
         "Regulations 17/2013"
@@ -14332,15 +14708,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 22/2013",
-        "No. 22/2013",
-        "nr. 22/2013",
-        "n° 22/2013",
-        "nº 22/2013",
-        "n. 22/2013",
+        "(EU) nr. 22/2013",
+        "(EU) nr 22/2013",
         "Uitvoeringsverordening 22/2013",
         "Verordening 22/2013",
         "Verordeningen 22/2013",
+        "(EU) No 22/2013",
+        "(EU) No. 22/2013",
         "Implementing Regulation 22/2013",
         "Regulation 22/2013",
         "Regulations 22/2013"
@@ -14356,14 +14730,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "No 34/2013",
-        "No. 34/2013",
-        "nr. 34/2013",
-        "n° 34/2013",
-        "nº 34/2013",
-        "n. 34/2013",
+        "(EU) nr. 34/2013",
+        "(EU) nr 34/2013",
         "Verordening 34/2013",
         "Verordeningen 34/2013",
+        "(EU) No 34/2013",
+        "(EU) No. 34/2013",
         "Regulation 34/2013",
         "Regulations 34/2013"
       ],
@@ -14378,14 +14750,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "No 35/2013",
-        "No. 35/2013",
-        "nr. 35/2013",
-        "n° 35/2013",
-        "nº 35/2013",
-        "n. 35/2013",
+        "(EU) nr. 35/2013",
+        "(EU) nr 35/2013",
         "Verordening 35/2013",
         "Verordeningen 35/2013",
+        "(EU) No 35/2013",
+        "(EU) No. 35/2013",
         "Regulation 35/2013",
         "Regulations 35/2013"
       ],
@@ -14400,10 +14770,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "175/2013",
+        "(EU) nr. 175/2013",
+        "(EU) nr 175/2013",
         "Uitvoeringsverordening 175/2013",
         "Verordening 175/2013",
         "Verordeningen 175/2013",
+        "(EU) No 175/2013",
+        "(EU) No. 175/2013",
         "Implementing Regulation 175/2013",
         "Regulation 175/2013",
         "Regulations 175/2013"
@@ -14419,10 +14792,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "187/2013",
+        "(EU) nr. 187/2013",
+        "(EU) nr 187/2013",
         "Uitvoeringsverordening 187/2013",
         "Verordening 187/2013",
         "Verordeningen 187/2013",
+        "(EU) No 187/2013",
+        "(EU) No. 187/2013",
         "Implementing Regulation 187/2013",
         "Regulation 187/2013",
         "Regulations 187/2013"
@@ -14438,10 +14814,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "188/2013",
+        "(EU) nr. 188/2013",
+        "(EU) nr 188/2013",
         "Uitvoeringsverordening 188/2013",
         "Verordening 188/2013",
         "Verordeningen 188/2013",
+        "(EU) No 188/2013",
+        "(EU) No. 188/2013",
         "Implementing Regulation 188/2013",
         "Regulation 188/2013",
         "Regulations 188/2013"
@@ -14457,10 +14836,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "190/2013",
+        "(EU) nr. 190/2013",
+        "(EU) nr 190/2013",
         "Uitvoeringsverordening 190/2013",
         "Verordening 190/2013",
         "Verordeningen 190/2013",
+        "(EU) No 190/2013",
+        "(EU) No. 190/2013",
         "Implementing Regulation 190/2013",
         "Regulation 190/2013",
         "Regulations 190/2013"
@@ -14476,10 +14858,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "200/2013",
+        "(EU) nr. 200/2013",
+        "(EU) nr 200/2013",
         "Uitvoeringsverordening 200/2013",
         "Verordening 200/2013",
         "Verordeningen 200/2013",
+        "(EU) No 200/2013",
+        "(EU) No. 200/2013",
         "Implementing Regulation 200/2013",
         "Regulation 200/2013",
         "Regulations 200/2013"
@@ -14495,10 +14880,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "201/2013",
+        "(EU) nr. 201/2013",
+        "(EU) nr 201/2013",
         "Uitvoeringsverordening 201/2013",
         "Verordening 201/2013",
         "Verordeningen 201/2013",
+        "(EU) No 201/2013",
+        "(EU) No. 201/2013",
         "Implementing Regulation 201/2013",
         "Regulation 201/2013",
         "Regulations 201/2013"
@@ -14514,9 +14902,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "212/2013",
+        "(EU) nr. 212/2013",
+        "(EU) nr 212/2013",
         "Verordening 212/2013",
         "Verordeningen 212/2013",
+        "(EU) No 212/2013",
+        "(EU) No. 212/2013",
         "Regulation 212/2013",
         "Regulations 212/2013"
       ],
@@ -14531,9 +14922,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "241/2013",
+        "(EU) nr. 241/2013",
+        "(EU) nr 241/2013",
         "Verordening 241/2013",
         "Verordeningen 241/2013",
+        "(EU) No 241/2013",
+        "(EU) No. 241/2013",
         "Regulation 241/2013",
         "Regulations 241/2013"
       ],
@@ -14548,9 +14942,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "251/2013",
+        "(EU) nr. 251/2013",
+        "(EU) nr 251/2013",
         "Verordening 251/2013",
         "Verordeningen 251/2013",
+        "(EU) No 251/2013",
+        "(EU) No. 251/2013",
         "Regulation 251/2013",
         "Regulations 251/2013"
       ],
@@ -14565,9 +14962,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "283/2013",
+        "(EU) nr. 283/2013",
+        "(EU) nr 283/2013",
         "Verordening 283/2013",
         "Verordeningen 283/2013",
+        "(EU) No 283/2013",
+        "(EU) No. 283/2013",
         "Regulation 283/2013",
         "Regulations 283/2013"
       ],
@@ -14582,9 +14982,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "284/2013",
+        "(EU) nr. 284/2013",
+        "(EU) nr 284/2013",
         "Verordening 284/2013",
         "Verordeningen 284/2013",
+        "(EU) No 284/2013",
+        "(EU) No. 284/2013",
         "Regulation 284/2013",
         "Regulations 284/2013"
       ],
@@ -14599,9 +15002,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "293/2013",
+        "(EU) nr. 293/2013",
+        "(EU) nr 293/2013",
         "Verordening 293/2013",
         "Verordeningen 293/2013",
+        "(EU) No 293/2013",
+        "(EU) No. 293/2013",
         "Regulation 293/2013",
         "Regulations 293/2013"
       ],
@@ -14616,10 +15022,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "350/2013",
+        "(EU) nr. 350/2013",
+        "(EU) nr 350/2013",
         "Uitvoeringsverordening 350/2013",
         "Verordening 350/2013",
         "Verordeningen 350/2013",
+        "(EU) No 350/2013",
+        "(EU) No. 350/2013",
         "Implementing Regulation 350/2013",
         "Regulation 350/2013",
         "Regulations 350/2013"
@@ -14635,10 +15044,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "354/2013",
+        "(EU) nr. 354/2013",
+        "(EU) nr 354/2013",
         "Uitvoeringsverordening 354/2013",
         "Verordening 354/2013",
         "Verordeningen 354/2013",
+        "(EU) No 354/2013",
+        "(EU) No. 354/2013",
         "Implementing Regulation 354/2013",
         "Regulation 354/2013",
         "Regulations 354/2013"
@@ -14654,10 +15066,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "355/2013",
+        "(EU) nr. 355/2013",
+        "(EU) nr 355/2013",
         "Uitvoeringsverordening 355/2013",
         "Verordening 355/2013",
         "Verordeningen 355/2013",
+        "(EU) No 355/2013",
+        "(EU) No. 355/2013",
         "Implementing Regulation 355/2013",
         "Regulation 355/2013",
         "Regulations 355/2013"
@@ -14673,10 +15088,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "356/2013",
+        "(EU) nr. 356/2013",
+        "(EU) nr 356/2013",
         "Uitvoeringsverordening 356/2013",
         "Verordening 356/2013",
         "Verordeningen 356/2013",
+        "(EU) No 356/2013",
+        "(EU) No. 356/2013",
         "Implementing Regulation 356/2013",
         "Regulation 356/2013",
         "Regulations 356/2013"
@@ -14692,10 +15110,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "365/2013",
+        "(EU) nr. 365/2013",
+        "(EU) nr 365/2013",
         "Uitvoeringsverordening 365/2013",
         "Verordening 365/2013",
         "Verordeningen 365/2013",
+        "(EU) No 365/2013",
+        "(EU) No. 365/2013",
         "Implementing Regulation 365/2013",
         "Regulation 365/2013",
         "Regulations 365/2013"
@@ -14711,10 +15132,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "366/2013",
+        "(EU) nr. 366/2013",
+        "(EU) nr 366/2013",
         "Uitvoeringsverordening 366/2013",
         "Verordening 366/2013",
         "Verordeningen 366/2013",
+        "(EU) No 366/2013",
+        "(EU) No. 366/2013",
         "Implementing Regulation 366/2013",
         "Regulation 366/2013",
         "Regulations 366/2013"
@@ -14730,10 +15154,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "367/2013",
+        "(EU) nr. 367/2013",
+        "(EU) nr 367/2013",
         "Uitvoeringsverordening 367/2013",
         "Verordening 367/2013",
         "Verordeningen 367/2013",
+        "(EU) No 367/2013",
+        "(EU) No. 367/2013",
         "Implementing Regulation 367/2013",
         "Regulation 367/2013",
         "Regulations 367/2013"
@@ -14749,10 +15176,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "368/2013",
+        "(EU) nr. 368/2013",
+        "(EU) nr 368/2013",
         "Uitvoeringsverordening 368/2013",
         "Verordening 368/2013",
         "Verordeningen 368/2013",
+        "(EU) No 368/2013",
+        "(EU) No. 368/2013",
         "Implementing Regulation 368/2013",
         "Regulation 368/2013",
         "Regulations 368/2013"
@@ -14768,10 +15198,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "369/2013",
+        "(EU) nr. 369/2013",
+        "(EU) nr 369/2013",
         "Uitvoeringsverordening 369/2013",
         "Verordening 369/2013",
         "Verordeningen 369/2013",
+        "(EU) No 369/2013",
+        "(EU) No. 369/2013",
         "Implementing Regulation 369/2013",
         "Regulation 369/2013",
         "Regulations 369/2013"
@@ -14787,10 +15220,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "373/2013",
+        "(EU) nr. 373/2013",
+        "(EU) nr 373/2013",
         "Uitvoeringsverordening 373/2013",
         "Verordening 373/2013",
         "Verordeningen 373/2013",
+        "(EU) No 373/2013",
+        "(EU) No. 373/2013",
         "Implementing Regulation 373/2013",
         "Regulation 373/2013",
         "Regulations 373/2013"
@@ -14806,10 +15242,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "375/2013",
+        "(EU) nr. 375/2013",
+        "(EU) nr 375/2013",
         "Uitvoeringsverordening 375/2013",
         "Verordening 375/2013",
         "Verordeningen 375/2013",
+        "(EU) No 375/2013",
+        "(EU) No. 375/2013",
         "Implementing Regulation 375/2013",
         "Regulation 375/2013",
         "Regulations 375/2013"
@@ -14825,10 +15264,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "378/2013",
+        "(EU) nr. 378/2013",
+        "(EU) nr 378/2013",
         "Uitvoeringsverordening 378/2013",
         "Verordening 378/2013",
         "Verordeningen 378/2013",
+        "(EU) No 378/2013",
+        "(EU) No. 378/2013",
         "Implementing Regulation 378/2013",
         "Regulation 378/2013",
         "Regulations 378/2013"
@@ -14844,10 +15286,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "380/2013",
+        "(EU) nr. 380/2013",
+        "(EU) nr 380/2013",
         "Uitvoeringsverordening 380/2013",
         "Verordening 380/2013",
         "Verordeningen 380/2013",
+        "(EU) No 380/2013",
+        "(EU) No. 380/2013",
         "Implementing Regulation 380/2013",
         "Regulation 380/2013",
         "Regulations 380/2013"
@@ -14863,10 +15308,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "414/2013",
+        "(EU) nr. 414/2013",
+        "(EU) nr 414/2013",
         "Uitvoeringsverordening 414/2013",
         "Verordening 414/2013",
         "Verordeningen 414/2013",
+        "(EU) No 414/2013",
+        "(EU) No. 414/2013",
         "Implementing Regulation 414/2013",
         "Regulation 414/2013",
         "Regulations 414/2013"
@@ -14882,10 +15330,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "480/2013",
+        "(EU) nr. 480/2013",
+        "(EU) nr 480/2013",
         "Uitvoeringsverordening 480/2013",
         "Verordening 480/2013",
         "Verordeningen 480/2013",
+        "(EU) No 480/2013",
+        "(EU) No. 480/2013",
         "Implementing Regulation 480/2013",
         "Regulation 480/2013",
         "Regulations 480/2013"
@@ -14901,10 +15352,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "485/2013",
+        "(EU) nr. 485/2013",
+        "(EU) nr 485/2013",
         "Uitvoeringsverordening 485/2013",
         "Verordening 485/2013",
         "Verordeningen 485/2013",
+        "(EU) No 485/2013",
+        "(EU) No. 485/2013",
         "Implementing Regulation 485/2013",
         "Regulation 485/2013",
         "Regulations 485/2013"
@@ -14920,9 +15374,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "500/2013",
+        "(EU) nr. 500/2013",
+        "(EU) nr 500/2013",
         "Verordening 500/2013",
         "Verordeningen 500/2013",
+        "(EU) No 500/2013",
+        "(EU) No. 500/2013",
         "Regulation 500/2013",
         "Regulations 500/2013"
       ],
@@ -14937,9 +15394,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "518/2013",
+        "(EU) nr. 518/2013",
+        "(EU) nr 518/2013",
         "Verordening 518/2013",
         "Verordeningen 518/2013",
+        "(EU) No 518/2013",
+        "(EU) No. 518/2013",
         "Regulation 518/2013",
         "Regulations 518/2013"
       ],
@@ -14954,10 +15414,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "532/2013",
+        "(EU) nr. 532/2013",
+        "(EU) nr 532/2013",
         "Uitvoeringsverordening 532/2013",
         "Verordening 532/2013",
         "Verordeningen 532/2013",
+        "(EU) No 532/2013",
+        "(EU) No. 532/2013",
         "Implementing Regulation 532/2013",
         "Regulation 532/2013",
         "Regulations 532/2013"
@@ -14973,10 +15436,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "533/2013",
+        "(EU) nr. 533/2013",
+        "(EU) nr 533/2013",
         "Uitvoeringsverordening 533/2013",
         "Verordening 533/2013",
         "Verordeningen 533/2013",
+        "(EU) No 533/2013",
+        "(EU) No. 533/2013",
         "Implementing Regulation 533/2013",
         "Regulation 533/2013",
         "Regulations 533/2013"
@@ -14992,10 +15458,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "546/2013",
+        "(EU) nr. 546/2013",
+        "(EU) nr 546/2013",
         "Uitvoeringsverordening 546/2013",
         "Verordening 546/2013",
         "Verordeningen 546/2013",
+        "(EU) No 546/2013",
+        "(EU) No. 546/2013",
         "Implementing Regulation 546/2013",
         "Regulation 546/2013",
         "Regulations 546/2013"
@@ -15011,10 +15480,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "564/2013",
+        "(EU) nr. 564/2013",
+        "(EU) nr 564/2013",
         "Uitvoeringsverordening 564/2013",
         "Verordening 564/2013",
         "Verordeningen 564/2013",
+        "(EU) No 564/2013",
+        "(EU) No. 564/2013",
         "Implementing Regulation 564/2013",
         "Regulation 564/2013",
         "Regulations 564/2013"
@@ -15030,10 +15502,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "568/2013",
+        "(EU) nr. 568/2013",
+        "(EU) nr 568/2013",
         "Uitvoeringsverordening 568/2013",
         "Verordening 568/2013",
         "Verordeningen 568/2013",
+        "(EU) No 568/2013",
+        "(EU) No. 568/2013",
         "Implementing Regulation 568/2013",
         "Regulation 568/2013",
         "Regulations 568/2013"
@@ -15049,10 +15524,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "570/2013",
+        "(EU) nr. 570/2013",
+        "(EU) nr 570/2013",
         "Uitvoeringsverordening 570/2013",
         "Verordening 570/2013",
         "Verordeningen 570/2013",
+        "(EU) No 570/2013",
+        "(EU) No. 570/2013",
         "Implementing Regulation 570/2013",
         "Regulation 570/2013",
         "Regulations 570/2013"
@@ -15068,9 +15546,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "613/2013",
+        "(EU) nr. 613/2013",
+        "(EU) nr 613/2013",
         "Verordening 613/2013",
         "Verordeningen 613/2013",
+        "(EU) No 613/2013",
+        "(EU) No. 613/2013",
         "Regulation 613/2013",
         "Regulations 613/2013"
       ],
@@ -15085,10 +15566,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "667/2013",
+        "(EU) nr. 667/2013",
+        "(EU) nr 667/2013",
         "Uitvoeringsverordening 667/2013",
         "Verordening 667/2013",
         "Verordeningen 667/2013",
+        "(EU) No 667/2013",
+        "(EU) No. 667/2013",
         "Implementing Regulation 667/2013",
         "Regulation 667/2013",
         "Regulations 667/2013"
@@ -15104,9 +15588,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "668/2013",
+        "(EU) nr. 668/2013",
+        "(EU) nr 668/2013",
         "Verordening 668/2013",
         "Verordeningen 668/2013",
+        "(EU) No 668/2013",
+        "(EU) No. 668/2013",
         "Regulation 668/2013",
         "Regulations 668/2013"
       ],
@@ -15121,10 +15608,13 @@
       "category": "delegated_regulation",
       "match": "phrase",
       "aliases": [
-        "736/2013",
+        "(EU) nr. 736/2013",
+        "(EU) nr 736/2013",
         "Gedelegeerde Verordening 736/2013",
         "Verordening 736/2013",
         "Verordeningen 736/2013",
+        "(EU) No 736/2013",
+        "(EU) No. 736/2013",
         "Delegated Regulation 736/2013",
         "Regulation 736/2013",
         "Regulations 736/2013"
@@ -15140,10 +15630,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "762/2013",
+        "(EU) nr. 762/2013",
+        "(EU) nr 762/2013",
         "Uitvoeringsverordening 762/2013",
         "Verordening 762/2013",
         "Verordeningen 762/2013",
+        "(EU) No 762/2013",
+        "(EU) No. 762/2013",
         "Implementing Regulation 762/2013",
         "Regulation 762/2013",
         "Regulations 762/2013"
@@ -15159,10 +15652,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "767/2013",
+        "(EU) nr. 767/2013",
+        "(EU) nr 767/2013",
         "Uitvoeringsverordening 767/2013",
         "Verordening 767/2013",
         "Verordeningen 767/2013",
+        "(EU) No 767/2013",
+        "(EU) No. 767/2013",
         "Implementing Regulation 767/2013",
         "Regulation 767/2013",
         "Regulations 767/2013"
@@ -15178,9 +15674,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "772/2013",
+        "(EU) nr. 772/2013",
+        "(EU) nr 772/2013",
         "Verordening 772/2013",
         "Verordeningen 772/2013",
+        "(EU) No 772/2013",
+        "(EU) No. 772/2013",
         "Regulation 772/2013",
         "Regulations 772/2013"
       ],
@@ -15195,9 +15694,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "777/2013",
+        "(EU) nr. 777/2013",
+        "(EU) nr 777/2013",
         "Verordening 777/2013",
         "Verordeningen 777/2013",
+        "(EU) No 777/2013",
+        "(EU) No. 777/2013",
         "Regulation 777/2013",
         "Regulations 777/2013"
       ],
@@ -15212,10 +15714,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "781/2013",
+        "(EU) nr. 781/2013",
+        "(EU) nr 781/2013",
         "Uitvoeringsverordening 781/2013",
         "Verordening 781/2013",
         "Verordeningen 781/2013",
+        "(EU) No 781/2013",
+        "(EU) No. 781/2013",
         "Implementing Regulation 781/2013",
         "Regulation 781/2013",
         "Regulations 781/2013"
@@ -15231,10 +15736,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "790/2013",
+        "(EU) nr. 790/2013",
+        "(EU) nr 790/2013",
         "Uitvoeringsverordening 790/2013",
         "Verordening 790/2013",
         "Verordeningen 790/2013",
+        "(EU) No 790/2013",
+        "(EU) No. 790/2013",
         "Implementing Regulation 790/2013",
         "Regulation 790/2013",
         "Regulations 790/2013"
@@ -15250,10 +15758,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "798/2013",
+        "(EU) nr. 798/2013",
+        "(EU) nr 798/2013",
         "Uitvoeringsverordening 798/2013",
         "Verordening 798/2013",
         "Verordeningen 798/2013",
+        "(EU) No 798/2013",
+        "(EU) No. 798/2013",
         "Implementing Regulation 798/2013",
         "Regulation 798/2013",
         "Regulations 798/2013"
@@ -15269,10 +15780,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "802/2013",
+        "(EU) nr. 802/2013",
+        "(EU) nr 802/2013",
         "Uitvoeringsverordening 802/2013",
         "Verordening 802/2013",
         "Verordeningen 802/2013",
+        "(EU) No 802/2013",
+        "(EU) No. 802/2013",
         "Implementing Regulation 802/2013",
         "Regulation 802/2013",
         "Regulations 802/2013"
@@ -15288,10 +15802,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "826/2013",
+        "(EU) nr. 826/2013",
+        "(EU) nr 826/2013",
         "Uitvoeringsverordening 826/2013",
         "Verordening 826/2013",
         "Verordeningen 826/2013",
+        "(EU) No 826/2013",
+        "(EU) No. 826/2013",
         "Implementing Regulation 826/2013",
         "Regulation 826/2013",
         "Regulations 826/2013"
@@ -15307,10 +15824,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "827/2013",
+        "(EU) nr. 827/2013",
+        "(EU) nr 827/2013",
         "Uitvoeringsverordening 827/2013",
         "Verordening 827/2013",
         "Verordeningen 827/2013",
+        "(EU) No 827/2013",
+        "(EU) No. 827/2013",
         "Implementing Regulation 827/2013",
         "Regulation 827/2013",
         "Regulations 827/2013"
@@ -15326,10 +15846,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "828/2013",
+        "(EU) nr. 828/2013",
+        "(EU) nr 828/2013",
         "Uitvoeringsverordening 828/2013",
         "Verordening 828/2013",
         "Verordeningen 828/2013",
+        "(EU) No 828/2013",
+        "(EU) No. 828/2013",
         "Implementing Regulation 828/2013",
         "Regulation 828/2013",
         "Regulations 828/2013"
@@ -15345,10 +15868,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "829/2013",
+        "(EU) nr. 829/2013",
+        "(EU) nr 829/2013",
         "Uitvoeringsverordening 829/2013",
         "Verordening 829/2013",
         "Verordeningen 829/2013",
+        "(EU) No 829/2013",
+        "(EU) No. 829/2013",
         "Implementing Regulation 829/2013",
         "Regulation 829/2013",
         "Regulations 829/2013"
@@ -15364,10 +15890,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "832/2013",
+        "(EU) nr. 832/2013",
+        "(EU) nr 832/2013",
         "Uitvoeringsverordening 832/2013",
         "Verordening 832/2013",
         "Verordeningen 832/2013",
+        "(EU) No 832/2013",
+        "(EU) No. 832/2013",
         "Implementing Regulation 832/2013",
         "Regulation 832/2013",
         "Regulations 832/2013"
@@ -15383,10 +15912,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "833/2013",
+        "(EU) nr. 833/2013",
+        "(EU) nr 833/2013",
         "Uitvoeringsverordening 833/2013",
         "Verordening 833/2013",
         "Verordeningen 833/2013",
+        "(EU) No 833/2013",
+        "(EU) No. 833/2013",
         "Implementing Regulation 833/2013",
         "Regulation 833/2013",
         "Regulations 833/2013"
@@ -15402,9 +15934,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "834/2013",
+        "(EU) nr. 834/2013",
+        "(EU) nr 834/2013",
         "Verordening 834/2013",
         "Verordeningen 834/2013",
+        "(EU) No 834/2013",
+        "(EU) No. 834/2013",
         "Regulation 834/2013",
         "Regulations 834/2013"
       ],
@@ -15419,10 +15954,13 @@
       "category": "delegated_regulation",
       "match": "phrase",
       "aliases": [
-        "837/2013",
+        "(EU) nr. 837/2013",
+        "(EU) nr 837/2013",
         "Gedelegeerde Verordening 837/2013",
         "Verordening 837/2013",
         "Verordeningen 837/2013",
+        "(EU) No 837/2013",
+        "(EU) No. 837/2013",
         "Delegated Regulation 837/2013",
         "Regulation 837/2013",
         "Regulations 837/2013"
@@ -15438,10 +15976,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "945/2013",
+        "(EU) nr. 945/2013",
+        "(EU) nr 945/2013",
         "Uitvoeringsverordening 945/2013",
         "Verordening 945/2013",
         "Verordeningen 945/2013",
+        "(EU) No 945/2013",
+        "(EU) No. 945/2013",
         "Implementing Regulation 945/2013",
         "Regulation 945/2013",
         "Regulations 945/2013"
@@ -15457,10 +15998,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "955/2013",
+        "(EU) nr. 955/2013",
+        "(EU) nr 955/2013",
         "Uitvoeringsverordening 955/2013",
         "Verordening 955/2013",
         "Verordeningen 955/2013",
+        "(EU) No 955/2013",
+        "(EU) No. 955/2013",
         "Implementing Regulation 955/2013",
         "Regulation 955/2013",
         "Regulations 955/2013"
@@ -15476,9 +16020,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1004/2013",
+        "(EU) nr. 1004/2013",
+        "(EU) nr 1004/2013",
         "Verordening 1004/2013",
         "Verordeningen 1004/2013",
+        "(EU) No 1004/2013",
+        "(EU) No. 1004/2013",
         "Regulation 1004/2013",
         "Regulations 1004/2013"
       ],
@@ -15493,10 +16040,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1031/2013",
+        "(EU) nr. 1031/2013",
+        "(EU) nr 1031/2013",
         "Uitvoeringsverordening 1031/2013",
         "Verordening 1031/2013",
         "Verordeningen 1031/2013",
+        "(EU) No 1031/2013",
+        "(EU) No. 1031/2013",
         "Implementing Regulation 1031/2013",
         "Regulation 1031/2013",
         "Regulations 1031/2013"
@@ -15512,10 +16062,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1032/2013",
+        "(EU) nr. 1032/2013",
+        "(EU) nr 1032/2013",
         "Uitvoeringsverordening 1032/2013",
         "Verordening 1032/2013",
         "Verordeningen 1032/2013",
+        "(EU) No 1032/2013",
+        "(EU) No. 1032/2013",
         "Implementing Regulation 1032/2013",
         "Regulation 1032/2013",
         "Regulations 1032/2013"
@@ -15531,10 +16084,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1033/2013",
+        "(EU) nr. 1033/2013",
+        "(EU) nr 1033/2013",
         "Uitvoeringsverordening 1033/2013",
         "Verordening 1033/2013",
         "Verordeningen 1033/2013",
+        "(EU) No 1033/2013",
+        "(EU) No. 1033/2013",
         "Implementing Regulation 1033/2013",
         "Regulation 1033/2013",
         "Regulations 1033/2013"
@@ -15550,10 +16106,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1034/2013",
+        "(EU) nr. 1034/2013",
+        "(EU) nr 1034/2013",
         "Uitvoeringsverordening 1034/2013",
         "Verordening 1034/2013",
         "Verordeningen 1034/2013",
+        "(EU) No 1034/2013",
+        "(EU) No. 1034/2013",
         "Implementing Regulation 1034/2013",
         "Regulation 1034/2013",
         "Regulations 1034/2013"
@@ -15569,10 +16128,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1035/2013",
+        "(EU) nr. 1035/2013",
+        "(EU) nr 1035/2013",
         "Uitvoeringsverordening 1035/2013",
         "Verordening 1035/2013",
         "Verordeningen 1035/2013",
+        "(EU) No 1035/2013",
+        "(EU) No. 1035/2013",
         "Implementing Regulation 1035/2013",
         "Regulation 1035/2013",
         "Regulations 1035/2013"
@@ -15588,10 +16150,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1036/2013",
+        "(EU) nr. 1036/2013",
+        "(EU) nr 1036/2013",
         "Uitvoeringsverordening 1036/2013",
         "Verordening 1036/2013",
         "Verordeningen 1036/2013",
+        "(EU) No 1036/2013",
+        "(EU) No. 1036/2013",
         "Implementing Regulation 1036/2013",
         "Regulation 1036/2013",
         "Regulations 1036/2013"
@@ -15607,10 +16172,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1037/2013",
+        "(EU) nr. 1037/2013",
+        "(EU) nr 1037/2013",
         "Uitvoeringsverordening 1037/2013",
         "Verordening 1037/2013",
         "Verordeningen 1037/2013",
+        "(EU) No 1037/2013",
+        "(EU) No. 1037/2013",
         "Implementing Regulation 1037/2013",
         "Regulation 1037/2013",
         "Regulations 1037/2013"
@@ -15626,10 +16194,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1038/2013",
+        "(EU) nr. 1038/2013",
+        "(EU) nr 1038/2013",
         "Uitvoeringsverordening 1038/2013",
         "Verordening 1038/2013",
         "Verordeningen 1038/2013",
+        "(EU) No 1038/2013",
+        "(EU) No. 1038/2013",
         "Implementing Regulation 1038/2013",
         "Regulation 1038/2013",
         "Regulations 1038/2013"
@@ -15645,10 +16216,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1039/2013",
+        "(EU) nr. 1039/2013",
+        "(EU) nr 1039/2013",
         "Uitvoeringsverordening 1039/2013",
         "Verordening 1039/2013",
         "Verordeningen 1039/2013",
+        "(EU) No 1039/2013",
+        "(EU) No. 1039/2013",
         "Implementing Regulation 1039/2013",
         "Regulation 1039/2013",
         "Regulations 1039/2013"
@@ -15664,10 +16238,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1089/2013",
+        "(EU) nr. 1089/2013",
+        "(EU) nr 1089/2013",
         "Uitvoeringsverordening 1089/2013",
         "Verordening 1089/2013",
         "Verordeningen 1089/2013",
+        "(EU) No 1089/2013",
+        "(EU) No. 1089/2013",
         "Implementing Regulation 1089/2013",
         "Regulation 1089/2013",
         "Regulations 1089/2013"
@@ -15683,10 +16260,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1124/2013",
+        "(EU) nr. 1124/2013",
+        "(EU) nr 1124/2013",
         "Uitvoeringsverordening 1124/2013",
         "Verordening 1124/2013",
         "Verordeningen 1124/2013",
+        "(EU) No 1124/2013",
+        "(EU) No. 1124/2013",
         "Implementing Regulation 1124/2013",
         "Regulation 1124/2013",
         "Regulations 1124/2013"
@@ -15702,10 +16282,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1136/2013",
+        "(EU) nr. 1136/2013",
+        "(EU) nr 1136/2013",
         "Uitvoeringsverordening 1136/2013",
         "Verordening 1136/2013",
         "Verordeningen 1136/2013",
+        "(EU) No 1136/2013",
+        "(EU) No. 1136/2013",
         "Implementing Regulation 1136/2013",
         "Regulation 1136/2013",
         "Regulations 1136/2013"
@@ -15721,9 +16304,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1138/2013",
+        "(EU) nr. 1138/2013",
+        "(EU) nr 1138/2013",
         "Verordening 1138/2013",
         "Verordeningen 1138/2013",
+        "(EU) No 1138/2013",
+        "(EU) No. 1138/2013",
         "Regulation 1138/2013",
         "Regulations 1138/2013"
       ],
@@ -15738,10 +16324,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1150/2013",
+        "(EU) nr. 1150/2013",
+        "(EU) nr 1150/2013",
         "Uitvoeringsverordening 1150/2013",
         "Verordening 1150/2013",
         "Verordeningen 1150/2013",
+        "(EU) No 1150/2013",
+        "(EU) No. 1150/2013",
         "Implementing Regulation 1150/2013",
         "Regulation 1150/2013",
         "Regulations 1150/2013"
@@ -15757,10 +16346,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1165/2013",
+        "(EU) nr. 1165/2013",
+        "(EU) nr 1165/2013",
         "Uitvoeringsverordening 1165/2013",
         "Verordening 1165/2013",
         "Verordeningen 1165/2013",
+        "(EU) No 1165/2013",
+        "(EU) No. 1165/2013",
         "Implementing Regulation 1165/2013",
         "Regulation 1165/2013",
         "Regulations 1165/2013"
@@ -15776,10 +16368,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1166/2013",
+        "(EU) nr. 1166/2013",
+        "(EU) nr 1166/2013",
         "Uitvoeringsverordening 1166/2013",
         "Verordening 1166/2013",
         "Verordeningen 1166/2013",
+        "(EU) No 1166/2013",
+        "(EU) No. 1166/2013",
         "Implementing Regulation 1166/2013",
         "Regulation 1166/2013",
         "Regulations 1166/2013"
@@ -15795,10 +16390,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1175/2013",
+        "(EU) nr. 1175/2013",
+        "(EU) nr 1175/2013",
         "Uitvoeringsverordening 1175/2013",
         "Verordening 1175/2013",
         "Verordeningen 1175/2013",
+        "(EU) No 1175/2013",
+        "(EU) No. 1175/2013",
         "Implementing Regulation 1175/2013",
         "Regulation 1175/2013",
         "Regulations 1175/2013"
@@ -15814,10 +16412,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1176/2013",
+        "(EU) nr. 1176/2013",
+        "(EU) nr 1176/2013",
         "Uitvoeringsverordening 1176/2013",
         "Verordening 1176/2013",
         "Verordeningen 1176/2013",
+        "(EU) No 1176/2013",
+        "(EU) No. 1176/2013",
         "Implementing Regulation 1176/2013",
         "Regulation 1176/2013",
         "Regulations 1176/2013"
@@ -15833,10 +16434,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1177/2013",
+        "(EU) nr. 1177/2013",
+        "(EU) nr 1177/2013",
         "Uitvoeringsverordening 1177/2013",
         "Verordening 1177/2013",
         "Verordeningen 1177/2013",
+        "(EU) No 1177/2013",
+        "(EU) No. 1177/2013",
         "Implementing Regulation 1177/2013",
         "Regulation 1177/2013",
         "Regulations 1177/2013"
@@ -15852,10 +16456,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1178/2013",
+        "(EU) nr. 1178/2013",
+        "(EU) nr 1178/2013",
         "Uitvoeringsverordening 1178/2013",
         "Verordening 1178/2013",
         "Verordeningen 1178/2013",
+        "(EU) No 1178/2013",
+        "(EU) No. 1178/2013",
         "Implementing Regulation 1178/2013",
         "Regulation 1178/2013",
         "Regulations 1178/2013"
@@ -15871,10 +16478,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1187/2013",
+        "(EU) nr. 1187/2013",
+        "(EU) nr 1187/2013",
         "Uitvoeringsverordening 1187/2013",
         "Verordening 1187/2013",
         "Verordeningen 1187/2013",
+        "(EU) No 1187/2013",
+        "(EU) No. 1187/2013",
         "Implementing Regulation 1187/2013",
         "Regulation 1187/2013",
         "Regulations 1187/2013"
@@ -15890,10 +16500,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1192/2013",
+        "(EU) nr. 1192/2013",
+        "(EU) nr 1192/2013",
         "Uitvoeringsverordening 1192/2013",
         "Verordening 1192/2013",
         "Verordeningen 1192/2013",
+        "(EU) No 1192/2013",
+        "(EU) No. 1192/2013",
         "Implementing Regulation 1192/2013",
         "Regulation 1192/2013",
         "Regulations 1192/2013"
@@ -15909,10 +16522,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1195/2013",
+        "(EU) nr. 1195/2013",
+        "(EU) nr 1195/2013",
         "Uitvoeringsverordening 1195/2013",
         "Verordening 1195/2013",
         "Verordeningen 1195/2013",
+        "(EU) No 1195/2013",
+        "(EU) No. 1195/2013",
         "Implementing Regulation 1195/2013",
         "Regulation 1195/2013",
         "Regulations 1195/2013"
@@ -15928,10 +16544,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1199/2013",
+        "(EU) nr. 1199/2013",
+        "(EU) nr 1199/2013",
         "Uitvoeringsverordening 1199/2013",
         "Verordening 1199/2013",
         "Verordeningen 1199/2013",
+        "(EU) No 1199/2013",
+        "(EU) No. 1199/2013",
         "Implementing Regulation 1199/2013",
         "Regulation 1199/2013",
         "Regulations 1199/2013"
@@ -15947,9 +16566,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1317/2013",
+        "(EU) nr. 1317/2013",
+        "(EU) nr 1317/2013",
         "Verordening 1317/2013",
         "Verordeningen 1317/2013",
+        "(EU) No 1317/2013",
+        "(EU) No. 1317/2013",
         "Regulation 1317/2013",
         "Regulations 1317/2013"
       ],
@@ -16162,14 +16784,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "No 36/2014",
-        "No. 36/2014",
-        "nr. 36/2014",
-        "n° 36/2014",
-        "nº 36/2014",
-        "n. 36/2014",
+        "(EU) nr. 36/2014",
+        "(EU) nr 36/2014",
         "Verordening 36/2014",
         "Verordeningen 36/2014",
+        "(EU) No 36/2014",
+        "(EU) No. 36/2014",
         "Regulation 36/2014",
         "Regulations 36/2014"
       ],
@@ -16184,14 +16804,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "No 51/2014",
-        "No. 51/2014",
-        "nr. 51/2014",
-        "n° 51/2014",
-        "nº 51/2014",
-        "n. 51/2014",
+        "(EU) nr. 51/2014",
+        "(EU) nr 51/2014",
         "Verordening 51/2014",
         "Verordeningen 51/2014",
+        "(EU) No 51/2014",
+        "(EU) No. 51/2014",
         "Regulation 51/2014",
         "Regulations 51/2014"
       ],
@@ -16206,14 +16824,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "No 61/2014",
-        "No. 61/2014",
-        "nr. 61/2014",
-        "n° 61/2014",
-        "nº 61/2014",
-        "n. 61/2014",
+        "(EU) nr. 61/2014",
+        "(EU) nr 61/2014",
         "Verordening 61/2014",
         "Verordeningen 61/2014",
+        "(EU) No 61/2014",
+        "(EU) No. 61/2014",
         "Regulation 61/2014",
         "Regulations 61/2014"
       ],
@@ -16228,14 +16844,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "No 79/2014",
-        "No. 79/2014",
-        "nr. 79/2014",
-        "n° 79/2014",
-        "nº 79/2014",
-        "n. 79/2014",
+        "(EU) nr. 79/2014",
+        "(EU) nr 79/2014",
         "Verordening 79/2014",
         "Verordeningen 79/2014",
+        "(EU) No 79/2014",
+        "(EU) No. 79/2014",
         "Regulation 79/2014",
         "Regulations 79/2014"
       ],
@@ -16250,15 +16864,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 85/2014",
-        "No. 85/2014",
-        "nr. 85/2014",
-        "n° 85/2014",
-        "nº 85/2014",
-        "n. 85/2014",
+        "(EU) nr. 85/2014",
+        "(EU) nr 85/2014",
         "Uitvoeringsverordening 85/2014",
         "Verordening 85/2014",
         "Verordeningen 85/2014",
+        "(EU) No 85/2014",
+        "(EU) No. 85/2014",
         "Implementing Regulation 85/2014",
         "Regulation 85/2014",
         "Regulations 85/2014"
@@ -16274,14 +16886,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "No 87/2014",
-        "No. 87/2014",
-        "nr. 87/2014",
-        "n° 87/2014",
-        "nº 87/2014",
-        "n. 87/2014",
+        "(EU) nr. 87/2014",
+        "(EU) nr 87/2014",
         "Verordening 87/2014",
         "Verordeningen 87/2014",
+        "(EU) No 87/2014",
+        "(EU) No. 87/2014",
         "Regulation 87/2014",
         "Regulations 87/2014"
       ],
@@ -16296,15 +16906,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 88/2014",
-        "No. 88/2014",
-        "nr. 88/2014",
-        "n° 88/2014",
-        "nº 88/2014",
-        "n. 88/2014",
+        "(EU) nr. 88/2014",
+        "(EU) nr 88/2014",
         "Uitvoeringsverordening 88/2014",
         "Verordening 88/2014",
         "Verordeningen 88/2014",
+        "(EU) No 88/2014",
+        "(EU) No. 88/2014",
         "Implementing Regulation 88/2014",
         "Regulation 88/2014",
         "Regulations 88/2014"
@@ -16320,15 +16928,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 89/2014",
-        "No. 89/2014",
-        "nr. 89/2014",
-        "n° 89/2014",
-        "nº 89/2014",
-        "n. 89/2014",
+        "(EU) nr. 89/2014",
+        "(EU) nr 89/2014",
         "Uitvoeringsverordening 89/2014",
         "Verordening 89/2014",
         "Verordeningen 89/2014",
+        "(EU) No 89/2014",
+        "(EU) No. 89/2014",
         "Implementing Regulation 89/2014",
         "Regulation 89/2014",
         "Regulations 89/2014"
@@ -16344,15 +16950,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 90/2014",
-        "No. 90/2014",
-        "nr. 90/2014",
-        "n° 90/2014",
-        "nº 90/2014",
-        "n. 90/2014",
+        "(EU) nr. 90/2014",
+        "(EU) nr 90/2014",
         "Uitvoeringsverordening 90/2014",
         "Verordening 90/2014",
         "Verordeningen 90/2014",
+        "(EU) No 90/2014",
+        "(EU) No. 90/2014",
         "Implementing Regulation 90/2014",
         "Regulation 90/2014",
         "Regulations 90/2014"
@@ -16368,15 +16972,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 91/2014",
-        "No. 91/2014",
-        "nr. 91/2014",
-        "n° 91/2014",
-        "nº 91/2014",
-        "n. 91/2014",
+        "(EU) nr. 91/2014",
+        "(EU) nr 91/2014",
         "Uitvoeringsverordening 91/2014",
         "Verordening 91/2014",
         "Verordeningen 91/2014",
+        "(EU) No 91/2014",
+        "(EU) No. 91/2014",
         "Implementing Regulation 91/2014",
         "Regulation 91/2014",
         "Regulations 91/2014"
@@ -16392,15 +16994,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 92/2014",
-        "No. 92/2014",
-        "nr. 92/2014",
-        "n° 92/2014",
-        "nº 92/2014",
-        "n. 92/2014",
+        "(EU) nr. 92/2014",
+        "(EU) nr 92/2014",
         "Uitvoeringsverordening 92/2014",
         "Verordening 92/2014",
         "Verordeningen 92/2014",
+        "(EU) No 92/2014",
+        "(EU) No. 92/2014",
         "Implementing Regulation 92/2014",
         "Regulation 92/2014",
         "Regulations 92/2014"
@@ -16416,15 +17016,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 93/2014",
-        "No. 93/2014",
-        "nr. 93/2014",
-        "n° 93/2014",
-        "nº 93/2014",
-        "n. 93/2014",
+        "(EU) nr. 93/2014",
+        "(EU) nr 93/2014",
         "Uitvoeringsverordening 93/2014",
         "Verordening 93/2014",
         "Verordeningen 93/2014",
+        "(EU) No 93/2014",
+        "(EU) No. 93/2014",
         "Implementing Regulation 93/2014",
         "Regulation 93/2014",
         "Regulations 93/2014"
@@ -16440,15 +17038,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "No 94/2014",
-        "No. 94/2014",
-        "nr. 94/2014",
-        "n° 94/2014",
-        "nº 94/2014",
-        "n. 94/2014",
+        "(EU) nr. 94/2014",
+        "(EU) nr 94/2014",
         "Uitvoeringsverordening 94/2014",
         "Verordening 94/2014",
         "Verordeningen 94/2014",
+        "(EU) No 94/2014",
+        "(EU) No. 94/2014",
         "Implementing Regulation 94/2014",
         "Regulation 94/2014",
         "Regulations 94/2014"
@@ -16464,10 +17060,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "108/2014",
+        "(EU) nr. 108/2014",
+        "(EU) nr 108/2014",
         "Uitvoeringsverordening 108/2014",
         "Verordening 108/2014",
         "Verordeningen 108/2014",
+        "(EU) No 108/2014",
+        "(EU) No. 108/2014",
         "Implementing Regulation 108/2014",
         "Regulation 108/2014",
         "Regulations 108/2014"
@@ -16483,10 +17082,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "116/2014",
+        "(EU) nr. 116/2014",
+        "(EU) nr 116/2014",
         "Uitvoeringsverordening 116/2014",
         "Verordening 116/2014",
         "Verordeningen 116/2014",
+        "(EU) No 116/2014",
+        "(EU) No. 116/2014",
         "Implementing Regulation 116/2014",
         "Regulation 116/2014",
         "Regulations 116/2014"
@@ -16502,10 +17104,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "140/2014",
+        "(EU) nr. 140/2014",
+        "(EU) nr 140/2014",
         "Uitvoeringsverordening 140/2014",
         "Verordening 140/2014",
         "Verordeningen 140/2014",
+        "(EU) No 140/2014",
+        "(EU) No. 140/2014",
         "Implementing Regulation 140/2014",
         "Regulation 140/2014",
         "Regulations 140/2014"
@@ -16521,10 +17126,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "141/2014",
+        "(EU) nr. 141/2014",
+        "(EU) nr 141/2014",
         "Uitvoeringsverordening 141/2014",
         "Verordening 141/2014",
         "Verordeningen 141/2014",
+        "(EU) No 141/2014",
+        "(EU) No. 141/2014",
         "Implementing Regulation 141/2014",
         "Regulation 141/2014",
         "Regulations 141/2014"
@@ -16540,10 +17148,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "143/2014",
+        "(EU) nr. 143/2014",
+        "(EU) nr 143/2014",
         "Uitvoeringsverordening 143/2014",
         "Verordening 143/2014",
         "Verordeningen 143/2014",
+        "(EU) No 143/2014",
+        "(EU) No. 143/2014",
         "Implementing Regulation 143/2014",
         "Regulation 143/2014",
         "Regulations 143/2014"
@@ -16559,10 +17170,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "144/2014",
+        "(EU) nr. 144/2014",
+        "(EU) nr 144/2014",
         "Uitvoeringsverordening 144/2014",
         "Verordening 144/2014",
         "Verordeningen 144/2014",
+        "(EU) No 144/2014",
+        "(EU) No. 144/2014",
         "Implementing Regulation 144/2014",
         "Regulation 144/2014",
         "Regulations 144/2014"
@@ -16578,10 +17192,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "145/2014",
+        "(EU) nr. 145/2014",
+        "(EU) nr 145/2014",
         "Uitvoeringsverordening 145/2014",
         "Verordening 145/2014",
         "Verordeningen 145/2014",
+        "(EU) No 145/2014",
+        "(EU) No. 145/2014",
         "Implementing Regulation 145/2014",
         "Regulation 145/2014",
         "Regulations 145/2014"
@@ -16597,10 +17214,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "149/2014",
+        "(EU) nr. 149/2014",
+        "(EU) nr 149/2014",
         "Uitvoeringsverordening 149/2014",
         "Verordening 149/2014",
         "Verordeningen 149/2014",
+        "(EU) No 149/2014",
+        "(EU) No. 149/2014",
         "Implementing Regulation 149/2014",
         "Regulation 149/2014",
         "Regulations 149/2014"
@@ -16616,10 +17236,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "151/2014",
+        "(EU) nr. 151/2014",
+        "(EU) nr 151/2014",
         "Uitvoeringsverordening 151/2014",
         "Verordening 151/2014",
         "Verordeningen 151/2014",
+        "(EU) No 151/2014",
+        "(EU) No. 151/2014",
         "Implementing Regulation 151/2014",
         "Regulation 151/2014",
         "Regulations 151/2014"
@@ -16635,10 +17258,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "154/2014",
+        "(EU) nr. 154/2014",
+        "(EU) nr 154/2014",
         "Uitvoeringsverordening 154/2014",
         "Verordening 154/2014",
         "Verordeningen 154/2014",
+        "(EU) No 154/2014",
+        "(EU) No. 154/2014",
         "Implementing Regulation 154/2014",
         "Regulation 154/2014",
         "Regulations 154/2014"
@@ -16654,9 +17280,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "186/2014",
+        "(EU) nr. 186/2014",
+        "(EU) nr 186/2014",
         "Verordening 186/2014",
         "Verordeningen 186/2014",
+        "(EU) No 186/2014",
+        "(EU) No. 186/2014",
         "Regulation 186/2014",
         "Regulations 186/2014"
       ],
@@ -16671,10 +17300,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "187/2014",
+        "(EU) nr. 187/2014",
+        "(EU) nr 187/2014",
         "Uitvoeringsverordening 187/2014",
         "Verordening 187/2014",
         "Verordeningen 187/2014",
+        "(EU) No 187/2014",
+        "(EU) No. 187/2014",
         "Implementing Regulation 187/2014",
         "Regulation 187/2014",
         "Regulations 187/2014"
@@ -16690,10 +17322,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "192/2014",
+        "(EU) nr. 192/2014",
+        "(EU) nr 192/2014",
         "Uitvoeringsverordening 192/2014",
         "Verordening 192/2014",
         "Verordeningen 192/2014",
+        "(EU) No 192/2014",
+        "(EU) No. 192/2014",
         "Implementing Regulation 192/2014",
         "Regulation 192/2014",
         "Regulations 192/2014"
@@ -16709,10 +17344,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "193/2014",
+        "(EU) nr. 193/2014",
+        "(EU) nr 193/2014",
         "Uitvoeringsverordening 193/2014",
         "Verordening 193/2014",
         "Verordeningen 193/2014",
+        "(EU) No 193/2014",
+        "(EU) No. 193/2014",
         "Implementing Regulation 193/2014",
         "Regulation 193/2014",
         "Regulations 193/2014"
@@ -16728,9 +17366,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "289/2014",
+        "(EU) nr. 289/2014",
+        "(EU) nr 289/2014",
         "Verordening 289/2014",
         "Verordeningen 289/2014",
+        "(EU) No 289/2014",
+        "(EU) No. 289/2014",
         "Regulation 289/2014",
         "Regulations 289/2014"
       ],
@@ -16745,9 +17386,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "318/2014",
+        "(EU) nr. 318/2014",
+        "(EU) nr 318/2014",
         "Verordening 318/2014",
         "Verordeningen 318/2014",
+        "(EU) No 318/2014",
+        "(EU) No. 318/2014",
         "Regulation 318/2014",
         "Regulations 318/2014"
       ],
@@ -16762,9 +17406,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "334/2014",
+        "(EU) nr. 334/2014",
+        "(EU) nr 334/2014",
         "Verordening 334/2014",
         "Verordeningen 334/2014",
+        "(EU) No 334/2014",
+        "(EU) No. 334/2014",
         "Regulation 334/2014",
         "Regulations 334/2014"
       ],
@@ -16779,9 +17426,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "364/2014",
+        "(EU) nr. 364/2014",
+        "(EU) nr 364/2014",
         "Verordening 364/2014",
         "Verordeningen 364/2014",
+        "(EU) No 364/2014",
+        "(EU) No. 364/2014",
         "Regulation 364/2014",
         "Regulations 364/2014"
       ],
@@ -16796,9 +17446,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "398/2014",
+        "(EU) nr. 398/2014",
+        "(EU) nr 398/2014",
         "Verordening 398/2014",
         "Verordeningen 398/2014",
+        "(EU) No 398/2014",
+        "(EU) No. 398/2014",
         "Regulation 398/2014",
         "Regulations 398/2014"
       ],
@@ -16813,10 +17466,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "400/2014",
+        "(EU) nr. 400/2014",
+        "(EU) nr 400/2014",
         "Uitvoeringsverordening 400/2014",
         "Verordening 400/2014",
         "Verordeningen 400/2014",
+        "(EU) No 400/2014",
+        "(EU) No. 400/2014",
         "Implementing Regulation 400/2014",
         "Regulation 400/2014",
         "Regulations 400/2014"
@@ -16832,10 +17488,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "405/2014",
+        "(EU) nr. 405/2014",
+        "(EU) nr 405/2014",
         "Uitvoeringsverordening 405/2014",
         "Verordening 405/2014",
         "Verordeningen 405/2014",
+        "(EU) No 405/2014",
+        "(EU) No. 405/2014",
         "Implementing Regulation 405/2014",
         "Regulation 405/2014",
         "Regulations 405/2014"
@@ -16851,10 +17510,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "406/2014",
+        "(EU) nr. 406/2014",
+        "(EU) nr 406/2014",
         "Uitvoeringsverordening 406/2014",
         "Verordening 406/2014",
         "Verordeningen 406/2014",
+        "(EU) No 406/2014",
+        "(EU) No. 406/2014",
         "Implementing Regulation 406/2014",
         "Regulation 406/2014",
         "Regulations 406/2014"
@@ -16870,10 +17532,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "407/2014",
+        "(EU) nr. 407/2014",
+        "(EU) nr 407/2014",
         "Uitvoeringsverordening 407/2014",
         "Verordening 407/2014",
         "Verordeningen 407/2014",
+        "(EU) No 407/2014",
+        "(EU) No. 407/2014",
         "Implementing Regulation 407/2014",
         "Regulation 407/2014",
         "Regulations 407/2014"
@@ -16889,10 +17554,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "408/2014",
+        "(EU) nr. 408/2014",
+        "(EU) nr 408/2014",
         "Uitvoeringsverordening 408/2014",
         "Verordening 408/2014",
         "Verordeningen 408/2014",
+        "(EU) No 408/2014",
+        "(EU) No. 408/2014",
         "Implementing Regulation 408/2014",
         "Regulation 408/2014",
         "Regulations 408/2014"
@@ -16908,10 +17576,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "437/2014",
+        "(EU) nr. 437/2014",
+        "(EU) nr 437/2014",
         "Uitvoeringsverordening 437/2014",
         "Verordening 437/2014",
         "Verordeningen 437/2014",
+        "(EU) No 437/2014",
+        "(EU) No. 437/2014",
         "Implementing Regulation 437/2014",
         "Regulation 437/2014",
         "Regulations 437/2014"
@@ -16927,10 +17598,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "438/2014",
+        "(EU) nr. 438/2014",
+        "(EU) nr 438/2014",
         "Uitvoeringsverordening 438/2014",
         "Verordening 438/2014",
         "Verordeningen 438/2014",
+        "(EU) No 438/2014",
+        "(EU) No. 438/2014",
         "Implementing Regulation 438/2014",
         "Regulation 438/2014",
         "Regulations 438/2014"
@@ -16946,9 +17620,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "460/2014",
+        "(EU) nr. 460/2014",
+        "(EU) nr 460/2014",
         "Verordening 460/2014",
         "Verordeningen 460/2014",
+        "(EU) No 460/2014",
+        "(EU) No. 460/2014",
         "Regulation 460/2014",
         "Regulations 460/2014"
       ],
@@ -16963,10 +17640,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "462/2014",
+        "(EU) nr. 462/2014",
+        "(EU) nr 462/2014",
         "Uitvoeringsverordening 462/2014",
         "Verordening 462/2014",
         "Verordeningen 462/2014",
+        "(EU) No 462/2014",
+        "(EU) No. 462/2014",
         "Implementing Regulation 462/2014",
         "Regulation 462/2014",
         "Regulations 462/2014"
@@ -16982,10 +17662,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "485/2014",
+        "(EU) nr. 485/2014",
+        "(EU) nr 485/2014",
         "Uitvoeringsverordening 485/2014",
         "Verordening 485/2014",
         "Verordeningen 485/2014",
+        "(EU) No 485/2014",
+        "(EU) No. 485/2014",
         "Implementing Regulation 485/2014",
         "Regulation 485/2014",
         "Regulations 485/2014"
@@ -17001,10 +17684,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "486/2014",
+        "(EU) nr. 486/2014",
+        "(EU) nr 486/2014",
         "Uitvoeringsverordening 486/2014",
         "Verordening 486/2014",
         "Verordeningen 486/2014",
+        "(EU) No 486/2014",
+        "(EU) No. 486/2014",
         "Implementing Regulation 486/2014",
         "Regulation 486/2014",
         "Regulations 486/2014"
@@ -17020,10 +17706,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "487/2014",
+        "(EU) nr. 487/2014",
+        "(EU) nr 487/2014",
         "Uitvoeringsverordening 487/2014",
         "Verordening 487/2014",
         "Verordeningen 487/2014",
+        "(EU) No 487/2014",
+        "(EU) No. 487/2014",
         "Implementing Regulation 487/2014",
         "Regulation 487/2014",
         "Regulations 487/2014"
@@ -17039,9 +17728,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "491/2014",
+        "(EU) nr. 491/2014",
+        "(EU) nr 491/2014",
         "Verordening 491/2014",
         "Verordeningen 491/2014",
+        "(EU) No 491/2014",
+        "(EU) No. 491/2014",
         "Regulation 491/2014",
         "Regulations 491/2014"
       ],
@@ -17056,10 +17748,13 @@
       "category": "delegated_regulation",
       "match": "phrase",
       "aliases": [
-        "492/2014",
+        "(EU) nr. 492/2014",
+        "(EU) nr 492/2014",
         "Gedelegeerde Verordening 492/2014",
         "Verordening 492/2014",
         "Verordeningen 492/2014",
+        "(EU) No 492/2014",
+        "(EU) No. 492/2014",
         "Delegated Regulation 492/2014",
         "Regulation 492/2014",
         "Regulations 492/2014"
@@ -17075,10 +17770,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "496/2014",
+        "(EU) nr. 496/2014",
+        "(EU) nr 496/2014",
         "Uitvoeringsverordening 496/2014",
         "Verordening 496/2014",
         "Verordeningen 496/2014",
+        "(EU) No 496/2014",
+        "(EU) No. 496/2014",
         "Implementing Regulation 496/2014",
         "Regulation 496/2014",
         "Regulations 496/2014"
@@ -17094,10 +17792,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "504/2014",
+        "(EU) nr. 504/2014",
+        "(EU) nr 504/2014",
         "Uitvoeringsverordening 504/2014",
         "Verordening 504/2014",
         "Verordeningen 504/2014",
+        "(EU) No 504/2014",
+        "(EU) No. 504/2014",
         "Implementing Regulation 504/2014",
         "Regulation 504/2014",
         "Regulations 504/2014"
@@ -17113,10 +17814,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "563/2014",
+        "(EU) nr. 563/2014",
+        "(EU) nr 563/2014",
         "Uitvoeringsverordening 563/2014",
         "Verordening 563/2014",
         "Verordeningen 563/2014",
+        "(EU) No 563/2014",
+        "(EU) No. 563/2014",
         "Implementing Regulation 563/2014",
         "Regulation 563/2014",
         "Regulations 563/2014"
@@ -17132,10 +17836,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "571/2014",
+        "(EU) nr. 571/2014",
+        "(EU) nr 571/2014",
         "Uitvoeringsverordening 571/2014",
         "Verordening 571/2014",
         "Verordeningen 571/2014",
+        "(EU) No 571/2014",
+        "(EU) No. 571/2014",
         "Implementing Regulation 571/2014",
         "Regulation 571/2014",
         "Regulations 571/2014"
@@ -17151,9 +17858,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "588/2014",
+        "(EU) nr. 588/2014",
+        "(EU) nr 588/2014",
         "Verordening 588/2014",
         "Verordeningen 588/2014",
+        "(EU) No 588/2014",
+        "(EU) No. 588/2014",
         "Regulation 588/2014",
         "Regulations 588/2014"
       ],
@@ -17168,9 +17878,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "617/2014",
+        "(EU) nr. 617/2014",
+        "(EU) nr 617/2014",
         "Verordening 617/2014",
         "Verordeningen 617/2014",
+        "(EU) No 617/2014",
+        "(EU) No. 617/2014",
         "Regulation 617/2014",
         "Regulations 617/2014"
       ],
@@ -17185,10 +17898,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "629/2014",
+        "(EU) nr. 629/2014",
+        "(EU) nr 629/2014",
         "Uitvoeringsverordening 629/2014",
         "Verordening 629/2014",
         "Verordeningen 629/2014",
+        "(EU) No 629/2014",
+        "(EU) No. 629/2014",
         "Implementing Regulation 629/2014",
         "Regulation 629/2014",
         "Regulations 629/2014"
@@ -17204,10 +17920,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "632/2014",
+        "(EU) nr. 632/2014",
+        "(EU) nr 632/2014",
         "Uitvoeringsverordening 632/2014",
         "Verordening 632/2014",
         "Verordeningen 632/2014",
+        "(EU) No 632/2014",
+        "(EU) No. 632/2014",
         "Implementing Regulation 632/2014",
         "Regulation 632/2014",
         "Regulations 632/2014"
@@ -17223,10 +17942,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "678/2014",
+        "(EU) nr. 678/2014",
+        "(EU) nr 678/2014",
         "Uitvoeringsverordening 678/2014",
         "Verordening 678/2014",
         "Verordeningen 678/2014",
+        "(EU) No 678/2014",
+        "(EU) No. 678/2014",
         "Implementing Regulation 678/2014",
         "Regulation 678/2014",
         "Regulations 678/2014"
@@ -17242,10 +17964,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "698/2014",
+        "(EU) nr. 698/2014",
+        "(EU) nr 698/2014",
         "Uitvoeringsverordening 698/2014",
         "Verordening 698/2014",
         "Verordeningen 698/2014",
+        "(EU) No 698/2014",
+        "(EU) No. 698/2014",
         "Implementing Regulation 698/2014",
         "Regulation 698/2014",
         "Regulations 698/2014"
@@ -17261,10 +17986,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "700/2014",
+        "(EU) nr. 700/2014",
+        "(EU) nr 700/2014",
         "Uitvoeringsverordening 700/2014",
         "Verordening 700/2014",
         "Verordeningen 700/2014",
+        "(EU) No 700/2014",
+        "(EU) No. 700/2014",
         "Implementing Regulation 700/2014",
         "Regulation 700/2014",
         "Regulations 700/2014"
@@ -17280,9 +18008,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "703/2014",
+        "(EU) nr. 703/2014",
+        "(EU) nr 703/2014",
         "Verordening 703/2014",
         "Verordeningen 703/2014",
+        "(EU) No 703/2014",
+        "(EU) No. 703/2014",
         "Regulation 703/2014",
         "Regulations 703/2014"
       ],
@@ -17297,9 +18028,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "737/2014",
+        "(EU) nr. 737/2014",
+        "(EU) nr 737/2014",
         "Verordening 737/2014",
         "Verordeningen 737/2014",
+        "(EU) No 737/2014",
+        "(EU) No. 737/2014",
         "Regulation 737/2014",
         "Regulations 737/2014"
       ],
@@ -17314,9 +18048,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "752/2014",
+        "(EU) nr. 752/2014",
+        "(EU) nr 752/2014",
         "Verordening 752/2014",
         "Verordeningen 752/2014",
+        "(EU) No 752/2014",
+        "(EU) No. 752/2014",
         "Regulation 752/2014",
         "Regulations 752/2014"
       ],
@@ -17331,10 +18068,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "878/2014",
+        "(EU) nr. 878/2014",
+        "(EU) nr 878/2014",
         "Uitvoeringsverordening 878/2014",
         "Verordening 878/2014",
         "Verordeningen 878/2014",
+        "(EU) No 878/2014",
+        "(EU) No. 878/2014",
         "Implementing Regulation 878/2014",
         "Regulation 878/2014",
         "Regulations 878/2014"
@@ -17350,10 +18090,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "880/2014",
+        "(EU) nr. 880/2014",
+        "(EU) nr 880/2014",
         "Uitvoeringsverordening 880/2014",
         "Verordening 880/2014",
         "Verordeningen 880/2014",
+        "(EU) No 880/2014",
+        "(EU) No. 880/2014",
         "Implementing Regulation 880/2014",
         "Regulation 880/2014",
         "Regulations 880/2014"
@@ -17369,10 +18112,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "890/2014",
+        "(EU) nr. 890/2014",
+        "(EU) nr 890/2014",
         "Uitvoeringsverordening 890/2014",
         "Verordening 890/2014",
         "Verordeningen 890/2014",
+        "(EU) No 890/2014",
+        "(EU) No. 890/2014",
         "Implementing Regulation 890/2014",
         "Regulation 890/2014",
         "Regulations 890/2014"
@@ -17388,10 +18134,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "891/2014",
+        "(EU) nr. 891/2014",
+        "(EU) nr 891/2014",
         "Uitvoeringsverordening 891/2014",
         "Verordening 891/2014",
         "Verordeningen 891/2014",
+        "(EU) No 891/2014",
+        "(EU) No. 891/2014",
         "Implementing Regulation 891/2014",
         "Regulation 891/2014",
         "Regulations 891/2014"
@@ -17407,10 +18156,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "916/2014",
+        "(EU) nr. 916/2014",
+        "(EU) nr 916/2014",
         "Uitvoeringsverordening 916/2014",
         "Verordening 916/2014",
         "Verordeningen 916/2014",
+        "(EU) No 916/2014",
+        "(EU) No. 916/2014",
         "Implementing Regulation 916/2014",
         "Regulation 916/2014",
         "Regulations 916/2014"
@@ -17426,10 +18178,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "917/2014",
+        "(EU) nr. 917/2014",
+        "(EU) nr 917/2014",
         "Uitvoeringsverordening 917/2014",
         "Verordening 917/2014",
         "Verordeningen 917/2014",
+        "(EU) No 917/2014",
+        "(EU) No. 917/2014",
         "Implementing Regulation 917/2014",
         "Regulation 917/2014",
         "Regulations 917/2014"
@@ -17445,10 +18200,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "918/2014",
+        "(EU) nr. 918/2014",
+        "(EU) nr 918/2014",
         "Uitvoeringsverordening 918/2014",
         "Verordening 918/2014",
         "Verordeningen 918/2014",
+        "(EU) No 918/2014",
+        "(EU) No. 918/2014",
         "Implementing Regulation 918/2014",
         "Regulation 918/2014",
         "Regulations 918/2014"
@@ -17464,10 +18222,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "921/2014",
+        "(EU) nr. 921/2014",
+        "(EU) nr 921/2014",
         "Uitvoeringsverordening 921/2014",
         "Verordening 921/2014",
         "Verordeningen 921/2014",
+        "(EU) No 921/2014",
+        "(EU) No. 921/2014",
         "Implementing Regulation 921/2014",
         "Regulation 921/2014",
         "Regulations 921/2014"
@@ -17483,10 +18244,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "922/2014",
+        "(EU) nr. 922/2014",
+        "(EU) nr 922/2014",
         "Uitvoeringsverordening 922/2014",
         "Verordening 922/2014",
         "Verordeningen 922/2014",
+        "(EU) No 922/2014",
+        "(EU) No. 922/2014",
         "Implementing Regulation 922/2014",
         "Regulation 922/2014",
         "Regulations 922/2014"
@@ -17502,9 +18266,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "991/2014",
+        "(EU) nr. 991/2014",
+        "(EU) nr 991/2014",
         "Verordening 991/2014",
         "Verordeningen 991/2014",
+        "(EU) No 991/2014",
+        "(EU) No. 991/2014",
         "Regulation 991/2014",
         "Regulations 991/2014"
       ],
@@ -17519,10 +18286,13 @@
       "category": "delegated_regulation",
       "match": "phrase",
       "aliases": [
-        "1062/2014",
+        "(EU) nr. 1062/2014",
+        "(EU) nr 1062/2014",
         "Gedelegeerde Verordening 1062/2014",
         "Verordening 1062/2014",
         "Verordeningen 1062/2014",
+        "(EU) No 1062/2014",
+        "(EU) No. 1062/2014",
         "Delegated Regulation 1062/2014",
         "Regulation 1062/2014",
         "Regulations 1062/2014"
@@ -17538,10 +18308,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1090/2014",
+        "(EU) nr. 1090/2014",
+        "(EU) nr 1090/2014",
         "Uitvoeringsverordening 1090/2014",
         "Verordening 1090/2014",
         "Verordeningen 1090/2014",
+        "(EU) No 1090/2014",
+        "(EU) No. 1090/2014",
         "Implementing Regulation 1090/2014",
         "Regulation 1090/2014",
         "Regulations 1090/2014"
@@ -17557,10 +18330,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1091/2014",
+        "(EU) nr. 1091/2014",
+        "(EU) nr 1091/2014",
         "Uitvoeringsverordening 1091/2014",
         "Verordening 1091/2014",
         "Verordeningen 1091/2014",
+        "(EU) No 1091/2014",
+        "(EU) No. 1091/2014",
         "Implementing Regulation 1091/2014",
         "Regulation 1091/2014",
         "Regulations 1091/2014"
@@ -17576,9 +18352,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1096/2014",
+        "(EU) nr. 1096/2014",
+        "(EU) nr 1096/2014",
         "Verordening 1096/2014",
         "Verordeningen 1096/2014",
+        "(EU) No 1096/2014",
+        "(EU) No. 1096/2014",
         "Regulation 1096/2014",
         "Regulations 1096/2014"
       ],
@@ -17593,9 +18372,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1119/2014",
+        "(EU) nr. 1119/2014",
+        "(EU) nr 1119/2014",
         "Verordening 1119/2014",
         "Verordeningen 1119/2014",
+        "(EU) No 1119/2014",
+        "(EU) No. 1119/2014",
         "Regulation 1119/2014",
         "Regulations 1119/2014"
       ],
@@ -17610,9 +18392,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1126/2014",
+        "(EU) nr. 1126/2014",
+        "(EU) nr 1126/2014",
         "Verordening 1126/2014",
         "Verordeningen 1126/2014",
+        "(EU) No 1126/2014",
+        "(EU) No. 1126/2014",
         "Regulation 1126/2014",
         "Regulations 1126/2014"
       ],
@@ -17627,9 +18412,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1127/2014",
+        "(EU) nr. 1127/2014",
+        "(EU) nr 1127/2014",
         "Verordening 1127/2014",
         "Verordeningen 1127/2014",
+        "(EU) No 1127/2014",
+        "(EU) No. 1127/2014",
         "Regulation 1127/2014",
         "Regulations 1127/2014"
       ],
@@ -17644,9 +18432,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1136/2014",
+        "(EU) nr. 1136/2014",
+        "(EU) nr 1136/2014",
         "Verordening 1136/2014",
         "Verordeningen 1136/2014",
+        "(EU) No 1136/2014",
+        "(EU) No. 1136/2014",
         "Regulation 1136/2014",
         "Regulations 1136/2014"
       ],
@@ -17661,9 +18452,12 @@
       "category": "regulation",
       "match": "phrase",
       "aliases": [
-        "1146/2014",
+        "(EU) nr. 1146/2014",
+        "(EU) nr 1146/2014",
         "Verordening 1146/2014",
         "Verordeningen 1146/2014",
+        "(EU) No 1146/2014",
+        "(EU) No. 1146/2014",
         "Regulation 1146/2014",
         "Regulations 1146/2014"
       ],
@@ -17678,10 +18472,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1155/2014",
+        "(EU) nr. 1155/2014",
+        "(EU) nr 1155/2014",
         "Uitvoeringsverordening 1155/2014",
         "Verordening 1155/2014",
         "Verordeningen 1155/2014",
+        "(EU) No 1155/2014",
+        "(EU) No. 1155/2014",
         "Implementing Regulation 1155/2014",
         "Regulation 1155/2014",
         "Regulations 1155/2014"
@@ -17697,10 +18494,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1264/2014",
+        "(EU) nr. 1264/2014",
+        "(EU) nr 1264/2014",
         "Uitvoeringsverordening 1264/2014",
         "Verordening 1264/2014",
         "Verordeningen 1264/2014",
+        "(EU) No 1264/2014",
+        "(EU) No. 1264/2014",
         "Implementing Regulation 1264/2014",
         "Regulation 1264/2014",
         "Regulations 1264/2014"
@@ -17716,10 +18516,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1316/2014",
+        "(EU) nr. 1316/2014",
+        "(EU) nr 1316/2014",
         "Uitvoeringsverordening 1316/2014",
         "Verordening 1316/2014",
         "Verordeningen 1316/2014",
+        "(EU) No 1316/2014",
+        "(EU) No. 1316/2014",
         "Implementing Regulation 1316/2014",
         "Regulation 1316/2014",
         "Regulations 1316/2014"
@@ -17735,10 +18538,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1330/2014",
+        "(EU) nr. 1330/2014",
+        "(EU) nr 1330/2014",
         "Uitvoeringsverordening 1330/2014",
         "Verordening 1330/2014",
         "Verordeningen 1330/2014",
+        "(EU) No 1330/2014",
+        "(EU) No. 1330/2014",
         "Implementing Regulation 1330/2014",
         "Regulation 1330/2014",
         "Regulations 1330/2014"
@@ -17754,10 +18560,13 @@
       "category": "implementing_regulation",
       "match": "phrase",
       "aliases": [
-        "1334/2014",
+        "(EU) nr. 1334/2014",
+        "(EU) nr 1334/2014",
         "Uitvoeringsverordening 1334/2014",
         "Verordening 1334/2014",
         "Verordeningen 1334/2014",
+        "(EU) No 1334/2014",
+        "(EU) No. 1334/2014",
         "Implementing Regulation 1334/2014",
         "Regulation 1334/2014",
         "Regulations 1334/2014"
@@ -27171,24 +27980,6 @@
       "celex": "32019R0989",
       "derived_from": "32009R1107,32011R0540",
       "title": "Uitvoeringsverordening (EU) 2019/989 van de Commissie van 17 juni 2019 tot niet-verlenging van de goedkeuring van de werkzame stof chloorprofam overeenkomstig Verordening (EG) nr. 1107/2009 van het Europees Parlement en de Raad betreffende het op de markt brengen van gewasbeschermingsmiddelen en tot wijziging van de bijlage bij Uitvoeringsverordening (EU) nr. 540/2011 van de Commissie"
-    },
-    {
-      "id": "nl-32019r1009",
-      "term": "Verordening (EU) 2019/1009",
-      "lang": "nl",
-      "category": "regulation",
-      "match": "phrase",
-      "aliases": [
-        "Verordening 2019/1009",
-        "Verordeningen 2019/1009",
-        "Verordening (EU) 2019/1009",
-        "Regulation 2019/1009",
-        "Regulations 2019/1009",
-        "Regulation (EU) 2019/1009"
-      ],
-      "celex": "32019R1009",
-      "derived_from": "32009R1107",
-      "title": "Verordening (EU) 2019/1009 van het Europees Parlement en de Raad van 5 juni 2019 tot vaststelling van voorschriften inzake het op de markt aanbieden van EU-bemestingsproducten en tot wijziging van de Verordeningen (EG) nr. 1069/2009 en (EG) nr. 1107/2009 en tot intrekking van Verordening (EG) nr. 2003/2003"
     },
     {
       "id": "nl-32019r1015",

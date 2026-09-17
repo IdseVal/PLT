@@ -96,11 +96,13 @@ What the generator keeps is legislation — CELEX sector 3, of the regulation, d
 decision types EUR-Lex distinguishes, whether or not still in force. It drops proposals,
 reports, resolutions and communications, which a judgment does not cite as the law it
 applies, and corrigenda, whose number is the number of the act they correct. It also drops
-an act related to a base instrument only by amending it when that act amends more than five
-instruments in all: Regulation (EC) No 1882/2003 and Regulation (EC) No 806/2003 adapt the
-committee procedures of a hundred acts each, Directive 2004/66/EC adapts directives to the
-2004 accession, and a judgment citing one is about whatever it happens to be about. Eight
-such omnibus acts are left out at version 1.0.0.
+an act related to a base instrument only by amending it when that act amends more than one
+instrument in all. Such an act is about something else: Regulation (EC) No 1882/2003 adapts
+the committee procedures of a hundred acts, Directive 2004/66/EC adapts directives to the
+2004 accession, Directive 2007/47/EC is about medical devices and also amended the biocides
+directive, Regulation (EU) 2019/1009 is about fertilisers and also amended 1107/2009, and a
+judgment citing one is about that. An act made under a base instrument amends at most that
+instrument and its register. Ten such acts are left out at version 1.0.0.
 
 ## Citation forms
 
@@ -109,9 +111,13 @@ differently depending on when the act was adopted and in which language. The gen
 carries every form; a hand-curated entry should too.
 
 **Number/year — regulations before 2015.** `540/2011`, `1107/2009`. Written the same in
-every language, and not a form any case-law reporter uses, so the **bare number is carried**
-where it has at least three digits. Below that (`No 8/2011`) a bare number is a date as
-often as an act, and only the `No`, `nr.`, `Nr.` and `n°` prefixed forms are carried.
+every language, and not a form any case-law reporter uses — but it is the form of a national
+law (*Law No 116/2014*), a docket (*Case R 520/2011-4*), a bulletin and a date, and the
+first run of a list that carried generated acts bare selected cases on each of those. So the
+**hand-curated base instruments carry their bare number**, each on the curator's
+measurement, and **a generated act carries its number behind its bracket token only**, in
+each language's spelling: `(EU) No 116/2014`, `(EU) nr. 116/2014`, `(UE) no 116/2014`,
+`(EU) Nr. 116/2014`. Nothing but the act is written that way.
 
 **Year/number — every directive and decision, and regulations from 2015.** `2017/2324`,
 `2009/128`. **The bare number is never carried**, because it is exactly how Dutch case-law

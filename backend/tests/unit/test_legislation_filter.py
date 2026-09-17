@@ -548,6 +548,21 @@ def test_an_act_of_another_type_with_the_same_number_does_not_select(
     ) == {"en-32003d0035"}
 
 
+def test_a_generated_act_number_needs_its_bracket_token(eu_stage: LegislationFilter) -> None:
+    """A national law, a docket and a bulletin are all numbered N/YYYY too.
+
+    Only the hand-curated base instruments carry a bare number; a generated act is found
+    behind the token nothing else is written with.
+    """
+    for text in ("Law No 116/2014", "Case R 520/2011-4", "Judgment No 241/2013"):
+        assert matched(eu_stage.evaluate(Doc(jurisdiction_code="EU", full_text=text))) == set(), (
+            text
+        )
+    assert matched(
+        eu_stage.evaluate(Doc(jurisdiction_code="EU", full_text="Regulation (EU) No 116/2014"))
+    ) == {"en-32014r0116"}
+
+
 def test_a_predecessor_directive_still_selects(eu_stage: LegislationFilter) -> None:
     result = eu_stage.evaluate(
         Doc(jurisdiction_code="EU", full_text="Annex I to Directive 91/414/EEC")

@@ -178,20 +178,26 @@ PLURAL_WORDS: Final[Mapping[str, str]] = {
     "Entscheidung": "Entscheidungen",
 }
 
-#: Below this number a bare number/year citation ("8/2011") is a date as often as an act, so
-#: it is carried only behind a "No"-style prefix.
-_BARE_NUMBER_FLOOR: Final[int] = 100
-
 #: An act related to a base instrument only by amending it, and amending more acts than this,
-#: is an omnibus - a comitology or accession adaptation touching a hundred instruments at
-#: once - and not pesticide law. Regulation (EC) No 1882/2003 amends 91/414/EEC and 98/8/EC
-#: among many others, and a judgment citing it is about whatever it happens to be about.
-_OMNIBUS_FLOOR: Final[int] = 5
+#: is about something else: a comitology or accession adaptation touching a hundred
+#: instruments at once (Regulation (EC) No 1882/2003), or an act whose subject is another
+#: field and which reached a base instrument in passing - Directive 2007/47/EC on medical
+#: devices amends 98/8/EC, Regulation (EU) 2019/1009 on fertilisers amends 1107/2009. An act
+#: made under a base instrument amends at most that instrument and its register, so one
+#: amendment is the line.
+_OMNIBUS_FLOOR: Final[int] = 1
 
 #: Bumped whenever the query changes shape, so a cached answer to the old one is not reused.
 _QUERY_VERSION: Final[str] = "v2"
 
-_NUMBER_PREFIXES: Final[tuple[str, ...]] = ("No", "No.", "nr.", "Nr.", "n°", "nº", "n.")
+#: How each language writes "No" before a number/year regulation number, after the bracket:
+#: "(EU) No 540/2011", "(EU) nr. 540/2011", "(UE) no 540/2011", "(EU) Nr. 540/2011".
+NUMBER_PREFIXES: Final[Mapping[str, tuple[str, ...]]] = {
+    "en": ("No", "No."),
+    "nl": ("nr.", "nr"),
+    "fr": ("no", "n°", "nº"),
+    "de": ("Nr.", "Nr"),
+}
 
 _CELEX_SHAPE: Final[re.Pattern[str]] = re.compile(r"^3(\d{4})([RLD])(\d{4})$")
 _BRACKETED: Final[re.Pattern[str]] = re.compile(
@@ -411,16 +417,15 @@ def citation_forms(citation: Citation, category: str, languages: Sequence[str]) 
     """
     forms: list[str] = []
     digits = citation.printed
-    if not citation.year_first:
-        # Regulations before 2015 are the only acts numbered number/year, so the bare number
-        # names one act. Below the floor it is as often a date.
-        bare = int(citation.number) >= _BARE_NUMBER_FLOOR
-        if bare:
-            forms.append(digits)
-        else:
-            forms.extend(f"{prefix} {digits}" for prefix in _NUMBER_PREFIXES)
     for code in languages:
         token = LANGUAGE_TOKENS[code][citation.family]
+        if not citation.year_first:
+            # Regulations before 2015 are the only acts numbered number/year, but the bare
+            # number is also a national law (Law No 116/2014), a docket number (Case R
+            # 520/2011-4) or a bulletin, so a generated act carries it behind its bracket
+            # token: "(EU) No 116/2014", which nothing else is written as. The hand-curated
+            # base instruments carry their bare numbers, on the curator's measurement.
+            forms.extend(f"({token}) {prefix} {digits}" for prefix in NUMBER_PREFIXES[code])
         for word in TYPE_WORDS[category].get(code, ()):
             # "Directive 2003/5" also reaches "Directive 2003/5/EC": the slash after the
             # number is not a word character. A year/number number is never carried without

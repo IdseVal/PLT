@@ -100,7 +100,7 @@ threshold, and nothing is marked for review automatically: an instrument either 
 the list or it does not (`docs/CORE_DOCUMENT.md` §2.14). The list is not narrowed to improve
 precision, because a missed judgment is the expensive error (§2.7).
 
-**The list.** `data/legislation/nl.json` holds 2,268 instruments at version 1.0.0. The Dutch
+**The list.** `data/legislation/nl.json` holds 2,266 instruments at version 1.0.0. The Dutch
 national instruments are hand-curated from what Dutch courts actually cite, measured over the
 whole Rechtspraak mirror of 945,823 documents: the Wet gewasbeschermingsmiddelen en biociden
 with its Besluit and Regeling, the Bestrijdingsmiddelenwet 1962 and the decrees and
@@ -110,7 +110,7 @@ gewasbeschermingsmiddelen and the rest. Beside them stand the Union base instrum
 pesticide law — Regulation (EC) No 1107/2009 and its predecessors, Implementing Regulation
 (EU) No 540/2011, Regulation (EC) No 396/2005, the biocides directive and regulation,
 Directive 2009/128/EC, Regulation (EC) No 1185/2009 — and, generated from CELLAR rather than
-typed, the 2,237 acts made under them. Instruments that were considered and left off, the
+typed, the 2,235 acts made under them. Instruments that were considered and left off, the
 Wet op de economische delicten and the Activiteitenbesluit among them, are listed with the
 reason in `data/legislation/README.md`.
 

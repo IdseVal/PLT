@@ -101,13 +101,13 @@ threshold, and nothing is marked for review automatically: an instrument either 
 the list or it does not (`docs/CORE_DOCUMENT.md` §2.14). The list is not narrowed to improve
 precision, because a missed judgment is the expensive error (§2.7).
 
-**The list.** `data/legislation/eu.json` holds 2,246 instruments at version 1.0.0. Nine are
+**The list.** `data/legislation/eu.json` holds 2,244 instruments at version 1.0.0. Nine are
 hand-curated, the base instruments of Union pesticide law: plant protection products
 (Directive 79/117/EEC, Directive 91/414/EEC, Regulation (EC) No 1107/2009 and the
 approved-substance register in Implementing Regulation (EU) No 540/2011), maximum residue
 levels (Regulation (EC) No 396/2005), biocides (Directive 98/8/EC and Regulation (EU) No
 528/2012), sustainable use (Directive 2009/128/EC) and pesticide statistics (Regulation (EC)
-No 1185/2009). The other 2,237 are the acts CELLAR records as based on, amending or
+No 1185/2009). The other 2,235 are the acts CELLAR records as based on, amending or
 correcting those — above all the implementing regulations that approve, renew and withdraw
 active substances — generated from CELLAR rather than typed. REACH, CLP, Aarhus, the general
 food law and the Water Framework Directive were considered and left off; the reasons are in
@@ -121,9 +121,10 @@ implementing act is a label of its own: a case about the non-renewal of one subs
 the regulation that withdrew it, which is what a reader filtering the corpus wants to find.
 
 *Language.* A judgment exists in up to 24 languages and every retrieved version is searched.
-The number of a regulation adopted before 2015 is written the same in all of them and is
-matched bare, so it is found in any language of the Court. A later act is matched behind its
-type word — `Implementing Regulation (EU) 2017/2324`, `règlement d'exécution (UE)
+The bare numbers of the base instruments — `1107/2009`, `528/2012`, `396/2005` — are
+written the same in all of them and are matched bare, so those are found in any language
+of the Court. Every other act is matched behind its bracket token or its type word —
+`Regulation (EU) No 116/2014`, `règlement (UE) no 116/2014`, `Implementing Regulation (EU)
 2017/2324`, `Durchführungsverordnung (EU) 2017/2324` — in the four languages the list
 carries: English, French, German and Dutch. Titles and short names are carried in the same
 four.
