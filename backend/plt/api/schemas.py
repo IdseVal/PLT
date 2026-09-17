@@ -1219,7 +1219,8 @@ def _keyword_options(facets: FacetValues, settings: Settings) -> list[dict[str, 
             keyword_list = load_legislation_list_for(code, settings)
         except LegislationListError:
             log.warning(
-                "no usable keyword list for %s; its terms are left out of /api/filters", code
+                "no usable legislation list for %s; its instruments are left out of /api/filters",
+                code,
             )
             continue
         options.extend(

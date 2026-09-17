@@ -1,7 +1,7 @@
 """Connector interface and the data classes that cross pipeline stages.
 
 This module is the contract a jurisdiction is onboarded through. Adding a jurisdiction means
-writing one :class:`SourceConnector` subclass and one keyword list in ``data/keywords/`` —
+writing one :class:`SourceConnector` subclass and one legislation list in ``data/legislation/`` —
 nothing in the runner, the deduplication logic or the persistence layer may learn about a
 jurisdiction (``docs/architecture.md`` section 4). Everything jurisdiction-specific therefore
 has to be expressible in the three methods below and in the dataclasses they exchange.
@@ -21,9 +21,9 @@ Two properties of :class:`NormalisedCase` are worth reading before writing a con
   wants one ``full_text``. :attr:`NormalisedCase.full_text` resolves that by concatenating the
   text-bearing documents, the case's own language first. A term in any language version
   therefore qualifies the case, which is the behaviour a multilingual jurisdiction needs.
-* **``subject`` is a scored field.** For the Netherlands it is the *rechtsgebied*, for the EU
-  the subject-matter classification of the notice. Both shipped keyword lists weight it, so a
-  connector that leaves it ``None`` throws away a strong signal.
+* **``subject`` is a scanned field.** For the Netherlands it is the *rechtsgebied*, for the EU
+  the subject-matter classification of the notice. Both shipped legislation lists name it in
+  ``fields``, so a connector that leaves it ``None`` throws away a strong signal.
 """
 
 from __future__ import annotations
@@ -499,7 +499,7 @@ class SourceTraffic:
 class SourceConnector(ABC):
     """One jurisdiction's data source.
 
-    A subclass is the *only* code a new jurisdiction needs, besides its keyword list. It
+    A subclass is the *only* code a new jurisdiction needs, besides its legislation list. It
     owns everything source-specific: endpoints (read from :class:`~plt.config.Settings`,
     never hard-coded), paging, the identifier scheme, and the mapping onto the schema.
 

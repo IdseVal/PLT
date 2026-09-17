@@ -12,8 +12,7 @@ the Union, which the map draws as the hoverable North Sea logo.
 
 ``/api/filters`` sits at the API root rather than under ``/api/stats``, which is why it has
 a blueprint of its own; section 1 fixes the file list of this package, so the two live in
-one module. ``/api/exclusions`` joins it there: it answers the methodology page rather than
-a filter control, but it is read from the same curated lists and shares their blueprint.
+one module.
 """
 
 from __future__ import annotations

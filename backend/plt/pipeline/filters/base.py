@@ -50,7 +50,7 @@ class FilterableDocument(Protocol):
 
     Attributes:
         jurisdiction_code: Jurisdiction the document belongs to, ``NL`` or ``EU``. Selects
-            the keyword list.
+            the legislation list.
         title: Case title, if the source provides one.
         abstract: Summary or headnote, if the source provides one.
         subject: Subject-matter classification - the *rechtsgebied* for the Netherlands, the

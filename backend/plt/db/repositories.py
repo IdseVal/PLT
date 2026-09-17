@@ -214,7 +214,7 @@ class ReviewSearchCriteria:
 
     statuses: tuple[ReviewStatus, ...] = (ReviewStatus.PENDING,)
     jurisdictions: tuple[str, ...] = ()
-    #: Version of the keyword list that produced the flag, so a curator can review the
+    #: Version of the legislation list that produced the flag, so a curator can review the
     #: effect of one revision of a list rather than the whole backlog.
     list_version: str | None = None
     #: Identifier of the person or agent that took the standing decision.

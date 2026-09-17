@@ -1,6 +1,6 @@
 """Finding the connector that serves a jurisdiction.
 
-"Adding a jurisdiction means writing one connector class and one keyword list, and nothing
+"Adding a jurisdiction means writing one connector class and one legislation list, and nothing
 else" (``docs/architecture.md`` section 4) is only true if nothing has to be *registered*
 either. So the registry discovers connectors instead of listing them: it imports every module
 under :mod:`plt.pipeline.connectors` and picks up the concrete
@@ -198,8 +198,8 @@ def connector_for(jurisdiction_code: str, settings: Settings | None = None) -> S
         known = ", ".join(available_jurisdictions()) or "none"
         message = (
             f"no connector for jurisdiction {code!r}; a jurisdiction is onboarded by adding "
-            f"a connector under plt.pipeline.connectors and a keyword list under "
-            f"data/keywords/. Known jurisdictions: {known}"
+            f"a connector under plt.pipeline.connectors and a legislation list under "
+            f"data/legislation/. Known jurisdictions: {known}"
         )
         raise ConnectorNotFoundError(message)
     return connector_class(settings)

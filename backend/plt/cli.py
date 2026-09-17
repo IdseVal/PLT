@@ -376,7 +376,7 @@ def mirror(
 
     This is not an ingestion: nothing is filtered, classified or written to the database. It
     stores what the source served, so that a selection experiment can be re-run over an
-    identical corpus and two keyword lists compared on their merits rather than on the day
+    identical corpus and two legislation lists compared on their merits rather than on the day
     they happened to run (core document 2.8).
 
     A case already on disk costs no request, so an interrupted capture is resumed by running
@@ -568,7 +568,7 @@ def jurisdictions(as_json: bool) -> None:
     """List the jurisdictions ``plt ingest --all`` would run.
 
     The list comes from the connector registry, so onboarding a jurisdiction stays one
-    connector plus one keyword list (``docs/architecture.md`` section 4) and no scheduler,
+    connector plus one legislation list (``docs/architecture.md`` section 4) and no scheduler,
     crontab or workflow file has to be edited to include it.
 
     Raises:
@@ -580,7 +580,7 @@ def jurisdictions(as_json: bool) -> None:
     if not registered:
         message = (
             "no connectors are registered; add one under plt.pipeline.connectors together "
-            "with its keyword list under data/keywords/"
+            "with its legislation list under data/legislation/"
         )
         raise click.ClickException(message)
     codes = sorted(registered)

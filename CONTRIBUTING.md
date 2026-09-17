@@ -309,9 +309,11 @@ interactively, where `0` still means "the run completed".
 
 ### On a schedule, in GitHub Actions
 
-[`.github/workflows/weekly-ingest.yml`](.github/workflows/weekly-ingest.yml) runs Mondays at
-04:20 UTC, one job per jurisdiction, and the matrix is built from `plt jurisdictions` so
-onboarding a jurisdiction never means editing the workflow. It needs one repository secret:
+[`.github/workflows/weekly-ingest.yml`](.github/workflows/weekly-ingest.yml) is dispatch-only:
+its schedule was removed on 22 August 2026 (commit `55bf0d0`) and returns when a deployment
+exists to run it against (`docs/deployment.md` §9). It runs one job per jurisdiction, and the
+matrix is built from `plt jurisdictions` so onboarding a jurisdiction never means editing the
+workflow. It needs one repository secret:
 
 | Secret | Purpose |
 | --- | --- |
@@ -362,7 +364,7 @@ welcome at a public court endpoint.
 ### The corpus mirror, and the log each run leaves
 
 `plt mirror` (`docs/architecture.md` §9) copies a jurisdiction's source payloads to disk
-verbatim. It is not an ingestion: it writes no database row and reads no keyword list.
+verbatim. It is not an ingestion: it writes no database row and reads no legislation list.
 
 ```bash
 cd backend
@@ -561,13 +563,23 @@ criterion in the issue is addressed, and the pull request says which checks were
 
 ## 8. Data files
 
-Keyword lists in [`data/keywords/`](data/keywords/) are **curated data owned by the content
-manager**, not code. Validate against `schema.json`, bump `list_version`, and record the
-reasoning in `notes`. A jurisdiction cannot be onboarded to the pipeline before its list
-exists — see [`data/keywords/README.md`](data/keywords/README.md).
+Legislation lists in [`data/legislation/`](data/legislation/) are **curated data owned by the
+content manager**, not code. Validate against `schema.json`, bump `list_version` on every
+change that can alter what is selected or how it is labelled, and record the reasoning in
+`notes`. A jurisdiction cannot be onboarded to the pipeline before its list exists — see
+[`data/legislation/README.md`](data/legislation/README.md).
+
+A list has two parts with different owners. The base instruments and the national
+instruments are hand-curated. Every entry carrying `derived_from` was written by
+[`backend/scripts/legislation_from_cellar.py`](backend/scripts/legislation_from_cellar.py),
+which asks CELLAR for the acts based on, amending or correcting each base instrument. Run it
+with `--cache .cache/cellar` so a second run reads no network, and `--refresh` to ask CELLAR
+again. A run replaces its own entries, touches none without `derived_from`, and bumps
+nothing: whether the regenerated list changes what is selected is the curator's call.
 
 `case_sensitive` and `match` are declared on a term and applied to **every alias it carries**,
 which the schema cannot express and cannot check. The loader therefore rejects a
 `case_sensitive` literal that is not acronym-shaped and a `substring` literal shorter than six
-characters, naming the term and the literal; three defects have shipped through that gap, so
-the failure is deliberate and is not to be worked around by widening the term.
+characters, naming the term and the literal; three defects shipped through that gap under the
+keyword lists, so the failure is deliberate and is not to be worked around by widening the
+term.

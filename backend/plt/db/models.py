@@ -199,7 +199,7 @@ class Jurisdiction(Base):
     """One legal order the tracker follows. ``NL`` and ``EU`` are seeded by migration.
 
     Adding a jurisdiction is a data change, not a code change (core document section 3.3):
-    a row here, a keyword list in ``data/keywords/`` and a connector.
+    a row here, a legislation list in ``data/legislation/`` and a connector.
     """
 
     __tablename__ = "jurisdiction"
@@ -532,16 +532,16 @@ class KeywordMatch(Base):
     case_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("case.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    #: Identifier of the term inside the jurisdiction's keyword list.
+    #: Identifier of the instrument inside the jurisdiction's legislation list.
     term_id: Mapped[str] = mapped_column(String(_IDENTIFIER_LEN), nullable=False)
     #: The curated term as written in the list - not the inflection found in the text. This
     #: is the public label the case is listed under, so every spelling of a term files under
     #: the one the curator wrote.
     term: Mapped[str | None] = mapped_column(String(_LABEL_LEN))
-    #: The term's category, e.g. ``active_substance``. The second public label, and what the
+    #: The instrument's category, e.g. ``regulation``. The second public label, and what the
     #: case list's category filter reads.
     category: Mapped[str | None] = mapped_column(String(_SHORT_LEN), index=True)
-    #: Version of the keyword list that produced the match.
+    #: Version of the legislation list that produced the match.
     list_version: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
     #: Field the term matched in, e.g. ``title``, ``abstract``, ``full_text``.
     field: Mapped[str | None] = mapped_column(String(_SHORT_LEN))
@@ -599,7 +599,7 @@ class CaseReview(Base):
         default=ReviewStatus.PENDING,
     )
 
-    #: Version of the keyword list the flag was raised against, so the flag can be
+    #: Version of the legislation list the flag was raised against, so the flag can be
     #: re-derived from the row alone — the repeatability requirement of core document
     #: section 2.8. The score, threshold and band ceiling that used to sit beside it are
     #: gone with the weighting: selection has no threshold, so a flag has no distance from

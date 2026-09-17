@@ -47,9 +47,10 @@ academic research and civil-society use.
 
 1. **Fetching pipeline** — per-jurisdiction connectors pull case law from official open-data
    endpoints, apply a filter chain, and write matches to the database.
-2. **Linguistic filtering (filter stage 1)** — because none of the source APIs offer a usable
-   topical filter for "pesticides", candidate documents are matched against a curated,
-   per-jurisdiction, per-language keyword list. See [§4](#4-keyword-filters).
+2. **Selection by legislation (filter stage 1)** — because none of the source APIs offer a
+   topical filter for "pesticides", every fetched document is searched for the names of the
+   pesticide laws on a per-jurisdiction legislation list, and selected when any is named.
+   See [§4](#4-legislation-filters).
    The filter chain is deliberately pluggable so later stages (classifier models,
    citation-based filters, manual curation) can be added without touching the connectors.
 3. **Deduplication** — every run checks incoming documents against what the database already
@@ -76,19 +77,29 @@ Launch jurisdictions:
 
 The full member-state source table is in [Annex 2 of the core document](docs/CORE_DOCUMENT.md#annex-2-project-data-sources).
 
-## 4. Keyword filters
+## 4. Legislation filters
 
-Keyword lists live in [`data/keywords/`](data/keywords/), one JSON file per jurisdiction,
-validated against [`data/keywords/schema.json`](data/keywords/schema.json).
+Legislation lists live in [`data/legislation/`](data/legislation/), one JSON file per
+jurisdiction, validated against [`data/legislation/schema.json`](data/legislation/schema.json).
+A case is selected when any instrument on its jurisdiction's list is named in its title,
+abstract, subject fields or full text. There is no score, no threshold and no exclusion
+pattern: an instrument either belongs on the list, in which case a judgment naming it is a
+pesticide case, or it does not.
 
-**Every jurisdiction added to the database needs its own list**, written in the working
-language(s) of that jurisdiction's courts — a Dutch list will not find German cases. This
-is a standing precondition for onboarding a jurisdiction, recorded in
-[§2.5 of the core document](docs/CORE_DOCUMENT.md#25-linguistic-filtering-and-per-jurisdiction-keyword-lists).
+Each list holds the Union base instruments of pesticide law — Regulation (EC) No 1107/2009 on
+plant protection products, Regulation (EU) No 528/2012 on biocides, Regulation (EC) No
+396/2005 on residues, Directive 2009/128/EC on sustainable use, and their predecessors — with
+the jurisdiction's own instruments (for the Netherlands, the Wet gewasbeschermingsmiddelen
+en biociden and the Bestrijdingsmiddelenwet 1962 with the decrees and regulations under them)
+and every act EUR-Lex records as made under the base instruments, generated from CELLAR
+rather than typed. The instruments that selected a case are its public labels.
 
-Terms are weighted so that unambiguous terms (`glyfosaat`, `gewasbeschermingsmiddel`)
-qualify a document on their own, while contextual terms (`lelieteelt`, `spuitzone`,
-`omwonenden`) only qualify in combination. Curation of these lists is a **content manager**
+**Every jurisdiction added to the database needs its own list**, carrying its national
+instruments in the citation forms of the working language(s) of its courts — a Dutch list
+will not find German cases. This is a standing precondition for onboarding a jurisdiction,
+recorded in
+[§2.5 of the core document](docs/CORE_DOCUMENT.md#25-selection-by-legislation-and-per-jurisdiction-legislation-lists);
+the decision behind the method is §2.14. Curation of these lists is a **content manager**
 responsibility, not a developer one.
 
 ## 5. Tech stack
@@ -104,7 +115,7 @@ responsibility, not a developer one.
 ```
 backend/     Flask API, SQLAlchemy models, migrations, fetching pipeline
 frontend/    React + Tailwind single-page application
-data/        Keyword filter lists and other curated reference data
+data/        Legislation lists and other curated reference data
 docs/        Core document and supporting documentation
 ```
 

@@ -5,7 +5,7 @@
     discover -> dedup pre-check -> fetch -> normalise -> filter chain -> persist -> checkpoint
 
 and it is the one module in the pipeline that may not know which jurisdiction it is running.
-Every jurisdiction-specific decision belongs to a connector or to a keyword list; anything
+Every jurisdiction-specific decision belongs to a connector or to a legislation list; anything
 about the Netherlands or the EU that leaked in here would have to be written again for the
 next jurisdiction, which is exactly what this design exists to prevent.
 

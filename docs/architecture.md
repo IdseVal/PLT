@@ -53,7 +53,7 @@ backend/
       dedup.py              Source-identifier and content-hash deduplication
       filters/
         base.py             Filter ABC (the chain is pluggable)
-        keywords.py         Stage 1: keyword matcher over data/keywords/*.json
+        legislation.py      Stage 1: legislation matcher over data/legislation/*.json
       connectors/
         rechtspraak.py      NL
         eurlex.py           EU
@@ -71,7 +71,7 @@ frontend/
     pages/                  Home, AllCases, CaseDetail, About, Methodology, Faq, Contact
     hooks/  types/  styles/
   tests/
-data/keywords/              Curated filter lists (schema.json + one file per jurisdiction)
+data/legislation/           Legislation lists (schema.json + one file per jurisdiction)
 docs/
 .github/workflows/          ci.yml, weekly-ingest.yml, weekly-digest.yml
 ```
@@ -187,11 +187,11 @@ add source-specific fields to `source_metadata`.
 | `case_document` | Full texts and attachments per case, per language | `id`, `case_id` (FK), `language`, `doc_type` (`judgment`\|`opinion`\|`summary`), `format`, `full_text`, `raw_payload`, `retrieved_at` |
 | `party` | Litigating parties | `id`, `case_id` (FK), `name`, `role` (`applicant`\|`defendant`\|`intervener`\|`other`), `party_type` |
 | `topic` + `case_topic` | Topic classification (§2.2 label 6), extensible | `id`, `slug`, `label`, `parent_id` |
-| `keyword_match` | The terms that selected a case — its **public labels** | `id`, `case_id` (FK), `term_id`, `term`, `category`, `list_version`, `field`, `match_count`, `snippet` |
+| `keyword_match` | The instruments that selected a case — its **public labels** | `id`, `case_id` (FK), `term_id`, `term`, `category`, `list_version`, `field`, `match_count`, `snippet` |
 | `case_review` | One row per case flagged for review, and the standing decision on it | `id`, `case_id` (**unique**, FK), `status` (`pending`\|`confirmed`\|`rejected`\|`withdrawn`), `list_version`, `reason`, `flagged_at`, `flagged_revision`, `flagged_content_hash`, `decision` (`confirmed`\|`rejected`), `decided_by`, `decided_at`, `decided_revision`, `decision_note`, `suppressed_publication` |
 | `case_review_decision` | Append-only history of decisions taken on a review item | `id`, `review_id` (FK), `decision`, `decided_by`, `decided_at`, `note`, `case_revision`, `content_hash` |
 | `citation` | Instruments and cases cited (CELEX/ECLI) | `id`, `case_id` (FK), `target_identifier`, `citation_type` |
-| `ingest_run` | One row per pipeline execution | `id`, `jurisdiction_code`, `connector`, `started_at`, `finished_at`, `status`, `fetched_count`, `matched_count`, `inserted_count`, `updated_count`, `skipped_duplicate_count`, `error_count`, `checkpoint_before`, `checkpoint_after` |
+| `ingest_run` | One row per pipeline execution | `id`, `jurisdiction_code`, `connector`, `started_at`, `finished_at`, `status`, `fetched_count`, `matched_count`, `inserted_count`, `updated_count`, `skipped_duplicate_count`, `error_count`, `checkpoint_before`, `checkpoint_after`, `list_version`, `list_digest` (the version the legislation list claimed and the SHA-256 of its file, so the run says which list it applied) |
 | `ingest_checkpoint` | Resumable position per connector | `connector` (PK), `jurisdiction_code`, `last_modified_seen`, `last_cursor`, `updated_at` |
 | `subscriber` | One address on the mailing list (§8) | `id`, `email` (**unique**, null once unsubscribed), `email_digest` (**unique**, the keyed digest that replaces it), `status` (`pending`\|`confirmed`\|`unsubscribed`), `token_seed` (**unique**), `created_at`, `updated_at`, `notice_sent_at`, `confirmed_at`, `unsubscribed_at`, `last_digest_at`, `digest_count` |
 
@@ -200,8 +200,10 @@ add source-specific fields to `source_metadata`.
 record the revision (`case.revision` is incremented). Never insert a second row for the same
 source identifier.
 
-**`keyword_match` matters:** it is how the content manager evaluates and tunes the keyword
-lists. Do not treat it as optional.
+**`keyword_match` matters:** it is how a case explains itself (core document §2.8) and how the
+content manager evaluates and tunes the legislation lists. Do not treat it as optional. The
+table keeps its name from the keyword method, as a stable interface; since core document
+§2.14 its rows are the instruments that selected the case.
 
 **The review queue (core document §2.7).** A queued case is stored and published exactly
 like any other; the flag adds a review, it never withholds a case. **Nothing raises the flag
@@ -341,7 +343,7 @@ adding a helper that could is a contract change, not a refactor.
 
 ## 4. Pipeline interfaces
 
-Onboarding a jurisdiction is **one connector class and one keyword list, and nothing else**.
+Onboarding a jurisdiction is **one connector class and one legislation list, and nothing else**.
 Nothing under `plt/pipeline/` outside `connectors/` may name a jurisdiction, and the registry
 discovers connector modules rather than listing them, so there is no third file to forget.
 
@@ -416,7 +418,7 @@ Two properties of `NormalisedCase` matter to every connector:
   members of `FilterableDocument` are declared **read-only**: a stage only reads them, and a
   settable-attribute protocol would reject a computed one.
 - **`subject` is scanned.** The *rechtsgebied* for the Netherlands, the subject-matter
-  heading for the EU. Both shipped keyword lists name it in `fields`, so a connector that
+  heading for the EU. Both shipped legislation lists name it in `fields`, so a connector that
   leaves it `None` throws away a strong signal. It has no column
   of its own in section 3 and is persisted under `case.source_metadata["subject"]`.
 
@@ -442,13 +444,16 @@ class Filter(ABC):
 
 `FilterableDocument` is a structural protocol over `jurisdiction_code`, `title`, `abstract`,
 `subject` and `full_text`, so no import couples a stage to the connector work stream. Stage 1
-is the keyword matcher; a later stage appends to the `FilterChain` and touches no connector.
+is the legislation matcher (`filters/legislation.py`, stage name `legislation`), which loads
+the jurisdiction's list from `data/legislation/` and scans the fields the list names; a later
+stage appends to the `FilterChain` and touches no connector.
 
-**A match is a verdict and a label.** `passed` is true when **any** curated term matched:
-selection is a word search, so a term that could not carry a case alone belongs in
-`excluded_<code>.json` rather than in the list (core document §2.13). `FilterResult.labels`
-is one match per distinct selecting term — a term found in two fields is one label, and a term
-whose `requires` gate stayed shut is none — and it is what `keyword_match` is written from.
+**A match is a verdict and a label.** `passed` is true when **any** listed instrument is
+named: selection is a search for the names of pesticide legislation, so an instrument that
+could not carry a case alone does not go on the list (core document §2.14). There are no
+gates, no vetoes and no exclusion patterns. `FilterResult.labels` is one match per distinct
+selecting instrument — an instrument found in two fields is one label — and it is what
+`keyword_match` is written from.
 
 `needs_review` is independent of all that: no stage raises it on its own any more, and a
 rejection never carries it. The chain still propagates a flag raised by **any** stage onto the
@@ -515,7 +520,7 @@ Base path `/api`. JSON only. All list endpoints paginate. Errors use one envelop
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/cases` | Search + filter + paginate. Query params: `q` (full text), `jurisdiction` (repeatable), `law_domain`, `law_subfield`, `topic`, `keyword` (a curated **term id**, e.g. `nl-glyfosaat`), `category` (e.g. `active_substance`), `court`, `language`, `date_from`, `date_to`, `sort` (`date_desc` default, `date_asc`, `relevance`), `page`, `page_size` (default 20, max 100) |
+| `GET` | `/api/cases` | Search + filter + paginate. Query params: `q` (full text), `jurisdiction` (repeatable), `law_domain`, `law_subfield`, `topic`, `keyword` (an instrument's **term id**, e.g. `nl-wgb`), `category` (e.g. `regulation`), `court`, `language`, `date_from`, `date_to`, `sort` (`date_desc` default, `date_asc`, `relevance`), `page`, `page_size` (default 20, max 100) |
 | `GET` | `/api/cases/latest?limit=20` | Sidebar feed, newest first, `limit` max 50 |
 | `GET` | `/api/cases/<jurisdiction>/<source_id>` | Single case with documents, parties, topics, matched terms |
 | `GET` | `/api/cases/export` | Same filters as `/api/cases`, plus `format` (`csv` default, or `jsonl`). Not paginated: it streams every match |
@@ -616,7 +621,7 @@ card can link to the rest of that court's cases without resolving the name first
 | `documents` | `id`, `language`, `doc_type`, `format`, `full_text`, `source_url`, `byte_size`, `retrieved_at` |
 | `parties` | `id`, `name`, `role`, `party_type`, `ordinal` |
 | `topics` | `slug`, `label`, `confidence`, `assigned_by` |
-| `keyword_matches` | `term_id`, `term`, `category`, `list_version`, `field`, `match_count`, `snippet` — the case's public labels |
+| `keyword_matches` | `term_id`, `term`, `category`, `list_version`, `field`, `match_count`, `snippet` — the instruments that selected the case, its public labels |
 | `citations` | `target_identifier`, `target_scheme`, `citation_type`, `target_title`, `target_url` |
 
 `case_document.raw_payload` is **never** exposed: it is the verbatim source response, kept
@@ -633,8 +638,8 @@ what the run recorded.
 
 ```json
 { "id": 12, "status": "pending",
-  "matched_term_count": 2, "list_version": "2.0.0",
-  "reason": "matched 2 curated term(s) (NL list v2.0.0): nl-glyfosaat, nl-spuitzone",
+  "matched_term_count": 2, "list_version": "1.0.0",
+  "reason": "named 2 listed instrument(s) (NL list v1.0.0): nl-wgb, nl-reg-1107-2009",
   "flagged_at": "2026-08-05T06:00:00+00:00", "flagged_revision": 1,
   "flagged_content_hash": "9f2c…",
   "decision": null, "decided_by": null, "decided_at": null, "decided_revision": null,
@@ -719,11 +724,13 @@ the string lists `law_domains`, `law_subfields`, `languages`, `categories`, `sor
 (`page_size_default`, `page_size_max`, `latest_limit_max`) so the filter UI reads them rather
 than repeating them.
 
-**`keywords` is the only facet not derived from the cases.** It is read from the curated
-lists, so a term that has selected nothing appears with `case_count: 0`. That is deliberate:
-a curator has to be able to see that a substance is in the list and has never been litigated,
-which an empty facet would hide. `categories`, by contrast, lists only what is on a case — a
-category with nothing behind it is a dead end rather than a finding.
+**`keywords` is the only facet not derived from the cases.** It is read from the legislation
+lists, so an instrument that has selected nothing appears with `case_count: 0`. That is
+deliberate: a curator has to be able to see that an instrument is on the list and has never
+been litigated, which an empty facet would hide. `categories`, by contrast, lists only what is
+on a case — a category with nothing behind it is a dead end rather than a finding. The facet
+keeps its name from the keyword method; it, the `keyword` query parameter and the
+`keyword_match` table are stable interfaces and are not renamed with the method.
 
 `keyword` filters on the term **id** rather than the term text, because the text is a label
 written to be read and may be re-worded, while a cited link has to keep working.
@@ -905,10 +912,11 @@ capability in return.
 ## 9. The corpus mirror
 
 `plt mirror` copies a jurisdiction's source payloads to disk, unfiltered and unclassified,
-and is **not** an ingestion: it writes no database row and reads no keyword list. It exists
-because core document §2.8 requires selection to be repeatable, and a live endpoint cannot
-give that — two keyword lists scored against CELLAR a week apart differ by the repository as
-well as by the list. Scored against a mirror they differ only by the list.
+and is **not** an ingestion: it writes no database row and reads no legislation list. It
+exists because core document §2.8 requires selection to be repeatable, and a live endpoint
+cannot give that — two legislation lists scored against CELLAR a week apart differ by the
+repository as well as by the list. Scored against a mirror they differ only by the list, and
+`ingest_run.list_version` and `list_digest` record which list each run applied.
 
 **Layout.** One directory per jurisdiction under `PLT_CORPUS_STORE_DIR`, one folder per case
 inside it. The Dutch store already had this shape, so it is the shape:

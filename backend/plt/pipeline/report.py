@@ -2,7 +2,7 @@
 
 ``--dry-run`` runs the whole chain — discover, deduplicate, fetch, normalise, filter — and
 writes this instead of touching the database (``docs/architecture.md`` section 4). That makes
-it the tool for tuning a keyword list: a curator can widen a list, re-run the same window
+it the tool for tuning a legislation list: a curator can widen a list, re-run the same window
 against a real source, and read exactly which cases the change let in and on which terms,
 without a single row being written.
 

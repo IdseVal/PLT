@@ -5,10 +5,10 @@
 | **Jurisdiction code** | `EU` |
 | **Courts covered** | Court of Justice of the European Union: the Court of Justice, the General Court and the Civil Service Tribunal |
 | **Source** | CELLAR, the Publications Office repository behind EUR-Lex |
-| **Keyword list** | `data/keywords/eu.json`, which records its own version |
-| **Status** | Connector built and tested against the live service; no cases stored yet |
+| **Legislation list** | `data/legislation/eu.json`, which records its own version |
+| **Status** | Corpus rebuilt under the legislation method, «MEASURED: n cases» |
 | **Source last checked** | 4 August 2026 |
-| **Last reviewed** | 6 August 2026 |
+| **Last reviewed** | 17 September 2026 |
 
 ---
 
@@ -94,106 +94,95 @@ newly corrected decisions alike. Historical periods are backfilled by decision d
 
 ## 3. How cases are selected
 
-Selection works the same way in every jurisdiction. Each fetched decision is scored against
-that jurisdiction's keyword list; a decision reaching the threshold is selected, and one
-scoring just above it is additionally marked for a content manager to confirm or reject. The
-threshold is not raised to improve precision, because a missed judgment is the expensive
-error (`docs/CORE_DOCUMENT.md` §2.7).
+Selection works the same way in every jurisdiction. Each fetched decision is searched for the
+names of the instruments on that jurisdiction's legislation list, and it is selected when any
+of them is named in its title, summary, subject labels or text. There is no score and no
+threshold, and nothing is marked for review automatically: an instrument either belongs on
+the list or it does not (`docs/CORE_DOCUMENT.md` §2.14). The list is not narrowed to improve
+precision, because a missed judgment is the expensive error (§2.7).
 
-**The list.** `data/keywords/eu.json` holds the terms; read the file for the count, which
-changes with every curation pass. Most of it is the active substances approved under
-Regulation (EC) No 1107/2009, taken from the Annex that lists them and therefore in English
-only. Beside them sit the instrument numbers, the procedural vocabulary and the wider
-chemicals regime, and a small French, German and Dutch section covering the product classes
-and the authorisation words but not the substances — the gap in §5.1. Nearly every term
-qualifies a decision on its own; a handful are contextual. A decision is selected at a score
-of 3 or more, and one scoring below 6 is marked for review. Terms in the title, the summary
-or CELLAR's subject labels count for more than terms in the body, because those fields are
-curated topical vocabulary here.
+**The list.** `data/legislation/eu.json` holds 2,254 instruments at version 1.0.0. Nine are
+hand-curated, the base instruments of Union pesticide law: plant protection products
+(Directive 79/117/EEC, Directive 91/414/EEC, Regulation (EC) No 1107/2009 and the
+approved-substance register in Implementing Regulation (EU) No 540/2011), maximum residue
+levels (Regulation (EC) No 396/2005), biocides (Directive 98/8/EC and Regulation (EU) No
+528/2012), sustainable use (Directive 2009/128/EC) and pesticide statistics (Regulation (EC)
+No 1185/2009). The other 2,245 are the acts CELLAR records as based on, amending or
+correcting those — above all the implementing regulations that approve, renew and withdraw
+active substances — generated from CELLAR rather than typed. REACH, CLP, Aarhus, the general
+food law and the Water Framework Directive were considered and left off; the reasons are in
+`data/legislation/README.md`.
 
-**Why these terms.** Three things make an EU list an EU list.
+**Why these instruments.** Two things make an EU list an EU list.
 
-*Language.* This is where the EU differs from every member state. The list carries English
-plus the three most common procedural languages for pesticide cases, and a term matching in
-any retrieved version qualifies the case.
+*Legal system.* The Court reviews approvals, refusals, emergency authorisations and access to
+the science behind them, and every such case names the instrument it is brought under. An
+implementing act is a label of its own: a case about the non-renewal of one substance carries
+the regulation that withdrew it, which is what a reader filtering the corpus wants to find.
 
-*Legal system.* Instrument numbers are the sharpest signals available and the only ones that
-work in every language: 1107/2009 (plant protection products), 528/2012 (biocides), 396/2005
-(maximum residue levels), 2009/128 (sustainable use), 91/414 (the predecessor directive).
-Beside them sit the procedural vocabulary of EU pesticide law — approval and non-renewal of
-active substances, zonal authorisation and mutual recognition, the Article 53 emergency
-derogation, SCoPAFF, the rapporteur Member State — and, as contextual terms, the wider
-chemicals regime: REACH, CLP, ECHA, EFSA and Aarhus.
+*Language.* A judgment exists in up to 24 languages and every retrieved version is searched.
+The number of an instrument is written the same in all of them, and its bracketed form
+carries each language's own token — `(EU)`, `(UE)`, `(ΕΕ)`, `(ЕС)` — so a number matches in
+any language of the Court. Titles and short names are carried in four: English, French,
+German and Dutch.
 
-*Agronomy.* Largely absent, and rightly. The EU courts do not try spray-drift disputes
-between neighbours; they review approvals, refusals and access to the science behind them.
-The list carries the science instead: endocrine-disrupting properties, bee health and
-pollinators, operator and bystander exposure, seed treatment, integrated pest management.
-
-**What a test run measured.** Over the whole of 2024 the tracker read 1,548 decisions and 54
-passed the filter. All 54 were read by hand, and about 17 were genuine pesticide or biocide
-cases — a precision of roughly one in three.
-
-The ranking is the reassuring part. The cases a pesticide lawyer would name first come out
-well above everything else: PAN Europe `C-308/22` and `C-309/22` at 58.5 and 60.5, PAN Europe
-`T-536/22` at 53.5, Commission v Pollinis France at 20.0, the biocides cases between 18 and
-19.5. A smaller check makes the same point: on 1 October 2019 the Court delivered eight
-decisions, and the filter passed exactly one — *Blaise*, on glyphosate, at 47.5 — with the
-other seven scoring zero.
-
-The scores separate the two groups sharply. Of the 54, 18 scored 12 or more and were almost
-all genuine; 21 scored between 3.0 and 3.9 and almost none were. That bottom band is 40% of
-everything selected and holds nearly all the wrong cases, which is why it is reviewed rather
-than cut off. Recall has not been measured against a reference list, and the ranking is not a
-substitute for one.
+**What a test run measured.** «MEASURED: which store or period the legislation list was run
+over, how many EU decisions were read and how many were selected». «MEASURED: how many of a
+hand-read sample were pesticide or biocide cases, and which instruments selected the ones
+that were not». «MEASURED: which cases the keyword method (branch 0.1.0, 1,312 EU cases on
+29 August 2026) held that this list does not, and which it adds, on a hand-read». Recall has
+not been measured against a reference list of EU pesticide cases.
 
 ---
 
 ## 4. Documented exceptions
 
-One, and it only narrows how a term matches: the EU list still vetoes no document and gates
-no term.
+The legislation method has one rule beyond the shared method, and it applies in every
+jurisdiction: a year/number instrument number — every directive and decision, and
+regulations from 2015 — is never matched bare, because `2009/128` is how Dutch case-law
+reporters cite judgments (*NJ 2009/128*), and Dutch is one of this list's languages. Such an
+instrument is matched in its bracketed, suffixed and worded forms instead — `(EU)
+2017/2324`, `2009/128/EC`, *Directive 2009/128* — which is how the Court writes it. What it
+costs: a decision citing such an act by its bare number and nothing else would be missed.
+None has been seen.
 
-| What it excludes | Why | What it costs |
-| --- | --- | --- |
-| The ISO common name *metam* inside longer words | It was an alias of *fipronil* and matched on word fragments because that name, at eight characters, can carry them. Five characters cannot: Dutch is one of this list's languages, and across 150,000 Dutch judgments 214 of the 217 documents holding the fragment hold *metamfetamine*, *metamorfose* or *trometamol*, against three holding the substance. Nothing gates the term, so at weight 3 each of those would have been selected on the fragment alone | Nothing measurable. Matched as a whole word it still finds *metam*, and *metam-sodium* and *metam natrium* with it, because a hyphen and a space are not word characters. The EU corpus itself has not been measured; the figures above are from the Dutch one |
-
-Two weaknesses in the list are known and are being weighed by the content manager, who owns
-curation (`docs/CORE_DOCUMENT.md` §2.3):
-
-- **A word spelled the same way in several languages is counted several times.** *Pesticide*
-  is both English and French, so one occurrence scores three times the threshold. Nine
-  literals in the list are shared this way. It distorts the ranking rather than the verdict,
-  since each of those terms would qualify a case on its own, but a case that scores 9 on a
-  single word lands in the confident band and escapes review.
-- **ECHA and REACH can carry a case over the threshold between them.** Twelve of the 54
-  selected in 2024 arrived this way, including an appeal about harmonised standards, an
-  oxo-degradable plastics case and one on lead in ammunition. Requiring a pesticide-specific
-  term alongside them would remove those, but the access-to-documents and Aarhus cases that
-  are genuine often discuss the chemicals regime at length, and it has not been measured
-  whether they always name a pesticide as well. Until that is known, the cost of the rule is
-  unknown, and an unknown cost in recall is not one this project accepts.
+Nothing else is excluded: the list vetoes no document and gates no term. The *metam* rule and
+the two weaknesses this section recorded under the keyword method — a word spelled the same
+in several languages counted several times, and REACH and ECHA carrying a case between them —
+no longer exist, because none of those words is on a legislation list. They are preserved on
+branch `0.1.0`.
 
 ---
 
 ## 5. Known limits
 
-1. **Only four of the Court's languages are covered by the list.** In 2024 a quarter of
-   decisions had no English text and were stored in the procedural language — German, French,
-   Spanish, Italian, Polish, Bulgarian, Greek, Portuguese, Romanian, Dutch, Hungarian. For
-   the languages without a section, only the instrument numbers can match. This partly heals
-   itself, because a case is re-read when a translation is added, but it is a real gap today.
+1. **Titles and short names are carried in four of the Court's languages.** In 2024 a
+   quarter of decisions had no English text and were stored in the procedural language —
+   German, French, Spanish, Italian, Polish, Bulgarian, Greek, Portuguese, Romanian, Dutch,
+   Hungarian. A decision in a language the list has no names for matches on an instrument
+   number, which the Court writes the same way in every language, but not on *the Plant
+   Protection Products Regulation* written out. This partly heals itself, because a case is
+   re-read when a translation is added.
 2. **EU cases carry no law domain or subfield** (§2), deliberately, so they are absent from
    any filter built on those fields.
-3. **Precision is about one case in three**, with the wrong cases concentrated just above the
-   threshold and marked for review rather than rejected.
-4. **Recall has not been measured** against a reference list of EU pesticide cases.
-5. **Trade mark judgments quote the Nice Classification**, whose class 5 reads "Fungicides,
-   herbicides", so EUIPO cases can score on a product-class term without concerning
-   pesticides. EUIPO cases are a large share of the General Court's docket, so this grows
-   with the corpus.
-6. **A single query returns at most 10,000 results**, a cap the source introduced in January
+3. **A pesticide case that never names the legislation is missed.** A staff case, a trade
+   mark case or a competition case can concern a pesticide producer without citing an
+   instrument on the list, and the tracker does not hold it. How many there are: «MEASURED:
+   count and character of the cases the 0.1.0 corpus held that the legislation list does
+   not select».
+4. **Instruments EUR-Lex has not linked are missing until curated.** The generated part of
+   the list is what CELLAR records as based on, amending or correcting the base instruments.
+   An act CELLAR has not linked that way, or has linked to an instrument outside the base
+   set, is not on the list until a curator adds it.
+5. **Precision is «MEASURED: share of a hand-read sample that is pesticide or biocide
+   litigation».** A wrong case is corrected by taking an instrument off the list, with the
+   reason recorded, not by a threshold.
+6. **Recall has not been measured** against a reference list of EU pesticide cases. The
+   comparison with the keyword corpus counts what changed between two methods, not what
+   either missed.
+7. **A single query returns at most 10,000 results**, a cap the source introduced in January
    2026. The tracker works around it by reading in date windows, but a lower cap would make
    backfilling materially more expensive.
-7. **No cases have been stored yet.** Every figure here comes from test runs against the live
-   service.
+8. **The corpus was rebuilt under the legislation method on «MEASURED: date of the rebuild»**
+   and holds «MEASURED: n cases». The figures in §3 come from that rebuild and from the
+   comparison with the corpus of 29 August 2026.

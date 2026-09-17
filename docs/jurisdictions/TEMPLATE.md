@@ -1,7 +1,7 @@
 # \<Jurisdiction\> — how cases are collected
 
 > **Using this template.** Copy it to `docs/jurisdictions/<code>.md`, lower case, with the
-> same code as the keyword list in `data/keywords/`. Keep the five sections, in this order,
+> same code as the legislation list in `data/legislation/`. Keep the five sections, in this order,
 > in every jurisdiction: a reader who knows one document knows them all. Delete these
 > guidance blockquotes as you write.
 >
@@ -13,7 +13,7 @@
 | **Jurisdiction code** | `XX` |
 | **Courts covered** | \<one line\> |
 | **Source** | \<the publisher whose data is read, and its address\> |
-| **Keyword list** | `data/keywords/xx.json`, version \<n.n.n\> |
+| **Legislation list** | `data/legislation/xx.json`, version \<n.n.n\> |
 | **Status** | *planned / connector built / ingesting* |
 | **Source last checked** | \<date\> |
 | **Last reviewed** | \<date\> |
@@ -40,11 +40,13 @@
 
 ## 3. How cases are selected
 
-> Every jurisdiction uses the same method: fetch, score each document against the keyword
-> list, select above the threshold, mark the band just above it for review. Describe the
-> list — size, languages, scoring — say why these terms suit this jurisdiction, and report
-> what a test run over a real period measured: how many documents, how many passed, how many
-> were genuine on a hand-read, and how the scores were spread.
+> Every jurisdiction uses the same method: fetch each document, look for the instruments on
+> the legislation list in its title, abstract, subject fields and full text, and select it
+> when any is named. Describe the list — how many instruments, which are hand-curated and
+> which generated, which languages the names are carried in — say why these instruments suit
+> this jurisdiction, and report what a test run over a real period or the store measured: how
+> many documents, how many were selected, how many were genuine on a hand-read, and which
+> instruments selected the ones that were not.
 
 ---
 
