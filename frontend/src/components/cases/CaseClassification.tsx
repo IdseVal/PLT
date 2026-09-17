@@ -21,7 +21,7 @@ import { categoryLabel, cleanInlineText } from '@/utils/caseText'
 import { formatDecisionDate } from '@/utils/dates'
 import type { CaseRecord, KeywordMatchRef, PartyRef } from '@/types/api'
 
-/** The keyword and category labels of a case, deduplicated and ordered for display. */
+/** The legislation and category labels of a case, deduplicated and ordered for display. */
 interface CaseLabels {
   readonly keywords: readonly { readonly term_id: string; readonly term: string }[]
   readonly categories: readonly string[]
@@ -220,7 +220,7 @@ export default function CaseClassification({ item }: CaseClassificationProps): J
       )}
 
       {keywords.length === 0 ? null : (
-        <Row label={keywords.length === 1 ? 'Keyword' : 'Keywords'}>
+        <Row label="Legislation">
           <ul className="flex flex-wrap gap-2">
             {keywords.map((keyword) => (
               <li key={keyword.term_id}>

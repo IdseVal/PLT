@@ -22,25 +22,7 @@ export interface ContentLink {
 export interface ContentDefinition {
   readonly term: string
   readonly description: string
-  /**
-   * Names an exclusion mechanism, which renders that mechanism's disclosure under this
-   * definition.
-   *
-   * The binding is this key rather than the definition's wording, so the copy can be
-   * rewritten without silently detaching the list of terms from the paragraph describing
-   * them.
-   */
-  readonly mechanism?: ExclusionMechanism
 }
-
-/**
- * The exclusion mechanisms `GET /api/exclusions` reports.
- *
- * Three genuinely different claims, which is why they are named separately rather than
- * merged: a term left off a list never runs, a gated term runs but cannot admit a case on
- * its own, and an exclusion pattern rejects a document other terms had already matched.
- */
-export type ExclusionMechanism = 'left-off' | 'gated' | 'patterns'
 
 /** One renderable unit of copy. */
 export type ContentBlock =
@@ -51,11 +33,11 @@ export type ContentBlock =
   /** A short aside, set apart from the running text. */
   | { readonly kind: 'callout'; readonly text: string }
   /**
-   * The per-jurisdiction keyword index, read live from `GET /api/filters`.
+   * The per-jurisdiction legislation index, read live from `GET /api/filters`.
    *
-   * The terms are curated data, not copy: repeating them in a content module would let the
-   * page drift from the lists the pipeline actually applies, so this block marks where the
-   * index goes and `src/components/KeywordIndex.tsx` fetches and renders it.
+   * The instruments are curated data, not copy: repeating them in a content module would let
+   * the page drift from the legislation lists the pipeline actually applies, so this block
+   * marks where the index goes and `src/components/KeywordIndex.tsx` fetches and renders it.
    */
   | { readonly kind: 'keyword-index' }
 

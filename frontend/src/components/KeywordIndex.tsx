@@ -105,7 +105,7 @@ function errorMessage(error: ApiError): string {
     case 'network_error':
       return 'The tracker could not reach the case database. It may be offline for maintenance.'
     case 'request_aborted':
-      return 'Loading the keyword lists took too long.'
+      return 'Loading the legislation lists took too long.'
     default:
       return error.message
   }
@@ -171,7 +171,7 @@ function KeywordIndexLoader({ onRetry }: KeywordIndexLoaderProps): JSX.Element {
   if (isLoading && data === null) {
     return (
       <p role="status" className="text-plt-muted max-w-prose leading-relaxed">
-        Loading the keyword lists…
+        Loading the legislation lists…
       </p>
     )
   }
@@ -179,7 +179,7 @@ function KeywordIndexLoader({ onRetry }: KeywordIndexLoaderProps): JSX.Element {
   if (error !== null && data === null) {
     return (
       <div role="alert" className="border-plt-border bg-plt-accent-soft max-w-prose space-y-3 rounded border p-4">
-        <p className="text-plt-ink text-sm font-semibold">The keyword lists could not be loaded.</p>
+        <p className="text-plt-ink text-sm font-semibold">The legislation lists could not be loaded.</p>
         <p className="text-plt-muted text-sm leading-relaxed">{errorMessage(error)}</p>
         <button
           type="button"
@@ -197,8 +197,8 @@ function KeywordIndexLoader({ onRetry }: KeywordIndexLoaderProps): JSX.Element {
   if (groups.length === 0) {
     return (
       <p className="text-plt-muted max-w-prose leading-relaxed">
-        The keyword lists are not available right now. They can be read in the project
-        repository, under data/keywords.
+        The legislation lists are not available right now. They can be read in the project
+        repository, under data/legislation.
       </p>
     )
   }
