@@ -64,6 +64,10 @@ COPIED: Final[tuple[type[Base], ...]] = (
     IngestRun,
 )
 
+#: Tables a freshly migrated target already holds rows in - the launch jurisdictions are
+#: seeded by migration - and which are therefore replaced rather than required empty.
+PRESEEDED: Final[frozenset[str]] = frozenset({"jurisdiction"})
+
 #: Rows fetched and inserted per round trip. Full texts are large; a thousand is a few
 #: megabytes.
 BATCH: Final[int] = 1000
@@ -93,12 +97,16 @@ def copy(source: Engine, target: Engine, *, replace: bool) -> None:
     tables = [cast(sa.Table, model.__table__) for model in COPIED]
     with source.connect() as reading, target.begin() as writing:
         if not replace:
-            occupied = [table.name for table in tables if _count(writing, table)]
+            occupied = [
+                table.name
+                for table in tables
+                if table.name not in PRESEEDED and _count(writing, table)
+            ]
             if occupied:
                 log.error("target already holds rows in %s; pass --replace", ", ".join(occupied))
                 raise SystemExit(2)
-        else:
-            for table in reversed(tables):
+        for table in reversed(tables):
+            if replace or table.name in PRESEEDED:
                 writing.execute(sa.delete(table))
         for table in tables:
             total = _count(reading, table)
