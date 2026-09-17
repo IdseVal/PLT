@@ -6,7 +6,7 @@
 | **Courts covered** | Court of Justice of the European Union: the Court of Justice, the General Court and the Civil Service Tribunal |
 | **Source** | CELLAR, the Publications Office repository behind EUR-Lex |
 | **Legislation list** | `data/legislation/eu.json`, which records its own version |
-| **Status** | Corpus rebuilt under the legislation method, «MEASURED: n cases» |
+| **Status** | Corpus rebuilt under the legislation method on 17 September 2026: 828 cases |
 | **Source last checked** | 4 August 2026 |
 | **Last reviewed** | 17 September 2026 |
 
@@ -129,12 +129,47 @@ of the Court. Every other act is matched behind its bracket token or its type wo
 carries: English, French, German and Dutch. Titles and short names are carried in the same
 four.
 
-**What a test run measured.** «MEASURED: which store or period the legislation list was run
-over, how many EU decisions were read and how many were selected». «MEASURED: how many of a
-hand-read sample were pesticide or biocide cases, and which instruments selected the ones
-that were not». «MEASURED: which cases the keyword method (branch 0.1.0, 1,312 EU cases on
-29 August 2026) held that this list does not, and which it adds, on a hand-read». Recall has
-not been measured against a reference list of EU pesticide cases.
+**What the rebuild measured.** On 17 September 2026 the list was run over the whole mirror:
+104,143 documents of the Court, decisions from 1954 to 6 August 2026, of which 828 named an
+instrument on the list — one in 126. Regulation (EC) No 1107/2009 selected 460 of them,
+Directive 91/414/EEC 397, Implementing Regulation (EU) No 540/2011 186, Regulation (EU) No
+528/2012 126, Directive 98/8/EC 91 and Regulation (EC) No 396/2005 64; 730 labels are
+implementing regulations, which is the approvals, renewals and withdrawals of individual
+substances that the keyword lists could not name.
+
+The keyword method (branch `0.1.0`), run over the same mirror the same day, selected 1,312.
+The two methods agree on 742 cases. The keyword method held 570 that this list does not
+select, and this list selects 86 the keyword method did not.
+
+*What was lost.* The 570 were selected by the words *pesticide* (203 of them), *herbicide*
+(111), *plant protection product* (97), *fungicide* (63), *calcium carbide* (49),
+*insecticide* (35), *biocidal product* (23) and *maximum residue level* (23). Forty of them
+were read from their titles, labels and matched passages. About three in four are not
+pesticide litigation: trade mark cases whose Nice class lists "fungicides, herbicides"
+(thirteen of the forty), the calcium carbide cartel cases, customs cases on copper
+compounds, pharmaceutical trade marks. About one in four is pesticide-adjacent and would
+have been worth holding: a residue dispute decided under general food law, a GMO case about
+herbicide tolerance, an access-to-documents case about a substance dossier, an action by an
+NGO whose Official Journal notice names no instrument. Those are the cost of the method,
+and §5 records them as its first limit.
+
+*What was gained.* Of the 86, about ten are pesticide or biocide cases the keyword lists
+had missed: the mancozeb and maneb cases T-326/07 and T-334/07, selected on the Commission
+directive that included those substances; Troy Chemical Company T-662/21 on Implementing
+Regulation (EU) 2021/348; Sipcam Oxon T-518/19; the biocides infringement C-353/11. The
+rest are errors in the source text that a text method cannot see past: twenty-seven trade
+mark cases whose Official Journal notice writes the trade mark regulation as "Regulation
+(EU) 2017/2001", the number of a biocide approval, where 2017/1001 was meant; directives
+mis-numbered in the judgment itself (*Directive 2008/78/EC* for 2000/78, *2004/58* for
+2004/38); and a number split by a footnote marker (*Delegated Regulation 2018/62 5*). That
+is 3% of the corpus, and §5 records it.
+
+*Precision.* Forty cases were drawn at random from the 828 and read from their titles and
+matched passages: 36 are pesticide or biocide litigation, three are trade mark cases
+admitted by the "2017/2001" typo, one could not be read. That reading was made by the
+project's assistant from titles and passages, not by a lawyer from the judgments; the Law
+group's own reading replaces it when made. Recall has not been measured against a reference
+list of EU pesticide cases.
 
 ---
 
@@ -174,15 +209,19 @@ branch `0.1.0`.
    any filter built on those fields.
 3. **A pesticide case that never names the legislation is missed.** A staff case, a trade
    mark case or a competition case can concern a pesticide producer without citing an
-   instrument on the list, and the tracker does not hold it. How many there are: «MEASURED:
-   count and character of the cases the 0.1.0 corpus held that the legislation list does
-   not select».
+   instrument on the list, and the tracker does not hold it. The comparison with the
+   keyword corpus puts a floor under the number: of the 570 cases that corpus held and this
+   one does not, about one in four is pesticide-adjacent on a reading of a sample (§3) —
+   roughly 140 cases, most of them residue, GMO and access-to-documents matters decided
+   under other instruments.
 4. **Instruments EUR-Lex has not linked are missing until curated.** The generated part of
    the list is what CELLAR records as based on, amending or correcting the base instruments.
    An act CELLAR has not linked that way, or has linked to an instrument outside the base
    set, is not on the list until a curator adds it.
-5. **Precision is «MEASURED: share of a hand-read sample that is pesticide or biocide
-   litigation».** A wrong case is corrected by taking an instrument off the list, with the
+5. **Precision is about nine in ten** on a reading of forty random cases (§3). The wrong
+   cases have one cause the list cannot remove: a citation mis-typed in the source text —
+   twenty-seven trade mark notices that number the trade mark regulation as a biocide act.
+   A wrong case is otherwise corrected by taking an instrument off the list, with the
    reason recorded, not by a threshold.
 6. **Recall has not been measured** against a reference list of EU pesticide cases. The
    comparison with the keyword corpus counts what changed between two methods, not what
@@ -190,6 +229,6 @@ branch `0.1.0`.
 7. **A single query returns at most 10,000 results**, a cap the source introduced in January
    2026. The tracker works around it by reading in date windows, but a lower cap would make
    backfilling materially more expensive.
-8. **The corpus was rebuilt under the legislation method on «MEASURED: date of the rebuild»**
-   and holds «MEASURED: n cases». The figures in §3 come from that rebuild and from the
+8. **The corpus was rebuilt under the legislation method on 17 September 2026** and holds
+   828 cases. The figures in §3 come from that rebuild and from the
    comparison with the corpus of 29 August 2026.

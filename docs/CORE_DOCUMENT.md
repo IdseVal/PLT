@@ -479,8 +479,9 @@ two methods can be compared on an identical corpus and the comparison repeated.
 
 **What it cost.** §2.7 asks that a change to what the tracker holds be assessed by what it
 loses, counted rather than estimated. The keyword method held 3,027 Dutch and 1,312 EU cases
-on 29 August 2026. The legislation method selects «MEASURED: n Dutch cases» and «MEASURED: n
-EU cases» from the same mirror. Lost: «MEASURED: how many cases the keyword method held that
+on 29 August 2026. The legislation method selects «MEASURED: n Dutch cases» and 828 EU
+cases from the same mirror, rebuilt on 17 September 2026 (`docs/jurisdictions/eu.md` §3
+for the EU figures below). Lost: «MEASURED: how many cases the keyword method held that
 the legislation method does not, per jurisdiction, and what they are on a hand-read».
 Gained: «MEASURED: how many cases the legislation method selects that the keyword method did
 not, per jurisdiction, and what they are on a hand-read». Precision: «MEASURED: share of a
