@@ -32,14 +32,15 @@ from plt.pipeline.base import (
 #: The instant the fake source's first document was modified.
 EPOCH = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
 
-#: Text that reaches ``min_score`` against the shipped Dutch list on its own: a weight-3
-#: term at the full-text multiplier of 1.0.
+#: Text that names an instrument on the shipped Dutch legislation list, so the filter
+#: chain selects it on its own.
 PESTICIDE_TEXT = (
-    "De rechtbank overweegt dat de toelating van gewasbeschermingsmiddelen door het Ctgb "
-    "in geschil is en dat eiser onvoldoende heeft onderbouwd dat sprake is van schade."
+    "De rechtbank overweegt dat de toelating op grond van de Wet gewasbeschermingsmiddelen "
+    "en biociden in geschil is en dat eiser onvoldoende heeft onderbouwd dat sprake is van "
+    "schade."
 )
 
-#: Text with nothing a curated list looks for, so the filter chain rejects it.
+#: Text naming nothing on the legislation list, so the filter chain rejects it.
 UNRELATED_TEXT = (
     "Het geschil betreft de uitleg van een huurovereenkomst voor bedrijfsruimte en de "
     "vraag of de opzegtermijn in acht is genomen."

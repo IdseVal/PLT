@@ -10,7 +10,7 @@ a checkpoint is written so an interrupted run resumes instead of restarting.
 Onboarding a jurisdiction is two files and no edits anywhere else: a
 :class:`~plt.pipeline.base.SourceConnector` subclass under
 :mod:`plt.pipeline.connectors` — discovered automatically by
-:mod:`plt.pipeline.registry` — and a keyword list under ``data/keywords/``::
+:mod:`plt.pipeline.registry` — and a legislation list under ``data/legislation/``::
 
     from plt.pipeline import Candidate, NormalisedCase, PoliteClient, RawDocument
     from plt.pipeline import SourceConnector
@@ -46,7 +46,7 @@ from plt.pipeline.base import (
 )
 from plt.pipeline.checkpoint import Checkpoint, read_checkpoint, write_checkpoint
 from plt.pipeline.dedup import DedupAction, DedupDecision, content_hash
-from plt.pipeline.filters import Filter, FilterChain, FilterResult, KeywordFilter, TermMatch
+from plt.pipeline.filters import Filter, FilterChain, FilterResult, LegislationFilter, TermMatch
 from plt.pipeline.http import PoliteClient
 from plt.pipeline.registry import available_jurisdictions, connector_for, register_connector
 from plt.pipeline.report import MatchReport
@@ -65,7 +65,7 @@ __all__ = [
     "FilterResult",
     "IngestCounters",
     "IngestReport",
-    "KeywordFilter",
+    "LegislationFilter",
     "MatchReport",
     "NormalisedCase",
     "NormalisedCitation",

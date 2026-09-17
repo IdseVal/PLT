@@ -42,7 +42,7 @@ REQUIRED_PATHS: tuple[str, ...] = (
     "backend/plt/pipeline/checkpoint.py",
     "backend/plt/pipeline/dedup.py",
     "backend/plt/pipeline/filters/base.py",
-    "backend/plt/pipeline/filters/keywords.py",
+    "backend/plt/pipeline/filters/legislation.py",
     "backend/plt/pipeline/connectors/rechtspraak.py",
     "backend/plt/pipeline/connectors/eurlex.py",
     "backend/plt/cli.py",
@@ -63,7 +63,7 @@ REQUIRED_PATHS: tuple[str, ...] = (
     "frontend/src/types",
     "frontend/src/styles",
     "frontend/tests",
-    "data/keywords/schema.json",
+    "data/legislation/schema.json",
     "docs/architecture.md",
     ".github/workflows/ci.yml",
     ".github/workflows/weekly-ingest.yml",
@@ -97,7 +97,7 @@ REQUIRED_MODULES: tuple[str, ...] = (
     "plt.pipeline.connectors.rechtspraak",
     "plt.pipeline.filters",
     "plt.pipeline.filters.base",
-    "plt.pipeline.filters.keywords",
+    "plt.pipeline.filters.legislation",
     "plt.utils",
     "plt.utils.logging",
 )
@@ -128,19 +128,17 @@ def test_env_example_documents_every_setting() -> None:
         name
         for name in Settings.model_fields
         if f"PLT_{name.upper()}" not in documented
-        # data_dir and keywords_dir are documented as commented-out overrides.
+        # data_dir and legislation_dir are documented as commented-out overrides.
     ]
 
     assert undocumented == [], f".env.example is missing: {undocumented}"
 
 
-def test_committed_keyword_lists_cover_the_launch_jurisdictions() -> None:
-    keywords = REPO_ROOT / "data" / "keywords"
+def test_committed_legislation_lists_cover_the_launch_jurisdictions() -> None:
+    legislation = REPO_ROOT / "data" / "legislation"
 
-    assert sorted(path.name for path in Path(keywords).glob("*.json")) == [
+    assert sorted(path.name for path in Path(legislation).glob("*.json")) == [
         "eu.json",
-        "excluded_eu.json",
-        "excluded_nl.json",
         "nl.json",
         "schema.json",
     ]
