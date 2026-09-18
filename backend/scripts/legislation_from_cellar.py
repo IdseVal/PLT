@@ -541,6 +541,7 @@ def rewrite_list(path: Path, cache: Path, *, refresh: bool) -> None:
     languages = [code for code in document["languages"] if code in LANGUAGE_URI]
     list_language = languages[0]
     curated = [entry for entry in document["terms"] if "derived_from" not in entry]
+    previous = [entry for entry in document["terms"] if "derived_from" in entry]
     acts = collect(languages, cache, refresh=refresh)
     generated = generate_entries(
         acts,
@@ -550,10 +551,18 @@ def rewrite_list(path: Path, cache: Path, *, refresh: bool) -> None:
     )
     document["terms"] = [*curated, *generated]
     sources = [s for s in document.get("sources", []) if s.get("name") != "CELLAR"]
+    recorded = next((s for s in document.get("sources", []) if s.get("name") == "CELLAR"), None)
+    # The date is when the generated part last changed, not when the script last ran: every
+    # run records the digest of this file, and a date that moved on a rerun that changed no
+    # entry would change the digest for no difference in content.
+    if generated == previous and recorded is not None and recorded.get("retrieved"):
+        retrieved = str(recorded["retrieved"])
+    else:
+        retrieved = datetime.now(tz=UTC).date().isoformat()
     sources.append(
         {
             "name": "CELLAR",
-            "retrieved": datetime.now(tz=UTC).date().isoformat(),
+            "retrieved": retrieved,
             "description": (
                 "Every act CELLAR records as based on, amending or correcting "
                 + ", ".join(BASE_INSTRUMENTS)
