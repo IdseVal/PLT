@@ -64,7 +64,7 @@ export const methodologyPage: StaticPageContent = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'A judgment is included when at least one instrument from that jurisdiction’s legislation list is named in its title, abstract, subject fields or full text — by its number, in any of the forms the Official Journal and the courts use, or by its title or customary short name. Applied to the corpus above, this criterion currently includes «NL» Dutch cases and «EU» EU cases — «TOTAL» in total.',
+          text: 'A judgment is included when at least one instrument from that jurisdiction’s legislation list is named in its title, abstract, subject fields or full text — by its number, in any of the forms the Official Journal and the courts use, or by its title or customary short name. Applied to the corpus above, this criterion currently includes 624 Dutch cases and 828 EU cases — 1,452 in total.',
         },
         {
           kind: 'paragraph',

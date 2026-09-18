@@ -479,13 +479,32 @@ two methods can be compared on an identical corpus and the comparison repeated.
 
 **What it cost.** §2.7 asks that a change to what the tracker holds be assessed by what it
 loses, counted rather than estimated. The keyword method held 3,027 Dutch and 1,312 EU cases
-on 29 August 2026. The legislation method selects «MEASURED: n Dutch cases» and 828 EU
-cases from the same mirror, rebuilt on 17 September 2026 (`docs/jurisdictions/eu.md` §3
-for the EU figures below). Lost: «MEASURED: how many cases the keyword method held that
-the legislation method does not, per jurisdiction, and what they are on a hand-read».
-Gained: «MEASURED: how many cases the legislation method selects that the keyword method did
-not, per jurisdiction, and what they are on a hand-read». Precision: «MEASURED: share of a
-hand-read sample of the new corpus that is pesticide litigation, per jurisdiction».
+on 29 August 2026. The legislation method selects 624 Dutch and 828 EU cases from the same
+mirror, rebuilt on 17 September 2026; the keyword method, rebuilt the same day, reproduced
+its 3,027 and 1,312 exactly. The two methods agree on 546 Dutch and 742 EU cases.
+
+*Lost.* 2,481 Dutch and 570 EU cases the keyword method held are not selected. On a reading
+of forty of each from titles, labels and matched passages (`docs/jurisdictions/nl.md` and
+`eu.md` §3), about two in five of the Dutch and one in four of the EU losses are pesticide
+litigation that never names the legislation — above all the Raad van State's spray-zone
+planning appeals, decided under planning law — and the rest are the incidental mentions
+the keyword lists were known to admit: toxicology reports, trade mark classes, cartel and
+customs cases. The order of magnitude of pesticide litigation given up is a thousand Dutch
+and a hundred and fifty EU cases, and each jurisdiction document records it as the
+method's first limit.
+
+*Gained.* 78 Dutch and 86 EU cases the keyword method did not hold. About nine and ten of
+them respectively are pesticide cases the keyword lists missed; the rest were admitted by
+citations mis-typed in the judgments themselves — the Temporary Protection Directive written
+as *Richtlijn 2011/55/EG*, the trade mark regulation as *Regulation (EU) 2017/2001* — that
+land on the number of a Commission act made under 91/414/EEC or 528/2012. A text method
+cannot see past a typo in its source, and whether the Commission directives made under
+91/414/EEC stay on the lists is a curation decision for the content manager.
+
+*Precision.* On forty random cases per jurisdiction, 35 of 40 Dutch and 36 of 40 EU cases
+are pesticide or biocide litigation; the remainder are the mis-typed citations above. The
+readings were made by the project's assistant from titles and passages, not by a lawyer
+from the judgments, and stand until the Law group's own reading replaces them.
 
 ---
 

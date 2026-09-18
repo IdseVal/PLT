@@ -6,7 +6,7 @@
 | **Courts covered** | Every court publishing through the Raad voor de rechtspraak, at all instances |
 | **Source** | Rechtspraak open data portal, `data.rechtspraak.nl` |
 | **Legislation list** | `data/legislation/nl.json`, which records its own version |
-| **Status** | Corpus rebuilt under the legislation method, «MEASURED: n cases» |
+| **Status** | Corpus rebuilt under the legislation method on 17 September 2026: 624 cases |
 | **Source last checked** | 4 August 2026 |
 | **Last reviewed** | 17 September 2026 |
 
@@ -128,14 +128,54 @@ statute's name is matched inside longer words: *Bestrijdingsmiddelenwet* inside
 *Bestrijdingsmiddelenwetgeving*. The customary abbreviations — *Wgb*, *Bgb*, *Rgb*, *Bmb* —
 are matched with their casing, so that the same letters in another sense are not the statute.
 
-**What a test run measured.** «MEASURED: which store or period the legislation list was run
-over, how many Dutch decisions were read and how many were selected». «MEASURED: how many of
-a hand-read sample were pesticide cases, and which instruments selected the ones that were
-not». «MEASURED: which cases the keyword method (branch 0.1.0, 3,027 Dutch cases on 29
-August 2026) held that this list does not, and which it adds, on a hand-read». Recall cannot
-be measured from a run alone — there is no reference list of Dutch pesticide judgments to
-check against — but the shape of what is missed is known: a case that names none of the
-listed instruments (§5).
+**What the rebuild measured.** On 17 September 2026 the list was run over the whole mirror:
+945,823 documents, decisions from 1994 to 8 August 2026, of which 624 named an instrument
+on the list — one in 1,500. The Wet gewasbeschermingsmiddelen en biociden selected 249 of
+them and its abbreviation *Wgb* 156, the Bestrijdingsmiddelenwet 1962 206, Verordening (EG)
+nr. 1107/2009 205, Richtlijn 91/414/EEG 142, Verordening (EU) nr. 528/2012 76, the Regeling
+toelating bestrijdingsmiddelen 1995 55 and the Besluit milieutoelatingseisen
+bestrijdingsmiddelen 42 with its abbreviation 39. The College van Beroep voor het
+bedrijfsleven, which hears the authorisation appeals, supplies most of the corpus.
+
+The keyword method (branch `0.1.0`), run over the same mirror the same day, selected 3,027
+— exactly the corpus published on 29 August 2026, which is what reproducibility from the
+mirror means in practice. The two methods agree on 546 cases. The keyword method held 2,481
+that this list does not select, and this list selects 78 the keyword method did not.
+
+*What was lost.* The 2,481 were selected by the words *bestrijdingsmiddel* (1,086 of them),
+*gewasbeschermingsmiddel* (695), *spuitzone* (223), *bespuiting* (192), *pesticide* (112),
+*biocide* (97), *teeltvrije zone* (96), *maximale residulimiet* (88), *insecticide* (85) and
+*herbicide* (80), and by substance names. Forty were read from their titles, labels and
+matched passages. About three in five are not pesticide litigation: a criminal judgment
+whose toxicology report rules pesticides out, a substance name that is also a tax, customs
+or chemical-industry matter (*chroomtrioxide*, *natriumhypochloriet*, *wijnsteenzuur*,
+*ethyleenoxide*), a tenancy or employment dispute in which spraying is mentioned once.
+About two in five are pesticide litigation that never names the legislation, and these are
+the real cost: the Raad van State's planning appeals about *spuitzones* between orchards and
+homes, which are decided under planning law and cite no pesticide instrument; enforcement
+under the Wet op de economische delicten charged without naming the Wgb; and civil disputes
+about spray drift decided in nuisance. On the sample that is of the order of 1,000 cases,
+and §5 records it as the method's first limit.
+
+*What was gained.* Of the 78, nine are pesticide cases the keyword lists had missed,
+selected on the abbreviations *Bmb* and *Bgb* of the Besluit milieutoelatingseisen
+bestrijdingsmiddelen and the Besluit gewasbeschermingsmiddelen en biociden. The rest are
+errors in the judgments themselves that a text method cannot see past: twenty-four
+temporary-protection judgments of the Rechtbank Den Haag that write the Temporary Protection
+Directive 2001/55/EG as *Richtlijn 2011/55/EG*, the number of a Commission directive that
+included a substance in Annex I to 91/414/EEG; eleven that write the Return Directive
+2008/115/EG as *richtlijn 2008/15*; eight that write the Working Time Directive 2003/88/EG
+as *2003/84*. Every one of those numbers is a Commission directive made under 91/414/EEG,
+and the Dutch courts almost never cite those directives themselves; whether they stay on the
+list is a curation decision the Law group can take on this evidence.
+
+*Precision.* Forty cases were drawn at random from the 624 and read from their titles and
+matched passages: 35 are pesticide or biocide litigation, five were admitted by a
+mis-typed citation of the kind above. That reading was made by the project's assistant from
+titles and passages, not by a lawyer from the judgments; the Law group's own reading
+replaces it when made. Recall cannot be measured from a run alone — there is no reference
+list of Dutch pesticide judgments to check against — but the shape of what is missed is
+known: a case that names none of the listed instruments (§5).
 
 ---
 
@@ -175,20 +215,26 @@ those words is on a legislation list. They are preserved on branch `0.1.0`.
 3. **A pesticide case that never names the legislation is missed.** A spray-drift dispute
    decided in nuisance or planning law, or a prosecution charged under the Wet op de
    economische delicten alone, can be about pesticides without citing the Wgb, and the
-   tracker does not hold it. How many there are: «MEASURED: count and character of the
-   cases the 0.1.0 corpus held that the legislation list does not select».
+   tracker does not hold it. The comparison with the keyword corpus puts a floor under the
+   number: of the 2,481 cases that corpus held and this one does not, about two in five are
+   pesticide litigation on a reading of a sample (§3) — of the order of 1,000 cases, most
+   of them the Raad van State's spray-zone planning appeals and enforcement charged under
+   the Wet op de economische delicten. A researcher working on spray zones should not rely
+   on this jurisdiction's holdings.
 4. **Recall has never been measured against a reference list.** There is no list of Dutch
    pesticide judgments for any period to check the tracker against. The comparison with the
    keyword corpus counts what changed between two methods, not what either missed.
-5. **Precision is «MEASURED: share of a hand-read sample that is pesticide litigation».** A
-   wrong case is corrected by taking an instrument off the list, with the reason recorded,
-   not by a threshold.
+5. **Precision is about seven in eight** on a reading of forty random cases (§3). The wrong
+   cases have one cause: a citation mis-typed in the judgment that lands on the number of a
+   Commission directive made under 91/414/EEG — forty-three cases in the corpus, most of
+   them asylum and immigration judgments. A wrong case is corrected by taking an instrument
+   off the list, with the reason recorded, not by a threshold.
 6. **Caribbean cases cannot yet be filtered out by a user.** They are identifiable in the
    stored data, but no search filter exposes the distinction, so a researcher receives
    judgments to which EU pesticide law does not apply without being able to separate them.
 7. **The list carries Dutch and English names only.** A Frisian-language judgment would
    match on an instrument number, which is the same in any language, but not on a statute
    written out in Frisian. Whether the corpus contains any has not been investigated.
-8. **The corpus was rebuilt under the legislation method on «MEASURED: date of the rebuild»**
-   and holds «MEASURED: n cases». The figures in §3 come from that rebuild and from the
+8. **The corpus was rebuilt under the legislation method on 17 September 2026** and holds
+   624 cases. The figures in §3 come from that rebuild and from the
    comparison with the corpus of 29 August 2026.
