@@ -126,9 +126,11 @@ judgment in any of those families names the instrument it applies.
 instrument carries both forms, and a number matches in either. Dutch builds compounds, so a
 statute's name is matched inside longer words: *Bestrijdingsmiddelenwet* inside
 *Bestrijdingsmiddelenwetgeving*. The customary abbreviations — *Wgb*, *Bgb*, *Rgb*, *Bmb* —
-are matched in the two casings courts write them in, *Wgb* and *WGB*, and not in lowercase,
-so that the same letters in another sense are not the statute. The first full run found 49
-judgments writing *WGB* that mixed case alone had missed; list 1.1.0 carries both.
+are matched in mixed case only, because the same letters in capitals are something else:
+*WGB* is the Wet Gelijke Behandeling, *BGB* the German Bürgerliches Gesetzbuch, *BMB* a
+medical assessment bureau. List 1.1.0 admitted the capitals on the observation that the
+keyword method had selected 49 judgments on *WGB*; the rebuild under it selected 1,147 cases
+instead of 624, and list 1.2.0 reverted it. The 49 were the keyword method's own errors.
 
 **What the rebuild measured.** On 17 September 2026 the list was run over the whole mirror:
 945,823 documents, decisions from 1994 to 8 August 2026, of which 624 named an instrument

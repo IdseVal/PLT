@@ -71,11 +71,12 @@ documents): every statute reference the portal records, and every mention of a *
 *besluit* or *regeling* whose title names bestrijdingsmiddelen, gewasbeschermingsmiddelen
 or biociden. The Wet gewasbeschermingsmiddelen en biociden and the Bestrijdingsmiddelenwet
 1962 account for most of it; the decrees and regulations made under them are the rest. The
-customary abbreviations — `Wgb`, `Bgb`, `Rgb`, `Bmb`, and their all-capitals renderings —
-are carried as case-sensitive expressions in terms of their own, because a mixed-case
-literal cannot satisfy the acronym-only rule and a lowercase rendering is not the statute.
-Measure before deciding a casing is unwritten: the first full run missed 49 judgments that
-write `WGB`.
+customary abbreviations — `Wgb`, `Bgb`, `Rgb`, `Bmb` — are carried as case-sensitive
+expressions in terms of their own, in mixed case only, because a mixed-case literal cannot
+satisfy the acronym-only rule and the other casings are other things: `WGB` is the Wet
+Gelijke Behandeling, `BGB` the German Bürgerliches Gesetzbuch, `BMB` a medical assessment
+bureau, `RGB` a colour space. List 1.1.0 admitted the capitals and selected 523 wrong cases
+before 1.2.0 took them out; measure a casing over the mirror before carrying it.
 
 **Everything made under the Union base instruments is generated, not typed.** CELLAR
 records which acts are *based on*, *amend* or *correct* each instrument, and

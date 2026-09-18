@@ -437,11 +437,12 @@ def test_the_dutch_statute_selects_alone(nl_stage: LegislationFilter) -> None:
     assert matched(result) == {"nl-wgb"}
 
 
-def test_the_acronym_selects_in_its_written_casings_only(nl_stage: LegislationFilter) -> None:
-    """Courts write Wgb and, forty-nine times in the mirror, WGB; nothing writes wgb."""
+def test_the_acronym_selects_in_its_own_casing_only(nl_stage: LegislationFilter) -> None:
+    """WGB is the Wet Gelijke Behandeling and BGB the German civil code; measured, not assumed."""
     assert matched(nl_stage.evaluate(Doc(full_text="artikel 20 van de Wgb"))) == {"nl-wgb-acronym"}
-    assert matched(nl_stage.evaluate(Doc(full_text="de WGB"))) == {"nl-wgb-acronym"}
+    assert matched(nl_stage.evaluate(Doc(full_text="de WGB"))) == set()
     assert matched(nl_stage.evaluate(Doc(full_text="de wgb"))) == set()
+    assert matched(nl_stage.evaluate(Doc(full_text="paragraaf 623 van het BGB"))) == set()
 
 
 def test_the_union_regulation_selects_a_dutch_case_by_its_number(
