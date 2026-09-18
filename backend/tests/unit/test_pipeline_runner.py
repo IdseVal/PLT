@@ -41,7 +41,7 @@ from plt.pipeline.checkpoint import read_checkpoint
 from plt.pipeline.filters.base import FilterChain
 from plt.pipeline.filters.legislation import LegislationListNotFoundError
 from plt.pipeline.runner import IngestReport, run_jurisdiction
-from tests.conftest import build_settings
+from tests.conftest import REPO_ROOT, build_settings
 from tests.fakes import (
     EPOCH,
     UNRELATED_TEXT,
@@ -594,7 +594,10 @@ def test_a_dry_run_reports_which_cases_passed_and_on_which_terms(
     assert "nl-wgb" in {term["term_id"] for term in passed["terms"]}
     assert "Wet gewasbeschermingsmiddelen en biociden" in {term["term"] for term in passed["terms"]}
     assert "national_act" in {term["category"] for term in passed["terms"]}
-    assert header["list_version"] == "1.0.0"
+    # Read off the shipped list rather than pinned: the list is curated data, and its version
+    # moves whenever the content manager changes what is selected.
+    shipped = json.loads((REPO_ROOT / "data" / "legislation" / "nl.json").read_text("utf-8"))
+    assert header["list_version"] == shipped["list_version"]
     assert len(header["list_digest"]) == 64
     assert entries[2]["action"] == "reject"
 
