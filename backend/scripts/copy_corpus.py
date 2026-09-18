@@ -68,6 +68,11 @@ COPIED: Final[tuple[type[Base], ...]] = (
 #: seeded by migration - and which are therefore replaced rather than required empty.
 PRESEEDED: Final[frozenset[str]] = frozenset({"jurisdiction"})
 
+#: Tables whose rows are appended rather than replaced, without their ids: the run rows are
+#: the target's operational history as much as the source's, so the target keeps its own
+#: and gains the source's, renumbered.
+APPENDED: Final[frozenset[str]] = frozenset({"ingest_run"})
+
 #: Rows fetched and inserted per round trip. Full texts are large; a thousand is a few
 #: megabytes.
 BATCH: Final[int] = 1000
@@ -100,23 +105,30 @@ def copy(source: Engine, target: Engine, *, replace: bool) -> None:
             occupied = [
                 table.name
                 for table in tables
-                if table.name not in PRESEEDED and _count(writing, table)
+                if table.name not in PRESEEDED | APPENDED and _count(writing, table)
             ]
             if occupied:
                 log.error("target already holds rows in %s; pass --replace", ", ".join(occupied))
                 raise SystemExit(2)
         for table in reversed(tables):
+            if table.name in APPENDED:
+                continue
             if replace or table.name in PRESEEDED:
                 writing.execute(sa.delete(table))
         for table in tables:
             total = _count(reading, table)
             copied = 0
+            appended = table.name in APPENDED
             result = reading.execution_options(stream_results=True).execute(sa.select(table))
             while True:
                 rows = result.fetchmany(BATCH)
                 if not rows:
                     break
-                writing.execute(sa.insert(table), [dict(row._mapping) for row in rows])
+                values = [dict(row._mapping) for row in rows]
+                if appended:
+                    for value in values:
+                        value.pop("id", None)
+                writing.execute(sa.insert(table), values)
                 copied += len(rows)
             log.info("%s: %d of %d rows copied", table.name, copied, total)
         if target.dialect.name == "postgresql":
