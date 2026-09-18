@@ -2,14 +2,14 @@
   "schema_version": "1.0.0",
   "jurisdiction": "NL",
   "jurisdiction_name": "Netherlands",
-  "list_version": "1.0.0",
+  "list_version": "1.1.0",
   "updated": "2026-09-17",
   "maintainer": "PLT content manager (Law group, WUR)",
   "languages": [
     "nl",
     "en"
   ],
-  "notes": "Legislation list for the Rechtspraak.nl connector. A case is selected when any instrument on this list is named in it. The Dutch national instruments were taken from what Dutch courts actually cite: every statute reference and every 'wet/besluit/regeling ... bestrijdingsmiddel, gewasbeschermingsmiddel, biocide' mention across the whole Rechtspraak mirror (945,823 documents, September 2026). The Union instruments are carried in their Dutch citation forms with their English forms as aliases, because Dutch judgments quote both; every entry carrying 'derived_from' is an act enumerated from CELLAR by backend/scripts/legislation_from_cellar.py. Revision 1.0.0: first legislation list, replacing keyword list 2.5.0 (core document 2.14).",
+  "notes": "Legislation list for the Rechtspraak.nl connector. A case is selected when any instrument on this list is named in it. The Dutch national instruments were taken from what Dutch courts actually cite: every statute reference and every 'wet/besluit/regeling ... bestrijdingsmiddel, gewasbeschermingsmiddel, biocide' mention across the whole Rechtspraak mirror (945,823 documents, September 2026). The Union instruments are carried in their Dutch citation forms with their English forms as aliases, because Dutch judgments quote both; every entry carrying 'derived_from' is an act enumerated from CELLAR by backend/scripts/legislation_from_cellar.py. Revision 1.0.0: first legislation list, replacing keyword list 2.5.0 (core document 2.14). Revision 1.1.0: the abbreviations Wgb, Bgb, Rgb and Bmb also match in capitals. The first full run showed 49 judgments writing WGB that the mixed-case expression alone had missed; adding a rendering can raise selection, so this is a minor bump.",
   "fields": [
     "title",
     "abstract",
@@ -189,13 +189,13 @@
     },
     {
       "id": "nl-wgb-acronym",
-      "term": "(?<!\\w)Wgb(?!\\w)",
+      "term": "(?<!\\w)(?:Wgb|WGB)(?!\\w)",
       "label": "Wgb",
       "lang": "nl",
       "category": "national_act",
       "match": "regex",
       "case_sensitive": true,
-      "note": "The customary abbreviation of Wet gewasbeschermingsmiddelen en biociden, matched as a case-sensitive expression: the acronym-only rule cannot admit a mixed-case literal, and an all-lowercase or all-capitals rendering is a different abbreviation."
+      "note": "The customary abbreviation of Wet gewasbeschermingsmiddelen en biociden, in its mixed-case and its all-capitals rendering, matched as a case-sensitive expression: the acronym-only rule cannot admit a mixed-case literal, and the lowercase rendering is not carried. Measured over the mirror in September 2026, 49 judgments write WGB and 6 wgb."
     },
     {
       "id": "nl-bgb",
@@ -210,13 +210,13 @@
     },
     {
       "id": "nl-bgb-acronym",
-      "term": "(?<!\\w)Bgb(?!\\w)",
+      "term": "(?<!\\w)(?:Bgb|BGB)(?!\\w)",
       "label": "Bgb",
       "lang": "nl",
       "category": "national_decree",
       "match": "regex",
       "case_sensitive": true,
-      "note": "The customary abbreviation of Besluit gewasbeschermingsmiddelen en biociden, matched as a case-sensitive expression: the acronym-only rule cannot admit a mixed-case literal, and an all-lowercase or all-capitals rendering is a different abbreviation."
+      "note": "The customary abbreviation of Besluit gewasbeschermingsmiddelen en biociden, in its mixed-case and its all-capitals rendering, matched as a case-sensitive expression: the acronym-only rule cannot admit a mixed-case literal, and the lowercase rendering is not carried. Measured over the mirror in September 2026, 49 judgments write WGB and 6 wgb."
     },
     {
       "id": "nl-rgb",
@@ -230,13 +230,13 @@
     },
     {
       "id": "nl-rgb-acronym",
-      "term": "(?<!\\w)Rgb(?!\\w)",
+      "term": "(?<!\\w)(?:Rgb|RGB)(?!\\w)",
       "label": "Rgb",
       "lang": "nl",
       "category": "national_ministerial_regulation",
       "match": "regex",
       "case_sensitive": true,
-      "note": "The customary abbreviation of Regeling gewasbeschermingsmiddelen en biociden, matched as a case-sensitive expression: the acronym-only rule cannot admit a mixed-case literal, and an all-lowercase or all-capitals rendering is a different abbreviation."
+      "note": "The customary abbreviation of Regeling gewasbeschermingsmiddelen en biociden, in its mixed-case and its all-capitals rendering, matched as a case-sensitive expression: the acronym-only rule cannot admit a mixed-case literal, and the lowercase rendering is not carried. Measured over the mirror in September 2026, 49 judgments write WGB and 6 wgb."
     },
     {
       "id": "nl-bmw-1962",
@@ -287,13 +287,13 @@
     },
     {
       "id": "nl-bmb-acronym",
-      "term": "(?<!\\w)Bmb(?!\\w)",
+      "term": "(?<!\\w)(?:Bmb|BMB)(?!\\w)",
       "label": "Bmb",
       "lang": "nl",
       "category": "national_decree",
       "match": "regex",
       "case_sensitive": true,
-      "note": "The customary abbreviation of Besluit milieutoelatingseisen bestrijdingsmiddelen, matched as a case-sensitive expression: the acronym-only rule cannot admit a mixed-case literal, and an all-lowercase or all-capitals rendering is a different abbreviation."
+      "note": "The customary abbreviation of Besluit milieutoelatingseisen bestrijdingsmiddelen, in its mixed-case and its all-capitals rendering, matched as a case-sensitive expression: the acronym-only rule cannot admit a mixed-case literal, and the lowercase rendering is not carried. Measured over the mirror in September 2026, 49 judgments write WGB and 6 wgb."
     },
     {
       "id": "nl-rumb-2000",
@@ -47021,7 +47021,7 @@
   "sources": [
     {
       "name": "CELLAR",
-      "retrieved": "2026-09-17",
+      "retrieved": "2026-09-18",
       "description": "Every act CELLAR records as based on, amending or correcting 31991L0414, 32009R1107, 32011R0540, 32005R0396, 31998L0008, 32012R0528, 32009L0128, 32009R1185, enumerated by scripts/legislation_from_cellar.py; legislation types only."
     }
   ]

@@ -65705,7 +65705,7 @@
   "sources": [
     {
       "name": "CELLAR",
-      "retrieved": "2026-09-17",
+      "retrieved": "2026-09-18",
       "description": "Every act CELLAR records as based on, amending or correcting 31991L0414, 32009R1107, 32011R0540, 32005R0396, 31998L0008, 32012R0528, 32009L0128, 32009R1185, enumerated by scripts/legislation_from_cellar.py; legislation types only."
     }
   ]
