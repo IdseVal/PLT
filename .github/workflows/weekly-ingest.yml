@@ -7,7 +7,7 @@ name: Weekly ingest
 # `plt ingest`, the same command a server cron calls (CONTRIBUTING.md section 5). Nothing
 # here knows how to fetch, filter or store a case, and nothing here names a jurisdiction —
 # the matrix is built from the connector registry, so onboarding a jurisdiction stays one
-# connector plus one keyword list.
+# connector plus one legislation list.
 #
 # Three properties are requirements rather than incidental:
 #

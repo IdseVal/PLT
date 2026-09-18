@@ -1,10 +1,10 @@
 """Pluggable filter chain applied to normalised candidates.
 
-Stage 1 is the keyword matcher in :mod:`plt.pipeline.filters.keywords`. Later stages
+Stage 1 is the legislation matcher in :mod:`plt.pipeline.filters.legislation`. Later stages
 (classifier models, citation-based filters, manual review queues) plug in behind the same
 ABC without touching the connectors (``docs/CORE_DOCUMENT.md`` section 2.5)::
 
-    chain = FilterChain.of(KeywordFilter.for_jurisdiction("NL"))
+    chain = FilterChain.of(LegislationFilter.for_jurisdiction("NL"))
     result = chain.evaluate(case)
 """
 
@@ -17,15 +17,15 @@ from plt.pipeline.filters.base import (
     FilterResult,
     TermMatch,
 )
-from plt.pipeline.filters.keywords import (
-    KeywordFilter,
-    KeywordList,
-    KeywordListError,
-    KeywordListNotFoundError,
-    KeywordListValidationError,
-    KeywordTerm,
-    load_keyword_list,
-    load_keyword_list_for,
+from plt.pipeline.filters.legislation import (
+    Instrument,
+    LegislationFilter,
+    LegislationList,
+    LegislationListError,
+    LegislationListNotFoundError,
+    LegislationListValidationError,
+    load_legislation_list,
+    load_legislation_list_for,
 )
 
 __all__ = [
@@ -33,13 +33,13 @@ __all__ = [
     "FilterChain",
     "FilterResult",
     "FilterableDocument",
-    "KeywordFilter",
-    "KeywordList",
-    "KeywordListError",
-    "KeywordListNotFoundError",
-    "KeywordListValidationError",
-    "KeywordTerm",
+    "Instrument",
+    "LegislationFilter",
+    "LegislationList",
+    "LegislationListError",
+    "LegislationListNotFoundError",
+    "LegislationListValidationError",
     "TermMatch",
-    "load_keyword_list",
-    "load_keyword_list_for",
+    "load_legislation_list",
+    "load_legislation_list_for",
 ]

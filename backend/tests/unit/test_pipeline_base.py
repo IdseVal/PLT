@@ -25,7 +25,7 @@ from plt.pipeline.base import (
     SourceConnector,
 )
 from plt.pipeline.filters.base import FilterableDocument
-from plt.pipeline.filters.keywords import KeywordFilter
+from plt.pipeline.filters.legislation import LegislationFilter
 from tests.conftest import build_settings
 from tests.fakes import PESTICIDE_TEXT, FakeConnector, FakeDocument
 
@@ -86,14 +86,16 @@ def test_full_text_joins_language_versions_with_the_case_language_first() -> Non
 
 def test_a_term_in_any_language_version_qualifies_the_case() -> None:
     """The EU publishes one judgment in many languages; the list covers several of them."""
-    stage = KeywordFilter.for_jurisdiction("EU", settings=build_settings())
+    stage = LegislationFilter.for_jurisdiction("EU", settings=build_settings())
     subject = case(
         jurisdiction_code="EU",
         source_id="62026CJ0001",
         language="en",
         documents=(
             NormalisedDocument(language="en", full_text="A dispute about lease agreements."),
-            NormalisedDocument(language="fr", full_text="Litige sur un produit phytosanitaire."),
+            NormalisedDocument(
+                language="fr", full_text="Litige relatif au règlement (CE) no 1107/2009."
+            ),
         ),
     )
 
@@ -104,9 +106,9 @@ def test_a_term_in_any_language_version_qualifies_the_case() -> None:
 
 
 def test_the_subject_field_is_scanned() -> None:
-    """``subject`` is the rechtsgebied for NL: on its own it selects the case."""
-    stage = KeywordFilter.for_jurisdiction("NL", settings=build_settings())
-    subject = case(subject="Gewasbeschermingsmiddelen en biociden")
+    """``subject`` is scanned like the text: an instrument named there selects the case."""
+    stage = LegislationFilter.for_jurisdiction("NL", settings=build_settings())
+    subject = case(subject="Wet gewasbeschermingsmiddelen en biociden")
 
     result = stage.evaluate(subject)
 
@@ -120,13 +122,17 @@ def test_the_eu_list_reads_the_subject_field_and_the_full_text_alike() -> None:
     The subject-matter heading used to be weighted above the prose; with the weighting gone,
     both select, and each match still names its own field.
     """
-    stage = KeywordFilter.for_jurisdiction("EU", settings=build_settings())
+    stage = LegislationFilter.for_jurisdiction("EU", settings=build_settings())
 
-    in_subject = stage.evaluate(case(jurisdiction_code="EU", subject="Pesticides"))
+    in_subject = stage.evaluate(
+        case(jurisdiction_code="EU", subject="Regulation (EC) No 1107/2009")
+    )
     in_text = stage.evaluate(
         case(
             jurisdiction_code="EU",
-            documents=(NormalisedDocument(language="en", full_text="Pesticides."),),
+            documents=(
+                NormalisedDocument(language="en", full_text="Regulation (EC) No 1107/2009."),
+            ),
         )
     )
 

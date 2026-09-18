@@ -2,7 +2,7 @@
 
 ``--dry-run`` runs the whole chain — discover, deduplicate, fetch, normalise, filter — and
 writes this instead of touching the database (``docs/architecture.md`` section 4). That makes
-it the tool for tuning a keyword list: a curator can widen a list, re-run the same window
+it the tool for tuning a legislation list: a curator can widen a list, re-run the same window
 against a real source, and read exactly which cases the change let in and on which terms,
 without a single row being written.
 
@@ -80,17 +80,30 @@ class MatchReport:
     an interrupted run leaves a complete file behind rather than a locked handle.
     """
 
-    def __init__(self, path: Path, *, jurisdiction_code: str, connector: str) -> None:
+    def __init__(
+        self,
+        path: Path,
+        *,
+        jurisdiction_code: str,
+        connector: str,
+        list_version: str | None = None,
+        list_digest: str | None = None,
+    ) -> None:
         """Prepare a report.
 
         Args:
             path: File to write. Parent directories are created on open.
             jurisdiction_code: Jurisdiction the run covers, recorded in the header line.
             connector: Connector name, recorded in the header line.
+            list_version: Version of the legislation list applied, recorded in the header
+                line so the report says which list it is evidence about.
+            list_digest: SHA-256 of that list's file, recorded beside it.
         """
         self._path = path
         self._jurisdiction_code = jurisdiction_code
         self._connector = connector
+        self._list_version = list_version
+        self._list_digest = list_digest
         self._handle: TextIO | None = None
         self._written = 0
 
@@ -117,6 +130,8 @@ class MatchReport:
                 "type": "run",
                 "jurisdiction": self._jurisdiction_code,
                 "connector": self._connector,
+                "list_version": self._list_version,
+                "list_digest": self._list_digest,
                 "started_at": utcnow().isoformat(),
             }
         )
@@ -167,7 +182,6 @@ class MatchReport:
                         "category": match.category,
                         "field": match.field,
                         "occurrences": match.occurrences,
-                        "gated": match.gated,
                         "matched_text": match.matched_text,
                         "snippet": match.snippet,
                     }

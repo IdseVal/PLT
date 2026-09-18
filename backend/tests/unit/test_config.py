@@ -153,20 +153,20 @@ def test_production_refuses_debug_mode() -> None:
         )
 
 
-def test_keyword_list_path_points_at_the_committed_lists() -> None:
+def test_legislation_list_path_points_at_the_committed_lists() -> None:
     settings = _settings()
 
-    path = settings.keyword_list_path("NL")
+    path = settings.legislation_list_path("NL")
 
-    assert path == settings.keywords_dir / "nl.json"
+    assert path == settings.legislation_dir / "nl.json"
     assert path.is_file(), "data/keywords/nl.json is committed and must be reachable"
-    assert settings.keyword_list_path("eu").is_file()
+    assert settings.legislation_list_path("eu").is_file()
 
 
 @pytest.mark.parametrize("code", ["../etc", "N", "NLD", "n1", ""])
-def test_keyword_list_path_rejects_anything_but_a_two_letter_code(code: str) -> None:
+def test_legislation_list_path_rejects_anything_but_a_two_letter_code(code: str) -> None:
     with pytest.raises(ValueError, match="two ASCII letters"):
-        _settings().keyword_list_path(code)
+        _settings().legislation_list_path(code)
 
 
 def test_user_agent_names_the_project_and_a_contact() -> None:

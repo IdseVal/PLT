@@ -6,7 +6,7 @@ Edwin Alblas, Idse Val & Vincent Latjes
 | | |
 | --- | --- |
 | Original version | 28 June 2026 (`Core document.pdf`) |
-| This version | 3 August 2026 |
+| This version | 17 September 2026 |
 | Status | **Living document.** This Markdown file supersedes the PDF. All updates go here. |
 
 ---
@@ -96,7 +96,7 @@ role is that of PLT users.
    management, and users. Fulfilled by a member of the Law chair group.
 3. **Content manager** — actively keeps track of added case law to verify eligibility
    according to set criteria and guarantee metadata is processed correctly. Fulfilled by a
-   member of the Law chair group. **This role owns the keyword lists described in §2.5.**
+   member of the Law chair group. **This role owns the legislation lists described in §2.5.**
 4. **User** — end-users of the PLT.
 
 ### 2.4 Potential future features
@@ -108,43 +108,52 @@ role is that of PLT users.
 5. FAQ.
 6. Visualisation of data insights.
 
-### 2.5 Linguistic filtering and per-jurisdiction keyword lists
+### 2.5 Selection by legislation and per-jurisdiction legislation lists
 
-> *Added 3 August 2026. This section records a structural constraint on the data pipeline.*
+> *Added 3 August 2026 as "Linguistic filtering and per-jurisdiction keyword lists". Amended
+> 17 September 2026: selection now matches the names of pesticide legislation (§2.14). This
+> section records a structural constraint on the data pipeline.*
 
-None of the source endpoints offer a reliable topical filter for "pesticides". Case law
-must therefore be selected by **filtering on language**: candidate documents are fetched
-from a jurisdiction's endpoint and matched against a curated list of terms that occur in
-pesticide litigation in that jurisdiction (for the Netherlands, e.g. `lelieteelt`,
-`pesticiden`, `gewasbeschermingsmiddelen`).
+None of the source endpoints offer a topical filter for "pesticides". Case law is therefore
+selected **client-side, on the text**: candidate documents are fetched from a jurisdiction's
+endpoint and searched for the names of the pesticide laws on that jurisdiction's
+**legislation list** — for the Netherlands, the `Wet gewasbeschermingsmiddelen en biociden`,
+the `Bestrijdingsmiddelenwet 1962`, `Verordening (EG) nr. 1107/2009` and the acts made under
+them.
 
-**Consequence for the project: such a keyword list must exist for every jurisdiction that
+**Consequence for the project: such a legislation list must exist for every jurisdiction that
 is added to the database.** A jurisdiction cannot be onboarded until its list exists,
-because the terms are language- and system-specific:
+because the instruments and their citation forms are language- and system-specific:
 
 - **Language.** A Dutch list will not retrieve German, French, Polish or Greek cases. Each
-  list is written in the working language(s) of that jurisdiction's courts. Multilingual
-  jurisdictions (Belgium, Luxembourg, Malta, Cyprus, Ireland, and the EU itself) need
-  multiple language sections within one list.
-- **Legal system.** Terms include national statutes, authorities and procedures — the
-  Dutch list carries `Ctgb` and `Wet gewasbeschermingsmiddelen en biociden`; a French list
-  would carry `ANSES` and `Code rural`. These have no cross-jurisdiction equivalent.
-- **Agronomy.** Crop and practice terms that signal pesticide litigation differ by country:
-  bulb and lily cultivation in the Netherlands, viticulture in France, olive groves in
-  Greece.
+  list carries its instruments in the citation forms of the working language(s) of that
+  jurisdiction's courts. The digits of a Union instrument's number are the same in every
+  language; its type word, its bracket token and its title are not (`Regulation (EU)
+  2017/2324`, `Verordening (EU) 2017/2324`, `règlement (UE) 2017/2324`), and a list carries
+  them in its own languages. Multilingual jurisdictions (Belgium, Luxembourg, Malta, Cyprus,
+  Ireland, and the EU itself) carry several languages in one list.
+- **Legal system.** The national instruments are the sharpest signals available and have no
+  cross-jurisdiction equivalent — the Dutch list carries the `Wet gewasbeschermingsmiddelen
+  en biociden` and the decrees and regulations under it; a French list would carry the
+  `Code rural et de la pêche maritime` and the arrêtés under it. Which instruments are
+  pesticide law, and how courts cite them, is a fact about one legal order.
 
 Design consequences:
 
-1. Keyword lists are **data, not code** — one JSON file per jurisdiction in
-   `data/keywords/`, validated against a shared schema, versioned in git.
-2. Selection is a **word search**: a document is in scope when **any** curated term matches
-   it. Every term therefore has to be specific enough to carry a case on its own, and a term
-   that is not belongs in `excluded_<code>.json` rather than in the list. See §2.13, which
-   replaced the weighted scoring this point used to describe.
+1. Legislation lists are **data, not code** — one JSON file per jurisdiction in
+   `data/legislation/`, validated against a shared schema, versioned in git. The base
+   instruments and the national instruments are hand-curated; the acts made under the Union
+   base instruments are generated from CELLAR (`data/legislation/README.md`).
+2. Selection is a **search for names**: a document is in scope when **any** listed
+   instrument is named in its title, abstract, subject fields or full text. There is no
+   score, no threshold, no gate and no exclusion pattern. An instrument that would not carry
+   a case on its own does not go on the list, and the ones considered and left off are
+   recorded in the README with the reason. See §2.14, which replaced the word search this
+   point used to describe.
 3. Lists are **curated by the content manager**, not by developers. Every ingestion run
-   records which terms matched each case, so precision and recall of the lists can be
-   reviewed and the lists tuned over time.
-4. Linguistic filtering is **filter stage 1**. The pipeline's filter chain is pluggable so
+   records which instruments matched each case, and which version and digest of the list it
+   applied, so the lists can be reviewed and tuned over time.
+4. Legislation matching is **filter stage 1**. The pipeline's filter chain is pluggable so
    later stages (classifier models, citation-based filters, manual review queues) can be
    added without rewriting the connectors.
 
@@ -175,8 +184,9 @@ Two consequences bind the filter chain:
 
 1. **Selection is not tightened by arithmetic.** Any proposal to narrow what the tracker
    holds must be assessed by **what it loses**, counted rather than estimated.
-2. **Precision is handled in curation.** A term that admits the wrong cases comes out of the
-   list, with the reason recorded, rather than being kept at a discount. See §2.13.
+2. **Precision is handled in curation.** An instrument that admits the wrong cases comes out
+   of the list, with the reason recorded, rather than being kept at a discount. See §2.13
+   and §2.14.
 
 **The content manager may be a person or an agent.** That is deliberately undecided, so the
 review queue must not assume either — the same queue, record and audit trail has to serve
@@ -189,6 +199,10 @@ both.
 > the flag. The recall-first principle above is unchanged — what changed is where precision
 > is bought.
 
+> *Amended 17 September 2026.* §2.14 replaced the word search with a search for the names of
+> pesticide legislation. Precision is still bought in curation; what comes out of the list is
+> now an instrument, and the reason it went is recorded in `data/legislation/README.md`.
+
 ### 2.8 Methodology must be transparent, explainable and repeatable
 
 > *Added 4 August 2026. Standing constraint on all selection and classification work.*
@@ -197,16 +211,18 @@ The PLT publishes its methodology (see the site's Methodology page) because a re
 database that cannot account for its own contents is not usable as a source. Three
 requirements follow, and they bound what the filter chain may become:
 
-- **Transparent.** How a case was selected is public, not internal. The criteria, the term
-  lists and the thresholds are published artefacts.
+- **Transparent.** How a case was selected is public, not internal. The criteria and the
+  legislation lists are published artefacts.
 - **Explainable.** For any individual case it must be possible to say *why it is in the
-  database* — which terms matched, in which field, against which version of which list. This
-  is what `keyword_match` records, and why it is not optional. Since §2.13 those records are
-  also public: the terms and their categories are the labels a case is listed under, so the
-  explanation is on the case's own page rather than in an internal table.
+  database* — which instruments were named, in which field, against which version of which
+  list. This is what `keyword_match` records, and why it is not optional. Since §2.13 those
+  records are also public: the instruments and their categories are the labels a case is
+  listed under, so the explanation is on the case's own page rather than in an internal
+  table.
 - **Repeatable.** Re-running the same selection over the same corpus with the same list
-  version must produce the same result. Lists are versioned data in git; scores are
-  deterministic; every run is recorded in `ingest_run`.
+  version must produce the same result. Lists are versioned data in git; matching is
+  deterministic; every run is recorded in `ingest_run`, since 17 September 2026 with the
+  version and the SHA-256 digest of the list it applied.
 
 **A technique that cannot meet all three is out of scope, however well it performs.** This
 applies directly to the "later stages" contemplated in §2.5: a classifier that improves
@@ -220,7 +236,7 @@ requirement above has to be revisited deliberately, not worked around.
 
 Every jurisdiction added to the database gets its own **methodology document** at
 `docs/jurisdictions/<code>.md`, written *before* its connector. It is a precondition for
-onboarding, alongside the keyword list required by §2.5.
+onboarding, alongside the legislation list required by §2.5.
 
 Each document records:
 
@@ -233,7 +249,7 @@ Each document records:
 2. **How to reach it.** The endpoints, their parameters, their quirks and their limits,
    each **verified against the live service** with the date of verification. Annex 2a is the
    summary; the jurisdiction document is where the detail belongs.
-3. **The keyword list**, and the reasoning behind its jurisdiction-specific terms.
+3. **The legislation list**, and the reasoning behind its jurisdiction-specific instruments.
 4. **Documented exceptions** — see §2.10.
 5. **Known limitations**, including anything the source does not expose.
 
@@ -241,17 +257,21 @@ Each document records:
 
 > *Added 5 August 2026.*
 
-The selection method is **the same for every jurisdiction**: fetch, filter, rank, with the
-recall-first policy of §2.7. Jurisdictions differ only in their *inputs* — the endpoints and
-the keyword list — not in how selection works.
+The selection method is **the same for every jurisdiction**: fetch, search for the
+instruments on the legislation list, select when any is named, with the recall-first policy
+of §2.7. Jurisdictions differ only in their *inputs* — the endpoints and the legislation
+list — not in how selection works.
 
 Where a jurisdiction genuinely needs more, it is added as an **explicit, documented
 exception** in that jurisdiction's methodology document, never as an undocumented adjustment
-to shared code. The Dutch list supplies the motivating cases: the forensic-toxicology
-boilerplate *"geen aanwijzingen … geneesmiddelen, drugs en/of bestrijdingsmiddelen"* admits
-homicide judgments, and `kwekerij` matches `hennepkwekerij`. These are linguistic accidents
-of one language, not facts about pesticide litigation, and they do not belong in shared
-logic.
+to shared code. The Dutch keyword list of August 2026 supplied the motivating cases: the
+forensic-toxicology boilerplate *"geen aanwijzingen … geneesmiddelen, drugs en/of
+bestrijdingsmiddelen"* admitted homicide judgments, and `kwekerij` matched `hennepkwekerij`.
+These were linguistic accidents of one language, not facts about pesticide litigation, and
+they did not belong in shared logic. Under the legislation method (§2.14) neither arises,
+because a statute's name is not an ordinary word; the one rule the method itself carries —
+a year/number instrument number is never matched bare, because that is how case-law
+reporters cite judgments — is recorded in every jurisdiction document.
 
 Every exception must state **what it excludes, why, and what it costs**. Because an exclusion
 is a deliberate false negative — the error §2.7 says this project does not accept — the
@@ -337,6 +357,9 @@ quietly becomes policy.
 
 ### 2.13 Selection is a word search, and a match is a public label
 
+> *Superseded by §2.14 on 17 September 2026. Kept as the record of the decision it made; the
+> lists it describes are frozen on branch `0.1.0`, tag `v0.1.0`.*
+
 > *Added 17 August 2026. Decision by the project owner, following the first full run.*
 
 **A case is in the tracker because a curated term appears in it. That is the whole rule.**
@@ -373,6 +396,115 @@ something the project asserts: the answer to "why is this case here" is on the c
 the removals are 17 and 16 terms respectively, offset by product classes split out of
 aliases. Almost the whole of both lists — 830 of 863, and 512 of 565 — is active substances,
 which is where the project owner placed the emphasis.
+
+### 2.14 Selection is a search for the names of pesticide laws
+
+> *Added 17 September 2026. Decision by the project owner, following a review of the corpus
+> published on 29 August 2026.*
+
+**A case is in the tracker because a pesticide law on its jurisdiction's legislation list is
+named in it — in its title, abstract, subject fields or full text. That is the whole rule.**
+There is no score, no threshold, no gate, no veto and no exclusion pattern.
+
+**Why.** The word search of §2.13 selected on a curated list of substances, crops, practices
+and authorities. Such a list holds precision only with machinery: `requires` gates to keep
+`water`, `beer` and `koper` from selecting every judgment that says them, exclusion patterns
+for the toxicology boilerplate and *hennepkwekerij*, and an `excluded_<code>.json` for every
+term that turned out to admit the wrong cases. Even so it selected on incidental mentions:
+the Wet op de economische delicten alone brought in 577 unrelated Dutch cases, and REACH and
+ECHA between them carried twelve of fifty-four EU cases in 2024, one of them on lead in
+ammunition. A law's name is not an ordinary word. A judgment that names the Wet
+gewasbeschermingsmiddelen en biociden or Regulation (EC) No 1107/2009 is applying pesticide
+law, whatever else it is about, and the ambiguities that needed the machinery do not arise.
+The selection criterion is now a **published list of instruments a lawyer can audit**, entry
+by entry, rather than a list of words and the rules that kept them in check.
+
+**What the lists contain.** One list per jurisdiction in `data/legislation/`, described in
+`data/legislation/README.md`. Each carries the Union base instruments of pesticide law —
+plant protection products (Directive 79/117/EEC, Directive 91/414/EEC, Regulation (EC) No
+1107/2009 and the approved-substance register in Implementing Regulation (EU) No 540/2011),
+maximum residue levels (Regulation (EC) No 396/2005), biocides (Directive 98/8/EC and
+Regulation (EU) No 528/2012), sustainable use (Directive 2009/128/EC) and pesticide
+statistics (Regulation (EC) No 1185/2009) — and, for a member state, its national
+instruments. For the Netherlands those are the Wet gewasbeschermingsmiddelen en biociden with
+its Besluit and Regeling, the Bestrijdingsmiddelenwet 1962 and the decrees and regulations
+made under it (the Regeling toelating bestrijdingsmiddelen 1995, the Besluit
+milieutoelatingseisen bestrijdingsmiddelen, the Besluit uniforme beginselen
+gewasbeschermingsmiddelen and the rest), taken from what Dutch courts cite across the whole
+Rechtspraak mirror. Every instrument is carried under the number and the names courts cite
+it by. Instruments considered and left off — REACH, CLP, the Water Framework Directive,
+Aarhus, the general food law, the Wet op de economische delicten, the Activiteitenbesluit —
+are recorded in the README with the reason, not in a data file.
+
+**What is generated and what is curated.** The base instruments and the national instruments
+are hand-curated. Everything made under the Union base instruments — 2,235 acts CELLAR
+records as based on, amending or correcting them, above all the implementing regulations
+that approve, renew and withdraw active substances — is generated by
+`backend/scripts/legislation_from_cellar.py` and marked as such, so the generator can replace
+its own entries and touch none of the curator's. A list of two thousand implementing acts
+typed from memory would have a recall floor. An act related to a base instrument only by
+amending it, and amending more than one act in all, is about something else — the
+comitology and accession adaptations that touch a hundred instruments at once, the medical
+devices directive that also amended the biocides directive, the fertiliser regulation that
+also amended 1107/2009 — and is left out; ten such acts are at version 1.0.0. The lists
+then hold 2,266 instruments for the Netherlands and 2,244 for the EU.
+
+**Implementing acts are labels of their own.** A case selected by the implementing regulation
+that withdrew one substance carries that regulation as its label, not the framework
+regulation it was made under, because that is what the court applied and what a reader
+filtering the corpus wants to find. The label rules of §2.13 otherwise stand: the label is
+the instrument as the curator wrote it, an alias is a citation form of its own instrument
+and never of another, and a label is written to be read.
+
+**Citation forms.** Instruments are cited mostly by number, and a number is matched in the
+forms a court writes. The base instruments carry their bare number/year numbers
+(`1107/2009`, `528/2012`), on the curator's measurement. A generated act's number/year
+number is carried behind its bracket token only — `Regulation (EU) No 116/2014`,
+`Verordening (EU) nr. 116/2014` — because the bare number is also a national law (*Law No
+116/2014*), a docket (*Case R 520/2011-4*) or a bulletin, and the first run of a list that
+carried it bare selected cases on each of those. Year/number numbers (every directive and decision, and regulations from 2015) are
+matched only behind their type word — `Implementing Regulation (EU) 2017/2324`,
+`Directive 2009/128`, `Richtlijn 2009/128` — never bare, because `2009/128` is how Dutch
+case-law reporters cite judgments (*NJ 2009/128*), and never as a bare suffixed or
+bracketed number either, because directives, decisions and, from 2015, regulations share one
+numbering space: Decision 2003/35/EC recognises pesticide dossiers and Directive 2003/35/EC
+is public participation, and only the word tells them apart. That is the only exception the
+method needs, and each jurisdiction document records it (§2.10).
+
+**The previous method is frozen, not deleted.** The keyword lists, the exclusion files and
+the word-search matcher of §2.13 are on branch `0.1.0`, tagged `v0.1.0`, and the corpus they
+produced on 29 August 2026 can be reproduced from the mirror (architecture §9). Every
+ingestion run now records the version and the SHA-256 digest of the list it applied, so the
+two methods can be compared on an identical corpus and the comparison repeated.
+
+**What it cost.** §2.7 asks that a change to what the tracker holds be assessed by what it
+loses, counted rather than estimated. The keyword method held 3,027 Dutch and 1,312 EU cases
+on 29 August 2026. The legislation method selects 624 Dutch and 828 EU cases from the same
+mirror, rebuilt on 17 September 2026; the keyword method, rebuilt the same day, reproduced
+its 3,027 and 1,312 exactly. The two methods agree on 546 Dutch and 742 EU cases.
+
+*Lost.* 2,481 Dutch and 570 EU cases the keyword method held are not selected. On a reading
+of forty of each from titles, labels and matched passages (`docs/jurisdictions/nl.md` and
+`eu.md` §3), about two in five of the Dutch and one in four of the EU losses are pesticide
+litigation that never names the legislation — above all the Raad van State's spray-zone
+planning appeals, decided under planning law — and the rest are the incidental mentions
+the keyword lists were known to admit: toxicology reports, trade mark classes, cartel and
+customs cases. The order of magnitude of pesticide litigation given up is a thousand Dutch
+and a hundred and fifty EU cases, and each jurisdiction document records it as the
+method's first limit.
+
+*Gained.* 78 Dutch and 86 EU cases the keyword method did not hold. About nine and ten of
+them respectively are pesticide cases the keyword lists missed; the rest were admitted by
+citations mis-typed in the judgments themselves — the Temporary Protection Directive written
+as *Richtlijn 2011/55/EG*, the trade mark regulation as *Regulation (EU) 2017/2001* — that
+land on the number of a Commission act made under 91/414/EEC or 528/2012. A text method
+cannot see past a typo in its source, and whether the Commission directives made under
+91/414/EEC stay on the lists is a curation decision for the content manager.
+
+*Precision.* On forty random cases per jurisdiction, 35 of 40 Dutch and 36 of 40 EU cases
+are pesticide or biocide litigation; the remainder are the mis-typed citations above. The
+readings were made by the project's assistant from titles and passages, not by a lawyer
+from the judgments, and stand until the Law group's own reading replaces them.
 
 ---
 
@@ -434,6 +566,10 @@ PostgreSQL-compatible for deployment.
 
 A scheduled job runs the ingestion pipeline weekly per jurisdiction, scanning for new case
 law and deduplicating against the existing database (§2.6).
+
+> *Note, 17 September 2026.* The GitHub Actions schedule was removed on 22 August 2026
+> (commit `55bf0d0`); the workflow runs on dispatch only until a deployment exists
+> (`docs/deployment.md` §9).
 
 ---
 
@@ -541,7 +677,7 @@ recorded here as each jurisdiction is onboarded.
 
 | Jurisdiction | Endpoint | Notes |
 | --- | --- | --- |
-| NL | `https://data.rechtspraak.nl/uitspraken/zoeken` | Atom feed. Parameters include `max` (≤1000), `from` (offset), `date` (repeatable, from/to), `modified`, `subject` (rechtsgebied URI), `creator` (instantie URI), `type`, `sort`, and `return=DOC`. **`DOC` is the only accepted value of `return`** — `META`, `ALL` and anything else give HTTP 400 (verified 4 August 2026). Omitting `return` yields **all** ECLIs, including metadata-only records with no document body; `return=DOC` yields only those with a body. The difference is large: the portal publishes **3,737,898 decisions, of which 949,461 carry a document body** (verified 5 August 2026). A connector must decide deliberately which it wants: metadata-only records cannot be keyword-filtered on full text (§2.5), but omitting them from discovery means never seeing them. **`modified` is read in Europe/Amsterdam local time while the feed's Atom `updated` is UTC**, and an explicit offset in the parameter is ignored, so a caller passing a UTC instant silently asks for a window one or two hours off the one it meant; a single `modified` value is a lower bound, so a bounded window sends two. **No full-text search** — topical selection must happen client-side (§2.5). |
+| NL | `https://data.rechtspraak.nl/uitspraken/zoeken` | Atom feed. Parameters include `max` (≤1000), `from` (offset), `date` (repeatable, from/to), `modified`, `subject` (rechtsgebied URI), `creator` (instantie URI), `type`, `sort`, and `return=DOC`. **`DOC` is the only accepted value of `return`** — `META`, `ALL` and anything else give HTTP 400 (verified 4 August 2026). Omitting `return` yields **all** ECLIs, including metadata-only records with no document body; `return=DOC` yields only those with a body. The difference is large: the portal publishes **3,737,898 decisions, of which 949,461 carry a document body** (verified 5 August 2026). A connector must decide deliberately which it wants: metadata-only records cannot be searched for legislation on full text (§2.5), but omitting them from discovery means never seeing them. **`modified` is read in Europe/Amsterdam local time while the feed's Atom `updated` is UTC**, and an explicit offset in the parameter is ignored, so a caller passing a UTC instant silently asks for a window one or two hours off the one it meant; a single `modified` value is a lower bound, so a bounded window sends two. **No full-text search** — topical selection must happen client-side (§2.5). |
 | NL | `https://data.rechtspraak.nl/uitspraken/content?id=<ECLI>` | Rechtspraak XML: Dublin Core metadata block, `inhoudsindicatie` (abstract) and `uitspraak` (full text). |
 | NL | `https://data.rechtspraak.nl/Waardelijst/{Rechtsgebieden,Instanties,Proceduresoorten}` | Controlled vocabularies; seed the reference tables from these rather than hard-coding. |
 | EU | `https://publications.europa.eu/webapi/rdf/sparql` | CELLAR SPARQL 1.1 endpoint over the CDM ontology. Used to enumerate case law works by CELEX sector 6 and by document date. From 1 January 2026 a single search returns at most 10,000 results — page by date window. |

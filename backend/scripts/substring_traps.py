@@ -12,7 +12,7 @@ person's job: `biociden` inside `biocidenrichtlijn` is the feature, `aldrin` ins
 
 Run it before giving any short literal `substring`, and after adding a batch of substances:
 
-    .venv/Scripts/python.exe scripts/substring_traps.py NL ../data/keywords/nl.json 30000
+    .venv/Scripts/python.exe scripts/substring_traps.py NL ../data/legislation/nl.json 30000
 
 It reads the local corpus store and sends no requests.
 """
@@ -64,10 +64,10 @@ def vocabulary(jurisdiction: str, sample: int) -> Counter[str]:
 
 
 def substring_literals(path: Path) -> list[tuple[str, str]]:
-    """Return every ``(term id, literal)`` a keyword list matches as a substring.
+    """Return every ``(term id, literal)`` a legislation list matches as a substring.
 
     Args:
-        path: The keyword list to read.
+        path: The legislation list to read.
 
     Returns:
         One pair per literal, aliases included, since an alias inherits the match mode.

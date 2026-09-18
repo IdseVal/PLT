@@ -10,9 +10,9 @@ it takes there. Companion documents: [`README.md`](../README.md) (what the app i
 ## 1. What this deployment is for
 
 This describes **one virtual machine** serving the tracker to people who need a URL rather
-than a checkout: the Law group, collaborating scholars, and whoever is curating the keyword
-lists. It is a shared, always-on instance of the development work — not the tracker's final
-home.
+than a checkout: the Law group, collaborating scholars, and whoever is curating the
+legislation lists. It is a shared, always-on instance of the development work — not the
+tracker's final home.
 
 **The final home is likely a WUR-managed machine or VM.** That is the single most important
 fact about this document, and it sets one rule that everything below obeys:
@@ -72,7 +72,7 @@ one folder per case (architecture §9). It is the raw material: roughly 140 kB p
 about 15 GB for CELEX sector 6 alone, and considerably more once member states are added.
 
 **The mirror lives on the workstation, never on the server.** It exists so that a selection
-experiment is repeatable — so two keyword lists can be scored against an identical corpus
+experiment is repeatable — so two legislation lists can be scored against an identical corpus
 rather than against whatever the endpoint happened to hold that day. That is a research
 activity, not a serving activity. Renting server storage that grows into tens of gigabytes to
 hold bytes the public site never reads would be paying rent on an archive.
@@ -96,19 +96,26 @@ So it belongs on the VM, as a systemd timer calling the same CLI the GitHub work
 
 ### 3.4 A methodology change is rebuilt on the workstation
 
-Changing a keyword list is not an increment. It re-scores **the entire corpus**, which means
-it needs the mirror, which means it happens where the mirror is.
+Changing a legislation list is not an increment. It re-selects from **the entire corpus**,
+which means it needs the mirror, which means it happens where the mirror is.
 
 The loop, run on the workstation against a local PostgreSQL matching the server's major
 version:
 
 ```bash
+# 0. The local database must be at the current schema. Revision 0010 adds
+#    ingest_run.list_version and ingest_run.list_digest, the record of which list produced
+#    the corpus; apply it here and on the server (§12) before anything is republished.
+cd backend && alembic upgrade head && cd ..
+
 # 1. Bring the mirror up to date first. It is incremental and checkpointed; skipping this
-#    re-scores a corpus missing whatever the server ingested since the last mirror run.
-plt mirror --every-jurisdiction
+#    re-selects from a corpus missing whatever the server ingested since the last mirror run.
+plt mirror --all
 
 # 2. Rebuild the filtered database from disk. No court is asked for a single document.
-plt ingest --every-jurisdiction --from-store
+#    --full reads the store from the beginning regardless of the stored checkpoint;
+#    --no-notify because a rebuild is not a scan and nobody should be told about it.
+plt ingest --all --from-store --full --no-notify
 
 # 3. Dump only the regenerable tables (see §3.5 for why "only").
 pg_dump --format=custom --no-owner --no-privileges \
@@ -177,7 +184,7 @@ Keep the retired schema until the new one has been exercised; it is the rollback
 ```bash
 # Catch up whatever the sources published between the local rebuild and this cutover.
 # The checkpoint that came across in the dump tells it exactly where to resume.
-sudo -u plt /srv/plt/venv/bin/plt ingest --every-jurisdiction
+sudo -u plt /srv/plt/venv/bin/plt ingest --all
 ```
 
 That last step closes the gap between a rebuild made on Monday and a cutover done on Thursday,
@@ -435,8 +442,8 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-**`plt-ingest.service`** — `ExecStart=/srv/plt/venv/bin/plt ingest --every-jurisdiction --strict`,
-with `OnSuccess=plt-digest.service` in its `[Unit]` section. `--strict` exits 3 when a run
+**`plt-ingest.service`** — `ExecStart=/srv/plt/venv/bin/plt ingest --all --fail-on-partial`,
+with `OnSuccess=plt-digest.service` in its `[Unit]` section. `--fail-on-partial` exits 3 when a run
 completed but documents failed, so `systemctl status` goes red instead of a silent partial
 scan. `OnSuccess=` reproduces the contract the workflows encode: the digest announces the
 cases *that scan just landed*, so it is triggered by the ingest's completion rather than by a

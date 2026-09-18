@@ -41,9 +41,11 @@ decision itself, for backfilling a historical period; candidates then carry no
 never looked at.
 
 **Multilingual matching.** A judgment exists in up to 24 languages.
-``NormalisedCase.full_text`` joins every retrieved language version, so a curated term in any
-of them qualifies the case — which is precisely why ``data/keywords/eu.json`` carries
-English, French, German and Dutch sections. Which languages are retrieved is configuration
+``NormalisedCase.full_text`` joins every retrieved language version, so a listed instrument
+named in any of them qualifies the case — which is precisely why ``data/legislation/eu.json``
+carries the instruments' names and type words in English, French, German and Dutch, and the
+numbers of pre-2015 regulations bare, which read the same in every language of the Court.
+Which languages are retrieved is configuration
 (``eurlex_languages``, English by default), with the procedural language as the fallback when
 none of the preferred ones exists, and the choice is recorded on the document row.
 
@@ -1530,9 +1532,9 @@ def _clean_title(title: str | None) -> str | None:
 
 
 def _subject(work: etree._Element) -> str | None:
-    """Join the subject-matter and descriptor labels into the scored ``subject`` field.
+    """Join the subject-matter and descriptor labels into the scanned ``subject`` field.
 
-    ``data/keywords/eu.json`` weights ``subject`` above plain full text, and the CDM
+    ``data/legislation/eu.json`` names ``subject`` among its ``fields``, and the CDM
     descriptors are where a pesticide case says so in as many words ("Plant protection
     products", "Chemicals"), so this is a strong signal rather than a decorative field.
 

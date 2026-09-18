@@ -41,7 +41,7 @@ from plt.pipeline.base import (
 )
 from plt.pipeline.connectors.eurlex import EurLexConnector
 from plt.pipeline.dedup import decide_before_fetch, resolve_content_hash
-from plt.pipeline.filters.keywords import KeywordFilter
+from plt.pipeline.filters.legislation import LegislationFilter
 from plt.pipeline.http import PoliteClient
 from plt.pipeline.persistence import persist_case
 from plt.pipeline.registry import connector_for
@@ -1412,15 +1412,14 @@ def test_the_registry_serves_the_eu_with_this_connector() -> None:
 def test_a_recorded_pesticide_judgment_passes_the_curated_eu_list(
     blaise_case: NormalisedCase,
 ) -> None:
-    """End to end for the two work streams that have to meet: connector and keyword list."""
-    stage = KeywordFilter.for_jurisdiction("EU", settings=build_settings())
+    """End to end for the two work streams that have to meet: connector and legislation list."""
+    stage = LegislationFilter.for_jurisdiction("EU", settings=build_settings())
 
     result = stage.evaluate(blaise_case)
 
     assert result.passed, result.reason
     matched = {match.term_id for match in result.matches}
     assert "en-reg-1107-2009" in matched
-    assert "en-glyphosate" in matched
 
 
 def test_a_second_run_in_another_language_adds_documents_and_no_second_case(
@@ -1432,7 +1431,7 @@ def test_a_second_run_in_another_language_adds_documents_and_no_second_case(
     What has to come out is one ``case`` row carrying more ``case_document`` rows — never a
     second case for the same decision.
     """
-    stage = KeywordFilter.for_jurisdiction("EU", settings=build_settings())
+    stage = LegislationFilter.for_jurisdiction("EU", settings=build_settings())
     english = FakeCellar(
         notices={BLAISE: fixture(f"notice-{BLAISE}.xml")},
         texts={(BLAISE, "ENG"): fixture(f"text-{BLAISE}-eng.xhtml")},

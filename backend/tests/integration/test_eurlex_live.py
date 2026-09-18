@@ -33,7 +33,7 @@ import pytest
 from plt.config import EurLexDiscoveryDate, Settings
 from plt.pipeline.base import Candidate, DocumentUnavailableError
 from plt.pipeline.connectors.eurlex import EurLexConnector
-from plt.pipeline.filters.keywords import KeywordFilter
+from plt.pipeline.filters.legislation import LegislationFilter
 from plt.pipeline.windows import Window
 from tests.conftest import build_settings
 
@@ -262,7 +262,7 @@ def test_the_live_judgment_passes_the_curated_eu_list(connector: EurLexConnector
     """The evidence that the connector and the keyword list actually meet."""
     case = connector.normalise(connector.fetch(Candidate(source_id=BLAISE, jurisdiction_code="EU")))
 
-    result = KeywordFilter.for_jurisdiction("EU", settings=live_settings()).evaluate(case)
+    result = LegislationFilter.for_jurisdiction("EU", settings=live_settings()).evaluate(case)
 
     assert result.passed, result.reason
 

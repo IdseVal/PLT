@@ -61,12 +61,12 @@ from plt.db.repositories import (
 from plt.db.session import create_session_factory, make_engine
 from plt.extensions import dispose_database
 from plt.pipeline.filters.base import Filter, FilterableDocument, FilterChain, FilterResult
-from plt.pipeline.filters.keywords import KeywordFilter, load_keyword_list
+from plt.pipeline.filters.legislation import LegislationFilter, load_legislation_list
 from plt.pipeline.runner import IngestReport, run_jurisdiction
 from tests.conftest import REPO_ROOT, build_settings
 from tests.fakes import EPOCH, FakeConnector, FakeDocument
 
-SCHEMA_PATH = REPO_ROOT / "data" / "keywords" / "schema.json"
+SCHEMA_PATH = REPO_ROOT / "data" / "legislation" / "schema.json"
 
 #: The token the test application accepts on the review endpoints.
 TOKEN = "review-token-for-tests"
@@ -102,11 +102,11 @@ def make_list() -> dict[str, Any]:
     is the one the flagging stage below reacts to.
     """
     return {
-        "schema_version": "2.0.0",
+        "schema_version": "1.0.0",
         "jurisdiction": "NL",
         "jurisdiction_name": "Netherlands",
         "list_version": "9.9.9",
-        "updated": "2026-08-17",
+        "updated": "2026-09-17",
         "languages": ["nl"],
         "fields": ["title", "abstract", "full_text"],
         "terms": [
@@ -114,13 +114,13 @@ def make_list() -> dict[str, Any]:
                 "id": "nl-alfa",
                 "term": "alfamiddel",
                 "lang": "nl",
-                "category": "product_class",
+                "category": "national_act",
             },
             {
                 "id": "nl-beta",
                 "term": "betamiddel",
                 "lang": "nl",
-                "category": "product_class",
+                "category": "national_act",
             },
         ],
     }
@@ -143,7 +143,7 @@ def write_list(directory: Path, document: dict[str, Any]) -> Path:
     return path
 
 
-def build_filter(directory: Path, document: dict[str, Any]) -> KeywordFilter:
+def build_filter(directory: Path, document: dict[str, Any]) -> LegislationFilter:
     """Compile a synthetic list into a filter stage.
 
     Args:
@@ -153,7 +153,7 @@ def build_filter(directory: Path, document: dict[str, Any]) -> KeywordFilter:
     Returns:
         The compiled stage.
     """
-    return KeywordFilter(load_keyword_list(write_list(directory, document)))
+    return LegislationFilter(load_legislation_list(write_list(directory, document)))
 
 
 @dataclass
@@ -533,7 +533,7 @@ def test_the_match_report_records_the_flag(harness: Harness) -> None:
     assert judged[0]["needs_review"] is True
     assert judged[0]["matched_term_count"] == 1
     assert [entry["term"] for entry in judged[0]["terms"]] == ["alfamiddel"]
-    assert [entry["category"] for entry in judged[0]["terms"]] == ["product_class"]
+    assert [entry["category"] for entry in judged[0]["terms"]] == ["national_act"]
 
 
 # ----------------------------------------------------------------------------------------

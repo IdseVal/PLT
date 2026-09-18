@@ -21,6 +21,8 @@ env/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+# Where scripts/legislation_from_cellar.py keeps the CELLAR listings between runs.
+.cache/
 .coverage
 .coverage.*
 coverage.xml

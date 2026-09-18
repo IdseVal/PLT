@@ -28,7 +28,7 @@ export const faqPage: StaticPageContent = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'The tracker starts with the European Union and the Netherlands, and adds member states one at a time. A jurisdiction is only added once two things exist: a connector to that country’s official judicial database, and a keyword list written in the working language of its courts. Jurisdictions that have not yet been onboarded stay visible on the map in a muted state rather than disappearing, so it is always clear what is covered and what is not.',
+          text: 'The tracker starts with the European Union and the Netherlands, and adds member states one at a time. A jurisdiction is only added once two things exist: a connector to that country’s official judicial database, and a legislation list naming the pesticide laws of that jurisdiction in the working language of its courts. Jurisdictions that have not yet been onboarded stay visible on the map in a muted state rather than disappearing, so it is always clear what is covered and what is not.',
         },
       ],
     },
@@ -68,7 +68,7 @@ export const faqPage: StaticPageContent = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'No collection of case law can be. The tracker can only hold what courts publish online, and in most member states the published record is a selection: first-instance judgments in particular are published unevenly. On top of that, cases are selected by matching curated keyword lists, which will occasionally miss a judgment written in unfamiliar vocabulary. The tracker is a finding aid; it is not a substitute for a systematic search of a national database when completeness matters.',
+          text: 'No collection of case law can be. The tracker can only hold what courts publish online, and in most member states the published record is a selection: first-instance judgments in particular are published unevenly. On top of that, cases are selected because they name a pesticide law, which will miss a judgment that discusses pesticides without citing the legislation. The tracker is a finding aid; it is not a substitute for a systematic search of a national database when completeness matters.',
         },
       ],
     },
@@ -108,7 +108,7 @@ export const faqPage: StaticPageContent = {
       blocks: [
         {
           kind: 'paragraph',
-          text: 'Please report it. Corrections are the fastest way the collection improves, and a missing case often points at a gap in a keyword list that is affecting other cases too. Send the case identifier, or a link to it, and a line about what is wrong.',
+          text: 'Please report it. Corrections are the fastest way the collection improves, and a missing case often points at an instrument missing from a legislation list that is affecting other cases too. Send the case identifier, or a link to it, and a line about what is wrong.',
         },
         {
           kind: 'links',

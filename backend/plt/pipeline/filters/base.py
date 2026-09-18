@@ -50,7 +50,7 @@ class FilterableDocument(Protocol):
 
     Attributes:
         jurisdiction_code: Jurisdiction the document belongs to, ``NL`` or ``EU``. Selects
-            the keyword list.
+            the legislation list.
         title: Case title, if the source provides one.
         abstract: Summary or headnote, if the source provides one.
         subject: Subject-matter classification - the *rechtsgebied* for the Netherlands, the
@@ -98,18 +98,17 @@ class TermMatch:
     aggregated into a single instance, so a term repeated five hundred times in a full text
     costs one row rather than five hundred.
 
-    A match is also a **label**. Selection is a word search, so a term that matched is a term
-    the public is told about: :attr:`term` and :attr:`category` are what a case is listed
-    under and what the case list is filtered by. That is why a gated match is marked rather
-    than dropped - it is evidence for the curator - and why only ungated matches label a case.
+    A match is also a **label**. Selection is a search for the names of listed instruments,
+    so an instrument that matched is one the public is told about: :attr:`term` and
+    :attr:`category` are what a case is listed under and what the case list is filtered by.
 
     Attributes:
-        term_id: Stable id of the curated term, e.g. ``nl-glyfosaat``. Aliases report the
-            id of their parent term.
-        term: The curated term as written in the list - not the inflection found in the
-            text. This is the public label, so every case matching an alias of ``glyfosaat``
-            is listed under ``glyfosaat`` and not under six spellings of it.
-        category: The term's category, e.g. ``active_substance``. The second public label.
+        term_id: Stable id of the curated term, e.g. ``nl-wgb``. Aliases report the id of
+            their parent term.
+        term: The curated citation as written in the list - not the form found in the text.
+            This is the public label, so every case citing Regulation (EC) No 1107/2009 under
+            any of its forms is listed under one name.
+        category: The term's category, e.g. ``regulation``. The second public label.
         list_version: Semantic version of the list that produced the match, so a stored
             match stays interpretable after the list is re-curated.
         field: Document field the term matched in, e.g. ``full_text``.
@@ -121,8 +120,6 @@ class TermMatch:
             NFC-normalised text - which is the text itself for every source seen so far, and
             differs only for a source that emits decomposed characters.
         end: Character offset one past the first occurrence.
-        gated: Whether a ``requires`` gate held this term back. A gated match selects
-            nothing and labels nothing.
     """
 
     term_id: str
@@ -135,17 +132,17 @@ class TermMatch:
     occurrences: int
     start: int
     end: int
-    gated: bool = False
 
 
 @dataclass(frozen=True, slots=True)
 class FilterResult:
     """The verdict of one filter stage on one document.
 
-    *Passed* decides whether the document enters the database at all, and selection is a word
-    search: one curated term matching is enough, because a term that could not carry a case on
-    its own does not belong in the list (``docs/CORE_DOCUMENT.md`` section 2.5). Precision is
-    bought in curation, by removing the term, rather than in arithmetic.
+    *Passed* decides whether the document enters the database at all, and selection is a
+    search for names: one listed instrument being named is enough, because an instrument
+    that could not carry a case on its own does not belong on the list
+    (``docs/CORE_DOCUMENT.md`` section 2.5). Precision is bought in curation, by leaving the
+    instrument off, rather than in arithmetic.
 
     *Needs review* survives as the content manager's own flag. Nothing raises it
     automatically any more: a threshold is what made a document "borderline", and there is no
@@ -155,7 +152,7 @@ class FilterResult:
         passed: Whether the document survives this stage.
         reason: Human-readable explanation for the pipeline report and the run log.
         stage: Name of the stage that produced the result.
-        matches: Every term match found, gated or not - see :class:`TermMatch`.
+        matches: Every term match found - see :class:`TermMatch`.
         needs_review: Whether a content manager should look at this document. Never ``True``
             on a rejection: a document that did not pass is not in the database and there is
             nothing to curate.
@@ -171,22 +168,21 @@ class FilterResult:
     def labels(self) -> tuple[TermMatch, ...]:
         """Return one match per distinct term that actually selected this document.
 
-        A term found in both the title and the full text is one label, not two, and a term
-        whose ``requires`` gate stayed shut is not a label at all. The order is the order the
-        terms were found in, so a report reads the way the document does.
+        A term found in both the title and the full text is one label, not two. The order is
+        the order the terms were found in, so a report reads the way the document does.
 
         Returns:
             The labelling matches, at most one per term id.
         """
         seen: dict[str, TermMatch] = {}
         for match in self.matches:
-            if not match.gated and match.term_id not in seen:
+            if match.term_id not in seen:
                 seen[match.term_id] = match
         return tuple(seen.values())
 
     @property
     def matched_term_count(self) -> int:
-        """Return how many distinct curated terms selected this document."""
+        """Return how many distinct listed instruments selected this document."""
         return len(self.labels)
 
 

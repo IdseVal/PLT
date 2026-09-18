@@ -154,7 +154,7 @@ describe('keyword index', () => {
     )
     render(<KeywordIndex />)
 
-    expect(screen.getByRole('status')).toHaveTextContent(/loading the keyword lists/i)
+    expect(screen.getByRole('status')).toHaveTextContent(/loading the legislation lists/i)
   })
 
   it('reports a failed request and loads the index when the retry is used', async () => {
@@ -196,7 +196,7 @@ describe('keyword index', () => {
     render(<KeywordIndex />)
 
     expect(
-      await screen.findByText(/keyword lists are not available right now/i),
+      await screen.findByText(/legislation lists are not available right now/i),
     ).toBeInTheDocument()
   })
 

@@ -5,7 +5,7 @@
     discover -> dedup pre-check -> fetch -> normalise -> filter chain -> persist -> checkpoint
 
 and it is the one module in the pipeline that may not know which jurisdiction it is running.
-Every jurisdiction-specific decision belongs to a connector or to a keyword list; anything
+Every jurisdiction-specific decision belongs to a connector or to a legislation list; anything
 about the Netherlands or the EU that leaked in here would have to be written again for the
 next jurisdiction, which is exactly what this design exists to prevent.
 
@@ -70,7 +70,7 @@ from plt.pipeline.dedup import (
     resolve_content_hash,
 )
 from plt.pipeline.filters.base import FilterChain, FilterResult
-from plt.pipeline.filters.keywords import KeywordFilter
+from plt.pipeline.filters.legislation import LegislationFilter
 from plt.pipeline.persistence import PersistOutcome, persist_case, touch_last_seen
 from plt.pipeline.registry import connector_for
 from plt.pipeline.report import MatchReport, default_report_path
@@ -153,6 +153,10 @@ class IngestReport:
         run_id: Primary key of the ``ingest_run`` row; ``None`` for a dry run.
         report_path: Match report written, if one was.
         error_message: First fatal error, if the run failed.
+        list_version: Version the legislation list the run applied claims to be, or
+            ``None`` when the chain carries no list.
+        list_digest: SHA-256 of that list's file, so two runs under the same claimed
+            version can still be told apart when the file differed.
     """
 
     jurisdiction_code: str
@@ -169,6 +173,8 @@ class IngestReport:
     run_id: int | None = None
     report_path: Path | None = None
     error_message: str | None = None
+    list_version: str | None = None
+    list_digest: str | None = None
 
     @property
     def succeeded(self) -> bool:
@@ -515,17 +521,38 @@ class _Run:
 def _default_chain(jurisdiction_code: str, settings: Settings) -> FilterChain:
     """Build the filter chain for a jurisdiction.
 
-    Stage 1 is the curated keyword matcher. Later stages append here and nowhere else, which
-    is what "the chain is pluggable" means in practice (``docs/CORE_DOCUMENT.md`` 2.5).
+    Stage 1 is the legislation matcher. Later stages append here and nowhere else, which is
+    what "the chain is pluggable" means in practice (``docs/CORE_DOCUMENT.md`` 2.5).
 
     Args:
         jurisdiction_code: Jurisdiction whose list to load.
-        settings: Settings resolving the keywords directory.
+        settings: Settings resolving the legislation directory.
 
     Returns:
         The chain to judge this jurisdiction's documents with.
     """
-    return FilterChain.of(KeywordFilter.for_jurisdiction(jurisdiction_code, settings=settings))
+    return FilterChain.of(LegislationFilter.for_jurisdiction(jurisdiction_code, settings=settings))
+
+
+def _list_provenance(chain: FilterChain) -> tuple[str | None, str | None]:
+    """Return the version and digest of the legislation list a chain applies.
+
+    A run has to be able to say which list produced it (``docs/CORE_DOCUMENT.md`` 2.8), and
+    the version string alone is a claim the file makes about itself; the digest is what the
+    file actually was.
+
+    Args:
+        chain: The chain about to run.
+
+    Returns:
+        The first legislation stage's list version and SHA-256, or two ``None`` when the
+        chain carries no such stage.
+    """
+    for stage in chain.stages:
+        if isinstance(stage, LegislationFilter):
+            listing = stage.legislation_list
+            return listing.list_version, listing.digest
+    return None, None
 
 
 def _open_run_row(session: Session, connector: SourceConnector, report: IngestReport) -> int:
@@ -545,6 +572,8 @@ def _open_run_row(session: Session, connector: SourceConnector, report: IngestRe
         started_at=report.started_at,
         status=IngestStatus.RUNNING,
         dry_run=report.dry_run,
+        list_version=report.list_version,
+        list_digest=report.list_digest,
         checkpoint_before=(
             report.checkpoint_before.as_dict() if report.checkpoint_before is not None else None
         ),
@@ -661,7 +690,7 @@ def run_jurisdiction(
         dry_run: Run every stage and write a match report, but make no database changes. The
             database is still read — deduplication needs it — and never written.
         connector: Connector to run. Defaults to the one registered for the jurisdiction.
-        chain: Filter chain to use. Defaults to the jurisdiction's keyword matcher.
+        chain: Filter chain to use. Defaults to the jurisdiction's legislation matcher.
         settings: Validated settings. Defaults to the process-wide settings.
         session_factory: Factory for the per-batch sessions. Defaults to the process-wide
             factory.
@@ -676,8 +705,8 @@ def run_jurisdiction(
 
     Raises:
         ConnectorNotFoundError: If no connector serves the jurisdiction.
-        KeywordListNotFoundError: If the jurisdiction has no keyword list. Both are caller
-            errors, raised before the run starts.
+        LegislationListNotFoundError: If the jurisdiction has no legislation list. Both are
+            caller errors, raised before the run starts.
     """
     resolved = settings if settings is not None else get_settings()
     jurisdiction_code = code.strip().upper()
@@ -687,11 +716,14 @@ def run_jurisdiction(
     factory = session_factory if session_factory is not None else get_session_factory()
     size = batch_size if batch_size is not None else resolved.pipeline_batch_size
 
+    list_version, list_digest = _list_provenance(filters)
     report = IngestReport(
         jurisdiction_code=source.jurisdiction_code,
         connector=source.name,
         dry_run=dry_run,
         window_until=until,
+        list_version=list_version,
+        list_digest=list_digest,
     )
     stop = StopRequest()
 
@@ -715,6 +747,8 @@ def run_jurisdiction(
                     "dry_run": dry_run,
                     "batch_size": size,
                     "stages": list(filters.stage_names),
+                    "list_version": report.list_version,
+                    "list_digest": report.list_digest,
                 }
             },
         )
@@ -814,5 +848,11 @@ def _open_report(
     )
     report.report_path = path
     return stack.enter_context(
-        MatchReport(path, jurisdiction_code=report.jurisdiction_code, connector=report.connector)
+        MatchReport(
+            path,
+            jurisdiction_code=report.jurisdiction_code,
+            connector=report.connector,
+            list_version=report.list_version,
+            list_digest=report.list_digest,
+        )
     )

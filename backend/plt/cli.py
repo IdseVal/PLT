@@ -62,6 +62,10 @@ from plt.pipeline.runner import IngestReport, run_jurisdiction
 from plt.pipeline.store_source import StoredCorpusConnector, stored_corpus_connector
 from plt.utils.logging import configure_logging, get_logger
 
+#: The lower bound ``--full`` reads from. Earlier than any published decision, so a run
+#: with it covers every document the source or the store holds.
+_BEGINNING_OF_TIME = datetime(1900, 1, 1, tzinfo=UTC)
+
 __all__ = ["main", "plt_cli"]
 
 log = get_logger(__name__)
@@ -147,6 +151,14 @@ def plt_cli() -> None:
     help="Only documents modified up to this ISO 8601 instant, UTC.",
 )
 @click.option(
+    "--full",
+    is_flag=True,
+    help="Read the whole window from the beginning instead of from the stored checkpoint. "
+    "A rebuild from the store needs this: without it a run against a database that has "
+    "ever been ingested into covers only what changed since. Mutually exclusive with "
+    "--since.",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Run every stage and write a match report, without touching the database.",
@@ -186,6 +198,7 @@ def ingest(
     every_jurisdiction: bool,
     since: datetime | None,
     until: datetime | None,
+    full: bool,
     dry_run: bool,
     report_path: Path | None,
     batch_size: int | None,
@@ -196,7 +209,9 @@ def ingest(
     """Fetch, filter and store one or more jurisdictions' case law.
 
     Run without ``--since`` — as the weekly job does — the stored checkpoint supplies the
-    window, so each run picks up where the last one left off.
+    window, so each run picks up where the last one left off. ``--full`` is the explicit way
+    to decline that: it reads from the beginning of time whatever the checkpoint says, which
+    is what re-selecting a whole corpus under a changed list means.
 
     With ``--from-store`` the payloads come off local disk instead of the network. That is how
     a corpus already mirrored is filtered: the cases are the same cases, so asking the source
@@ -209,8 +224,9 @@ def ingest(
     one command, and a library caller of ``run_jurisdiction`` gets none.
 
     Raises:
-        click.UsageError: If no jurisdiction was named, or ``--report`` was combined with
-            several jurisdictions, which would have them overwrite each other's report.
+        click.UsageError: If no jurisdiction was named, if ``--report`` was combined with
+            several jurisdictions, which would have them overwrite each other's report, or
+            if ``--full`` was combined with ``--since``.
         click.ClickException: If any run failed; the message names the jurisdictions.
     """
     settings = get_settings()
@@ -218,6 +234,11 @@ def ingest(
     if report_path is not None and len(codes) > 1:
         message = "--report names one file, so it cannot be combined with several jurisdictions"
         raise click.UsageError(message)
+    if full:
+        if since is not None:
+            message = "--full reads from the beginning, so it cannot be combined with --since"
+            raise click.UsageError(message)
+        since = _BEGINNING_OF_TIME
 
     reports: list[IngestReport] = []
     for code in codes:
@@ -355,7 +376,7 @@ def mirror(
 
     This is not an ingestion: nothing is filtered, classified or written to the database. It
     stores what the source served, so that a selection experiment can be re-run over an
-    identical corpus and two keyword lists compared on their merits rather than on the day
+    identical corpus and two legislation lists compared on their merits rather than on the day
     they happened to run (core document 2.8).
 
     A case already on disk costs no request, so an interrupted capture is resumed by running
@@ -547,7 +568,7 @@ def jurisdictions(as_json: bool) -> None:
     """List the jurisdictions ``plt ingest --all`` would run.
 
     The list comes from the connector registry, so onboarding a jurisdiction stays one
-    connector plus one keyword list (``docs/architecture.md`` section 4) and no scheduler,
+    connector plus one legislation list (``docs/architecture.md`` section 4) and no scheduler,
     crontab or workflow file has to be edited to include it.
 
     Raises:
@@ -559,7 +580,7 @@ def jurisdictions(as_json: bool) -> None:
     if not registered:
         message = (
             "no connectors are registered; add one under plt.pipeline.connectors together "
-            "with its keyword list under data/keywords/"
+            "with its legislation list under data/legislation/"
         )
         raise click.ClickException(message)
     codes = sorted(registered)

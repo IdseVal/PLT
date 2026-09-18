@@ -246,8 +246,8 @@ def _rebuild_children(row: Case, case: NormalisedCase, result: FilterResult, now
     ]
     row.citations = _unique_citations(case)
     # One row per term that selected the case, not per term-and-field: this table is the
-    # case's list of labels, and a term found in both the title and the body is one label.
-    # A term whose ``requires`` gate stayed shut selected nothing and is not a label at all.
+    # case's list of labels, and an instrument found in both the title and the body is one
+    # label.
     row.keyword_matches = [
         KeywordMatch(
             term_id=_clip(match.term_id, _IDENTIFIER_LEN) or match.term_id,

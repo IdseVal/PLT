@@ -34,7 +34,7 @@ from plt.pipeline.base import (
     SourceUnavailableError,
 )
 from plt.pipeline.connectors.rechtspraak import RechtspraakConnector
-from plt.pipeline.filters.keywords import KeywordFilter
+from plt.pipeline.filters.legislation import LegislationFilter
 from plt.pipeline.http import PoliteClient
 from plt.pipeline.windows import Window
 from tests.conftest import REPO_ROOT, build_settings
@@ -281,7 +281,7 @@ def settings_for(**overrides: object) -> Settings:
         rechtspraak_search_url=SEARCH_URL,
         rechtspraak_content_url=CONTENT_URL,
         rechtspraak_vocabulary_url=VOCABULARY_URL,
-        keywords_dir=REPO_ROOT / "data" / "keywords",
+        legislation_dir=REPO_ROOT / "data" / "legislation",
         **overrides,
     )
 
@@ -1056,7 +1056,7 @@ def test_a_metadata_only_ecli_is_stored_without_being_scored() -> None:
     assert case.source_metadata["has_body"] is False
     assert case.court is not None
 
-    verdict = KeywordFilter.for_jurisdiction("NL", settings=settings_for()).evaluate(case)
+    verdict = LegislationFilter.for_jurisdiction("NL", settings=settings_for()).evaluate(case)
     assert verdict.passed is False
 
 
@@ -1139,10 +1139,10 @@ def test_a_pesticide_judgment_passes_the_shipped_dutch_list(
 ) -> None:
     case = normalise(multivalued, "ECLI:NL:RVS:2024:9001")
 
-    verdict = KeywordFilter.for_jurisdiction("NL", settings=settings_for()).evaluate(case)
+    verdict = LegislationFilter.for_jurisdiction("NL", settings=settings_for()).evaluate(case)
 
     assert verdict.passed is True
-    assert {match.term_id for match in verdict.matches} >= {"nl-gewasbeschermingsmiddel"}
+    assert {match.term_id for match in verdict.matches} >= {"nl-wgb"}
 
 
 def test_a_line_break_instruction_keeps_the_text_that_follows_it(

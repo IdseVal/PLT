@@ -164,7 +164,7 @@ describe('page copy', () => {
     // rests on. Deliberately a short list of subjects rather than of sentences: the copy is
     // the Law group's to write, and a test that pinned its phrasing would fail on an edit
     // that improved it.
-    for (const subject of ['eur-lex', 'rechtspraak', 'celex', 'ecli', 'keyword', 'corpus', 'week']) {
+    for (const subject of ['eur-lex', 'rechtspraak', 'celex', 'ecli', 'legislation', 'corpus', 'week']) {
       expect(text).toContain(subject)
     }
   })
@@ -174,7 +174,6 @@ describe('page copy', () => {
 
     expect(screen.getByRole('heading', { level: 2, name: 'The corpus' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Inclusion criteria' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 2, name: 'Exclusion criteria' })).toBeInTheDocument()
     expect(
       screen.getByRole('heading', { level: 2, name: 'What each included case records' }),
     ).toBeInTheDocument()
@@ -198,17 +197,6 @@ describe('page copy', () => {
     const blocks = methodologyPage.sections.flatMap((section) => section.blocks)
 
     expect(blocks.some((block) => block.kind === 'keyword-index')).toBe(true)
-  })
-
-  it('binds every exclusion mechanism to the definition that describes it', () => {
-    const definitions = methodologyPage.sections
-      .flatMap((section) => section.blocks)
-      .flatMap((block) => (block.kind === 'definitions' ? block.items : []))
-
-    // Bound by key rather than by wording, so rewriting the copy cannot silently detach a
-    // list of excluded terms from the paragraph that introduces it.
-    expect(definitions.filter((item) => item.mechanism !== undefined).map((i) => i.mechanism))
-      .toEqual(['left-off', 'gated', 'patterns'])
   })
 
   it('is written as replaceable copy, not as filler', () => {

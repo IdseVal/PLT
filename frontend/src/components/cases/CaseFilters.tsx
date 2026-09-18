@@ -132,7 +132,7 @@ interface KeywordPickerProps {
 }
 
 /**
- * The keyword filter: a text box with typeahead over every curated term.
+ * The keyword filter: a text box with typeahead over every listed instrument.
  *
  * A `<select>` is the wrong control here. The lists carry roughly fourteen hundred terms
  * between them — almost all of them active substances with names like
@@ -185,7 +185,7 @@ function KeywordPicker({ id, value, options, onChange }: KeywordPickerProps): JS
   return (
     <div className="space-y-1">
       <label className={LABEL} htmlFor={id}>
-        Keyword
+        Legislation
       </label>
       <input
         id={id}
@@ -212,7 +212,7 @@ function KeywordPicker({ id, value, options, onChange }: KeywordPickerProps): JS
       </datalist>
       {unknown ? (
         <p id={`${id}-unknown`} role="alert" className="text-plt-accent-deep text-sm font-medium">
-          No curated term is written exactly that way, so no keyword filter was applied.
+          No listed instrument is written exactly that way, so no legislation filter was applied.
         </p>
       ) : null}
     </div>

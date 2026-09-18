@@ -353,8 +353,8 @@ def review_notice_message(
     body = (
         f"{total} {plural} entered the review queue since {since.isoformat()}.\n"
         f"\n"
-        f"Each scored inside its keyword list's review band: published like any other\n"
-        f"case, and additionally queued for a content manager to confirm or reject\n"
+        f"Each was flagged for a second look: published like any other case, and\n"
+        f"additionally queued for a content manager to confirm or reject\n"
         f"(core document 2.7). A rejection unpublishes the case and deletes nothing.\n"
         f"\n"
         f"{_RULE}\n"
